@@ -5,6 +5,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { webcrypto } from 'node:crypto';
+import { relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { createRollFlow, decodeWithTable } from '../src/roll/rollFlow.js';
 import { RollFetchError } from '../src/roll/fetchRoll.js';
@@ -12,6 +14,7 @@ import { createRollStore, minimiseEntries } from '../src/roll/rollStore.js';
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url));
 const strings = JSON.parse(read('src/strings.hi.json').toString('utf8'));
 const PDF = read('fixtures/badli-ward1.pdf');
@@ -193,7 +196,7 @@ test('rollFlow reaches the decoder only through dynamic imports (offline startup
   const seen = new Set();
   const walk = (rel) => {
     for (const spec of statics(rel)) {
-      const next = new URL(spec, new URL('../' + rel, import.meta.url)).pathname.replace(/^.*?\/work\//, '');
+      const next = relative(repoRoot, fileURLToPath(new URL(spec, new URL('../' + rel, import.meta.url)))).split(sep).join('/');
       assert.doesNotMatch(next, /decoder/, `${rel} statically imports ${spec}`);
       if (!seen.has(next)) { seen.add(next); walk(next); }
     }
