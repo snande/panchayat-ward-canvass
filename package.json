@@ -1,0 +1,15 @@
+{
+  "name": "panchayat-ward-canvass",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline decoder for Rajasthan panchayat roll PDFs (text layer only, no OCR)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "glyph-report": "node scripts/glyph-map-report.mjs fixtures/badli-ward1.pdf",
+    "build-glyph-table": "node scripts/build-glyph-table.mjs fonts/ARIALUNI.TTF src/decoder/master-glyph-table.json",
+    "test": "node --test"
+  }
+}

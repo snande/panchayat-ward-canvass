@@ -1,0 +1,22 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  decoder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Every Arial Unicode MS subset in the benchmark roll must map with unmatched=0.
+      - name: Glyph map report
+        run: npm run glyph-report
+      - name: Mandate check (no OCR, no Kruti Dev, no network in the decoder)
+        run: |
+          if grep -rniE "tesseract|from ['\"][^'\"]*ocr|kruti|\bfetch\(|XMLHttpRequest|WebSocket|sendBeacon" src/ scripts/; then
+            echo "decoder must work from the PDF text layer only, offline"; exit 1
+          fi
+      - name: Tests
+        run: npm test

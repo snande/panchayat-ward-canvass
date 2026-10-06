@@ -66,3 +66,15 @@ Scope: the table covers the Devanagari block, basic Latin, Latin-1, general
 punctuation, U+25CC, and every glyph reachable from those through GSUB
 (811 glyphs). Five pairs of distinct glyphs share an outline; the first by
 glyph id is kept.
+
+## Fallback indexes and the space glyph
+
+`scripts/build-glyph-table.mjs` (the JavaScript port of `glyphtable.py`)
+also writes `meta.spaceGid` (the master glyph a contour-less subset glyph
+maps to) and `index`: `index.offset` maps the hash of the outline translated
+so its minimum x and y are 0 to the entry's hash, and `index.coarse` maps the
+hash of that offset-free outline with coordinates divided by 8 and rounded to
+the list of entry hashes. `mapSubsetGlyphs` tries the exact hash first, then
+`index.offset`, then `index.coarse` when it names exactly one entry. Tables
+built without these keys (such as the one built by `glyphtable.py`) match by
+exact hash only, and the space maps to glyph 3.

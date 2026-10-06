@@ -1,0 +1,4 @@
+node_modules/
+# Arial Unicode MS is licensed and never committed; scripts/build-glyph-table.mjs reads it from here.
+fonts/*.ttf
+fonts/*.TTF
