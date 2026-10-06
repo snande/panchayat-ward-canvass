@@ -13,6 +13,8 @@ jobs:
         with:
           node-version: 20
       - run: npm test
+      - run: node scripts/benchmark.mjs
+      - run: git diff --exit-code reports/badli-ward1-benchmark.md
       - run: python3 scripts/check_pwa_shell.py
       - run: python3 -m unittest test_pwa_shell
         working-directory: scripts

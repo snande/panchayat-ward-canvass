@@ -7,9 +7,14 @@
 // with an error or yield no used glyphs, which glyph-map-report treats as a
 // failure rather than a pass. The subset's cmap is read here ONLY to turn the
 // character codes in the content streams into glyph IDs ("which glyphs are
-// used"); the decoder in src/decoder never looks at it.
+// used", via src/decoder/subsetCmap.js); Unicode never comes from it.
 
 import { inflateSync } from 'node:zlib';
+
+import { balancedDict, refNumber, topLevelEntries } from '../src/decoder/pdfReader.js';
+import { codeToGlyph } from '../src/decoder/subsetCmap.js';
+
+export { balancedDict, topLevelEntries };
 
 /** Every `N G obj ... endobj`: Map<objNum, {dict: string, stream: Buffer|null}>. */
 export function readObjects(pdf) {
@@ -40,53 +45,6 @@ export function readObjects(pdf) {
   return objects;
 }
 
-// --- dictionary parsing with balanced delimiters -----------------------------
-
-// Skip a literal string starting at text[i] === '('; returns the index after it.
-function skipLiteral(text, i) {
-  let depth = 0;
-  for (; i < text.length; i++) {
-    if (text[i] === '\\') i++;
-    else if (text[i] === '(') depth++;
-    else if (text[i] === ')' && --depth === 0) return i + 1;
-  }
-  return text.length;
-}
-
-/** The first `<< ... >>` in text, nested dictionaries included; null if none. */
-export function balancedDict(text) {
-  const open = text.indexOf('<<');
-  if (open < 0) return null;
-  let depth = 0;
-  for (let i = open; i < text.length; i++) {
-    if (text[i] === '(') i = skipLiteral(text, i) - 1;
-    else if (text.startsWith('<<', i)) { depth++; i++; }
-    else if (text.startsWith('>>', i)) { depth--; i++; if (depth === 0) return text.slice(open, i + 1); }
-  }
-  return null;
-}
-
-/** Top-level entries of a dictionary: Map<name, text following the name>. */
-export function topLevelEntries(dict) {
-  const entries = new Map();
-  const body = balancedDict(dict) ?? '';
-  let depth = 0;
-  for (let i = 0; i < body.length; i++) {
-    const ch = body[i];
-    if (ch === '(') i = skipLiteral(body, i) - 1;
-    else if (body.startsWith('<<', i)) { depth++; i++; }
-    else if (body.startsWith('>>', i)) { depth--; i++; }
-    else if (ch === '/' && depth === 1) {
-      let j = i + 1;
-      while (j < body.length && !/[\s/()<>[\]{}%]/.test(body[j])) j++;
-      const name = body.slice(i + 1, j);
-      if (!entries.has(name)) entries.set(name, body.slice(j));
-      i = j - 1;
-    }
-  }
-  return entries;
-}
-
 /** A dictionary value given inline or as an indirect reference, as dictionary text (or null). */
 function dictValue(valueText, objects) {
   if (valueText === undefined) return null;
@@ -95,11 +53,6 @@ function dictValue(valueText, objects) {
   const ref = /^(\d+)\s+\d+\s+R\b/.exec(trimmed);
   return ref && objects.has(Number(ref[1])) ? balancedDict(objects.get(Number(ref[1])).dict) : null;
 }
-
-const refNumber = (valueText) => {
-  const m = /^\s*(\d+)\s+\d+\s+R\b/.exec(valueText ?? '');
-  return m ? Number(m[1]) : null;
-};
 
 /** name -> font object number from a dictionary's /Resources /Font. */
 function fontResources(holderDict, objects) {
@@ -112,61 +65,6 @@ function fontResources(holderDict, objects) {
     if (num !== null) map.set(name, num);
   }
   return map;
-}
-
-// --- cmap (used only to learn which glyphs a character code draws) --------------
-
-/** code -> glyph ID from a subset's cmap (symbolic 3,0 with or without the 0xF000 offset, or 1,0). */
-function codeToGlyph(font) {
-  const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
-  const tables = new Map();
-  for (let i = 0; i < view.getUint16(4); i++) {
-    const rec = 12 + i * 16;
-    tables.set(String.fromCharCode(...font.subarray(rec, rec + 4)), view.getUint32(rec + 8));
-  }
-  const maps = new Map(); // "platform,encoding" -> Map<code, gid>
-  const cmap = tables.get('cmap');
-  if (cmap === undefined) return () => undefined;
-  for (let k = 0; k < view.getUint16(cmap + 2); k++) {
-    const platform = view.getUint16(cmap + 4 + k * 8);
-    const encoding = view.getUint16(cmap + 6 + k * 8);
-    const sub = cmap + view.getUint32(cmap + 8 + k * 8);
-    const codes = new Map();
-    const format = view.getUint16(sub);
-    if (format === 0) {
-      for (let c = 0; c < 256; c++) codes.set(c, font[sub + 6 + c]);
-    } else if (format === 4) {
-      const segCount = view.getUint16(sub + 6) / 2;
-      const ends = sub + 14;
-      const starts = ends + segCount * 2 + 2;
-      const deltas = starts + segCount * 2;
-      const ranges = deltas + segCount * 2;
-      for (let s = 0; s < segCount; s++) {
-        const end = view.getUint16(ends + s * 2);
-        const start = view.getUint16(starts + s * 2);
-        const delta = view.getInt16(deltas + s * 2);
-        const rangeOffset = view.getUint16(ranges + s * 2);
-        for (let c = start; c <= end && c !== 0xffff; c++) {
-          let gid;
-          if (rangeOffset === 0) {
-            gid = (c + delta) & 0xffff;
-          } else {
-            gid = view.getUint16(ranges + s * 2 + rangeOffset + (c - start) * 2);
-            if (gid) gid = (gid + delta) & 0xffff;
-          }
-          codes.set(c, gid);
-        }
-      }
-    }
-    maps.set(`${platform},${encoding}`, codes);
-  }
-  return (code) => {
-    for (const [key, offset] of [['3,0', 0], ['3,0', 0xf000], ['1,0', 0], ['3,1', 0]]) {
-      const gid = maps.get(key)?.get(code + offset);
-      if (gid) return gid;
-    }
-    return undefined;
-  };
 }
 
 // --- content streams ------------------------------------------------------------
