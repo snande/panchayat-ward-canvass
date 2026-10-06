@@ -9,7 +9,7 @@ import check_pwa_shell
 
 REPO = check_pwa_shell.ROOT
 HARNESS = Path(__file__).resolve().parent / "sw_behavior_test.cjs"
-SHELL_ITEMS = ("index.html", "manifest.webmanifest", "sw.js", "styles.css", "js", "icons", "src", "fonts")
+SHELL_ITEMS = ("index.html", "manifest.webmanifest", "sw.js", "styles.css", "js", "icons", "src", "fonts", "config")
 FONT = "fonts/noto-sans-devanagari-subset.woff2"
 NODE = shutil.which("node")
 

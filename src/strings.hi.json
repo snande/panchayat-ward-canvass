@@ -9,5 +9,16 @@
   "status_offline_ready": "ऑफ़लाइन उपयोग के लिए तैयार।",
   "status_offline_failed": "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",
   "offline_title": "ऑफ़लाइन",
-  "offline_body": "इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।"
+  "offline_body": "इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।",
+  "picker_district": "ज़िला",
+  "picker_samiti": "पंचायत समिति",
+  "picker_panchayat": "ग्राम पंचायत",
+  "picker_ward": "वार्ड",
+  "picker_district_prompt": "ज़िला चुनें",
+  "picker_samiti_prompt": "पंचायत समिति चुनें",
+  "picker_panchayat_prompt": "ग्राम पंचायत चुनें",
+  "picker_ward_prompt": "वार्ड चुनें",
+  "network_unavailable": "नेटवर्क नहीं है",
+  "picker_loading": "वार्ड सूची लोड हो रही है…",
+  "picker_load_failed": "वार्ड सूची लोड नहीं हो सकी। कृपया पेज फिर से खोलें।"
 }

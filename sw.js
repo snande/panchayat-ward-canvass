@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -13,6 +13,10 @@ const PRECACHE = [
   "manifest.webmanifest",
   "styles.css",
   "js/app.js",
+  "js/picker.js",
+  "config/constituency.json",
+  "src/picker/wardPicker.js",
+  "src/ui/wardPickerScreen.js",
   "src/strings.hi.json",
   "fonts/noto-sans-devanagari-subset.woff2",
   "icons/icon-192.png",
