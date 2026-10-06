@@ -5,15 +5,17 @@
 // A port of tools/reference-decoder/glyphtable.py. It hashes every in-scope
 // master glyph with the canonical outline hash (CANONICAL_OUTLINE.md) and
 // records its glyph id, name, kind and Unicode expansion (from the font's
-// cmap and GSUB). It also writes two fallback indexes the decoder uses when an
-// exact hash misses: "offset" (outline hash with the offset removed) and
-// "coarse" (offset-free outline on an 8-unit grid). The font is not committed
-// (licence); the decoder needs only the JSON this writes, never the font.
+// cmap and GSUB). It also records the space glyph (meta.spaceGid,
+// meta.spaceAdvance) and every entry's offset-free shape (index.shapes),
+// which the decoder's offset and nearest-outline fallbacks use. The font is
+// not committed (licence); the decoder needs only the JSON this writes.
 
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
-import { parseTrueType } from "../src/decoder/truetype.js";
-import { outlineHash, offsetFreeHash, coarseHash, penContours } from "../src/decoder/outlineHash.js";
+import { parseTrueType, advanceWidth } from "../src/decoder/truetype.js";
+import { outlineHash, outlineShape, penContours } from "../src/decoder/outlineHash.js";
+import { STANDARD_MAC_NAMES } from "./lib/macGlyphNames.mjs";
+import { writeTable } from "./lib/writeTable.mjs";
 
 const fontPath = process.argv[2] || "fonts/ARIALUNI.TTF";
 const outPath = process.argv[3] || "src/decoder/master-glyph-table.json";
@@ -36,7 +38,6 @@ const isCons = (c) => (c >= 0x915 && c <= 0x939) || (c >= 0x958 && c <= 0x95f);
 const names = Array.from({ length: font.numGlyphs }, (_, i) => (i === 0 ? ".notdef" : `glyph${String(i).padStart(5, "0")}`));
 if (font.tables.post && dv.getUint32(font.tables.post.offset) === 0x20000) {
   const post = font.tables.post.offset;
-  const { STANDARD_MAC_NAMES } = await import("./lib/macGlyphNames.mjs");
   const n = u16(post + 32);
   const idx = Array.from({ length: n }, (_, i) => u16(post + 34 + i * 2));
   const extra = [];
@@ -51,6 +52,7 @@ if (font.tables.post && dv.getUint32(font.tables.post.offset) === 0x20000) {
 // ---- best cmap (fontTools getBestCmap order), code points ascending ----
 function cmapEntries() {
   const t = font.tables.cmap;
+  if (!t) throw new Error("font has no cmap");
   const subs = new Map();
   for (let i = 0; i < u16(t.offset + 2); i++) {
     const rec = t.offset + 4 + i * 8;
@@ -225,7 +227,7 @@ function withMark(g) {
 }
 
 // ---- the table ----
-const glyphs = {}, offsetIndex = {}, coarseIndex = {};
+const glyphs = {}, shapes = {};
 let collisions = 0, unresolved = 0, marked = 0;
 for (const g of [...scope].sort((a, b) => a - b)) {
   const contours = font.glyphContours(g);
@@ -244,23 +246,21 @@ for (const g of [...scope].sort((a, b) => a - b)) {
   if (seq === null) unresolved++;
   if (glyphs[h]) { collisions++; continue; }
   glyphs[h] = { gid: g, name: names[g], kind, codepoints: seq };
-  const oh = offsetFreeHash(contours);
-  if (!(oh in offsetIndex)) offsetIndex[oh] = h;
-  (coarseIndex[coarseHash(contours)] ||= []).push(h);
+  shapes[h] = outlineShape(contours);
 }
 
+const spaceGid = cmapOf.get(0x20);
 const meta = {
   source: `Arial Unicode MS (${basename(fontPath)})`,
   unitsPerEm: font.unitsPerEm,
   glyphs: Object.keys(glyphs).length,
   scope: "Devanagari U+0900-097F, basic Latin, Latin-1, general punctuation, U+25CC, plus every glyph reachable from them through GSUB",
   hash: "sha256 hex of the canonical outline string; see CANONICAL_OUTLINE.md",
-  spaceGid: cmapOf.get(0x20) ?? 3,
+  spaceGid,
+  spaceAdvance: spaceGid === undefined ? undefined : advanceWidth(font, spaceGid),
 };
-// Same layout as the Python builder's json.dump(indent=0).
-const json = JSON.stringify({ meta, glyphs, index: { offset: offsetIndex, coarse: coarseIndex } }, null, 1).replace(/^ +/gm, "");
-await writeFile(outPath, json);
+await writeTable(outPath, { meta, glyphs, index: { coverage: "every entry", shapes } });
 console.log(`scope glyphs: ${scope.size} table entries: ${meta.glyphs} collisions: ${collisions} unresolved: ${unresolved} variants with a mark: ${marked} upem: ${font.unitsPerEm}`);
 const kinds = {};
 for (const e of Object.values(glyphs)) kinds[e.kind] = (kinds[e.kind] || 0) + 1;
-console.log("kinds:", JSON.stringify(kinds));
+console.log("kinds:", JSON.stringify(kinds), "space gid:", spaceGid, "advance:", meta.spaceAdvance);

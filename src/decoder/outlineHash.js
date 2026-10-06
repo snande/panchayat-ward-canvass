@@ -113,20 +113,31 @@ export function outlineHash(contours) {
   return s ? sha256Hex(s) : "";
 }
 
-/** Hash of the outline with its offset removed (for the fallback index). */
-export function offsetFreeHash(contours) {
-  return outlineHash(normaliseOffset(contours));
+/**
+ * The outline's shape: the canonical string of the outline translated so its
+ * minimum x and y are 0. Equal shapes are the same outline at any offset.
+ */
+export function outlineShape(contours) {
+  return canonicalOutline(normaliseOffset(contours));
 }
 
 /**
- * Hash of the offset-free outline quantised to a coarse grid, for matching
- * outlines whose coordinates differ by rounding (the nearest-outline fallback).
+ * Split a shape into its skeleton (the operators and structure, numbers
+ * removed) and its coordinates, for the nearest-outline comparison.
  */
-export const COARSE_GRID = 8;
-export function coarseHash(contours) {
-  const q = normaliseOffset(contours).map((c) =>
-    c.map((p) => ({ x: Math.round(p.x / COARSE_GRID), y: Math.round(p.y / COARSE_GRID), on: p.on })),
-  );
-  return outlineHash(q);
+export function shapeGeometry(shape) {
+  const nums = [];
+  const skeleton = shape.replace(/-?\d+/g, (n) => { nums.push(Number(n)); return "#"; });
+  return { skeleton, nums: Int32Array.from(nums) };
 }
 
+/**
+ * Largest coordinate difference between two shapes with the same skeleton,
+ * or Infinity when their structure differs.
+ */
+export function shapeDistance(a, b) {
+  if (a.skeleton !== b.skeleton || a.nums.length !== b.nums.length) return Infinity;
+  let d = 0;
+  for (let i = 0; i < a.nums.length; i++) d = Math.max(d, Math.abs(a.nums[i] - b.nums[i]));
+  return d;
+}

@@ -10,6 +10,7 @@
   "scripts": {
     "glyph-report": "node scripts/glyph-map-report.mjs fixtures/badli-ward1.pdf",
     "build-glyph-table": "node scripts/build-glyph-table.mjs fonts/ARIALUNI.TTF src/decoder/master-glyph-table.json",
-    "test": "node --test"
+    "seed-glyph-index": "node scripts/seed-glyph-index.mjs fixtures/badli-ward1.pdf",
+    "test": "node --test \"tests/*.test.js\""
   }
 }

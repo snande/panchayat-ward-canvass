@@ -67,14 +67,19 @@ punctuation, U+25CC, and every glyph reachable from those through GSUB
 (811 glyphs). Five pairs of distinct glyphs share an outline; the first by
 glyph id is kept.
 
-## Fallback indexes and the space glyph
+## Fallbacks and the space glyph
 
-`scripts/build-glyph-table.mjs` (the JavaScript port of `glyphtable.py`)
-also writes `meta.spaceGid` (the master glyph a contour-less subset glyph
-maps to) and `index`: `index.offset` maps the hash of the outline translated
-so its minimum x and y are 0 to the entry's hash, and `index.coarse` maps the
-hash of that offset-free outline with coordinates divided by 8 and rounded to
-the list of entry hashes. `mapSubsetGlyphs` tries the exact hash first, then
-`index.offset`, then `index.coarse` when it names exactly one entry. Tables
-built without these keys (such as the one built by `glyphtable.py`) match by
-exact hash only, and the space maps to glyph 3.
+`meta.spaceGid` and `meta.spaceAdvance` record the master space glyph (3)
+and its advance (569). A subset glyph with no contours maps to it only if
+its advance, scaled to 2048 units per em, is within one unit of that.
+
+`index.shapes` maps an entry's hash to its shape: the canonical string of
+the outline after translating it so its minimum x and y are 0. When the
+exact hash misses, `mapSubsetGlyphs` first looks for an entry with an equal
+shape (the same outline at another offset). Failing that, it takes the entry
+whose shape has the same structure (identical with every number removed)
+and whose coordinates differ by at most 8 units, provided exactly one master
+glyph is nearest. `scripts/build-glyph-table.mjs` writes a shape for every
+entry. `scripts/seed-glyph-index.mjs` adds shapes without the font, from
+subset glyphs in roll PDFs whose hash is an exact entry; `index.coverage`
+says which.

@@ -12,11 +12,14 @@
 // mapSubsetGlyphs, which matches outlines and never reads the cmap.
 // Glyphs that are only components of composite glyphs are not drawn by the
 // text and are not counted (the composites are matched as flattened outlines).
+// Two consistency checks guard the counts themselves: every glyph of the
+// subset other than .notdef must be reachable by some code or be a component
+// of a composite, and distinct shown codes must not collapse onto fewer
+// glyphs. Either failing means the code-to-glyph resolution is wrong.
 
 import { readFile } from "node:fs/promises";
 import { embeddedTrueTypeFonts } from "../src/pdf/embeddedFonts.js";
-import { mapSubsetGlyphsDetailed } from "../src/decoder/glyphMap.js";
-import { parseTrueType, pdfCodeToGlyph } from "../src/decoder/truetype.js";
+import { glyphReport } from "./lib/glyphReport.mjs";
 
 const path = process.argv[2];
 const verbose = process.argv.includes("--verbose");
@@ -32,29 +35,16 @@ if (!fonts.length) {
 }
 let failed = false;
 for (const f of fonts) {
-  const r = mapSubsetGlyphsDetailed(f.bytes);
-  const font = parseTrueType(f.bytes);
-  const used = new Set();
-  const undrawable = [];
-  for (const code of f.usedCodes) {
-    const gid = pdfCodeToGlyph(font, code);
-    if (gid > 0) used.add(gid);
-    else undrawable.push(code);
-  }
-  const matched = [...used].filter((g) => r.map.has(g));
-  const unmatched = [...used].filter((g) => !r.map.has(g)).sort((a, b) => a - b);
-  const bad = unmatched.length + undrawable.length;
-  console.log(`${f.baseFont}@${f.objNum} matched=${matched.length} unmatched=${bad}`);
-  if (bad) {
-    failed = true;
-    if (unmatched.length) console.log(`  unmatched subset glyph ids: ${unmatched.join(", ")}`);
-    if (undrawable.length) console.log(`  codes with no glyph: ${undrawable.map((c) => "0x" + c.toString(16)).join(", ")}`);
-  }
+  const r = glyphReport(f);
+  console.log(`${f.baseFont}@${f.objNum} matched=${r.matched.length} unmatched=${r.unmatchedCount}`);
+  if (r.unmatched.length) console.log(`  unmatched subset glyph ids: ${r.unmatched.join(", ")}`);
+  if (r.undrawable.length) console.log(`  codes with no glyph: ${r.undrawable.map((c) => "0x" + c.toString(16)).join(", ")}`);
+  for (const problem of r.problems) console.log(`  ${problem}`);
+  if (r.unmatchedCount || r.problems.length) failed = true;
   if (verbose) {
-    const counts = {};
-    for (const g of used) if (r.via.has(g)) counts[r.via.get(g)] = (counts[r.via.get(g)] || 0) + 1;
-    console.log(`  codes shown=${f.usedCodes.size} glyphs in subset=${font.numGlyphs} matched via: ${JSON.stringify(counts)}`);
-    if (r.unmatched.length) console.log(`  subset glyphs without a match (not drawn by the text): ${r.unmatched.join(", ")}`);
+    console.log(`  codes shown=${f.usedCodes.size} glyphs in subset=${r.numGlyphs} matched via: ${JSON.stringify(r.via)}`);
+    if (r.componentOnly.length) console.log(`  component-only glyphs (not drawn by the text): ${r.componentOnly.join(", ")}`);
+    if (r.notShown.length) console.log(`  glyphs with a code the text never shows: ${r.notShown.join(", ")}`);
   }
 }
 process.exit(failed ? 1 : 0);

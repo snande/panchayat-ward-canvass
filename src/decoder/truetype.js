@@ -1,9 +1,10 @@
-// Minimal TrueType reader: the table directory, head, maxp, loca and glyf.
-// It returns each glyph's contours as raw points with their on-curve flags,
-// composites flattened, in the order the font stores them. The canonical
-// outline hash (see CANONICAL_OUTLINE.md) depends on exact point order and
-// on-curve flags, so the points are read directly rather than through a
-// path API that would already have inserted implied midpoints.
+// Minimal TrueType reader: the table directory, head, maxp, loca, glyf and
+// (optionally) hhea/hmtx and cmap. It returns each glyph's contours as raw
+// points with their on-curve flags, composites flattened, in the order the
+// font stores them. The canonical outline hash (see CANONICAL_OUTLINE.md)
+// depends on exact point order and on-curve flags, so the points are read
+// directly rather than through a path API that would already have inserted
+// implied midpoints.
 
 const ARG_1_AND_2_ARE_WORDS = 0x0001;
 const ARGS_ARE_XY_VALUES = 0x0002;
@@ -44,10 +45,13 @@ export function parseTrueType(bytes) {
 /**
  * Contours of glyph `gid` as arrays of {x, y, on}. Coordinates are in font
  * units; components of a composite glyph are transformed (floats when a
- * component is scaled) and appended in component order.
+ * component is scaled) and appended in component order. Throws on a
+ * point-matched component whose point indices do not exist, rather than
+ * guessing an offset that would yield a wrong outline.
  */
 export function glyphContours(font, gid, depth = 0) {
-  if (gid < 0 || gid >= font.numGlyphs || depth > MAX_COMPONENT_DEPTH) return [];
+  if (depth > MAX_COMPONENT_DEPTH) throw new Error(`glyph ${gid}: components nested too deeply`);
+  if (gid < 0 || gid >= font.numGlyphs) throw new Error(`glyph ${gid}: no such glyph`);
   const start = font.glyphOffset(gid);
   const end = font.glyphOffset(gid + 1);
   if (end <= start) return [];
@@ -58,19 +62,46 @@ export function glyphContours(font, gid, depth = 0) {
   if (numberOfContours >= 0) return simpleGlyph(font, p, numberOfContours);
 
   const contours = [];
+  for (const c of readComponents(dv, p)) {
+    const { xx, xy, yx, yy } = c;
+    const childContours = glyphContours(font, c.glyph, depth + 1);
+    let dx = 0, dy = 0;
+    if (c.xyValues) {
+      dx = c.a1; dy = c.a2;
+    } else {
+      // Point matching: align child point a2 with the parent's point a1 so far.
+      const parentPts = contours.flat();
+      const childPts = childContours.flat().map((q) => ({ x: xx * q.x + yx * q.y, y: xy * q.x + yy * q.y }));
+      if (!parentPts[c.a1] || !childPts[c.a2]) {
+        throw new Error(`glyph ${gid}: component ${c.glyph} matches points ${c.a1}/${c.a2}, which do not exist`);
+      }
+      dx = parentPts[c.a1].x - childPts[c.a2].x;
+      dy = parentPts[c.a1].y - childPts[c.a2].y;
+    }
+    for (const cc of childContours) {
+      contours.push(cc.map((q) => ({ x: xx * q.x + yx * q.y + dx, y: xy * q.x + yy * q.y + dy, on: q.on })));
+    }
+  }
+  return contours;
+}
+
+/** Component records of a composite glyph whose header ends at `p`. */
+function readComponents(dv, p) {
+  const out = [];
   let flags;
   do {
     flags = dv.getUint16(p);
-    const child = dv.getUint16(p + 2);
+    const glyph = dv.getUint16(p + 2);
+    const xyValues = (flags & ARGS_ARE_XY_VALUES) !== 0;
     p += 4;
     let a1, a2;
     if (flags & ARG_1_AND_2_ARE_WORDS) {
-      a1 = flags & ARGS_ARE_XY_VALUES ? dv.getInt16(p) : dv.getUint16(p);
-      a2 = flags & ARGS_ARE_XY_VALUES ? dv.getInt16(p + 2) : dv.getUint16(p + 2);
+      a1 = xyValues ? dv.getInt16(p) : dv.getUint16(p);
+      a2 = xyValues ? dv.getInt16(p + 2) : dv.getUint16(p + 2);
       p += 4;
     } else {
-      a1 = flags & ARGS_ARE_XY_VALUES ? dv.getInt8(p) : dv.getUint8(p);
-      a2 = flags & ARGS_ARE_XY_VALUES ? dv.getInt8(p + 1) : dv.getUint8(p + 1);
+      a1 = xyValues ? dv.getInt8(p) : dv.getUint8(p);
+      a2 = xyValues ? dv.getInt8(p + 1) : dv.getUint8(p + 1);
       p += 2;
     }
     // 2x2 as fontTools stores it: x' = xx*x + yx*y + dx, y' = xy*x + yy*y + dy.
@@ -83,24 +114,27 @@ export function glyphContours(font, gid, depth = 0) {
     } else if (flags & WE_HAVE_A_TWO_BY_TWO) {
       xx = f2dot14(p); xy = f2dot14(p + 2); yx = f2dot14(p + 4); yy = f2dot14(p + 6); p += 8;
     }
-    const childContours = glyphContours(font, child, depth + 1);
-    let dx = 0, dy = 0;
-    if (flags & ARGS_ARE_XY_VALUES) {
-      dx = a1; dy = a2;
-    } else {
-      // Point matching: align child point a2 with the parent's point a1 so far.
-      const parentPts = contours.flat();
-      const childPts = childContours.flat().map((q) => ({ x: xx * q.x + yx * q.y, y: xy * q.x + yy * q.y }));
-      if (parentPts[a1] && childPts[a2]) {
-        dx = parentPts[a1].x - childPts[a2].x;
-        dy = parentPts[a1].y - childPts[a2].y;
-      }
-    }
-    for (const c of childContours) {
-      contours.push(c.map((q) => ({ x: xx * q.x + yx * q.y + dx, y: xy * q.x + yy * q.y + dy, on: q.on })));
-    }
+    out.push({ glyph, xyValues, a1, a2, xx, xy, yx, yy });
   } while (flags & MORE_COMPONENTS);
-  return contours;
+  return out;
+}
+
+/** Glyph ids a composite glyph references directly ([] for a simple or empty glyph). */
+export function componentGids(font, gid) {
+  const start = font.glyphOffset(gid);
+  if (font.glyphOffset(gid + 1) <= start) return [];
+  const p = font.tables.glyf.offset + start;
+  if (font.view.getInt16(p) >= 0) return [];
+  return readComponents(font.view, p + 10).map((c) => c.glyph);
+}
+
+/** Advance width of a glyph from hmtx, or null when the font has no hhea/hmtx. */
+export function advanceWidth(font, gid) {
+  const { hhea, hmtx } = font.tables;
+  if (!hhea || !hmtx) return null;
+  const n = font.view.getUint16(hhea.offset + 34);
+  if (!n) return null;
+  return font.view.getUint16(hmtx.offset + Math.min(gid, n - 1) * 4);
 }
 
 function simpleGlyph(font, p, numberOfContours) {
