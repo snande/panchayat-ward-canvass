@@ -13,6 +13,10 @@ jobs:
         with:
           node-version: 20
       - run: npm test
+      - run: node scripts/benchmark.mjs
+      # the committed report must exist and match what the decoder produces now
+      - run: git ls-files --error-unmatch reports/badli-ward1-benchmark.md
+      - run: test -z "$(git status --porcelain -- reports/)" || { git status --porcelain -- reports/; git diff -- reports/; exit 1; }
       - run: python3 scripts/check_pwa_shell.py
       - run: python3 -m unittest test_pwa_shell
         working-directory: scripts
