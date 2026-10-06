@@ -11,7 +11,7 @@ var strings = {};
 // copies of their src/strings.hi.json entries, used only if the table fails to
 // load. repo-ci fails if a copy drifts from the table.
 var FALLBACK_STRINGS = {
-  action_pending: "वार्ड सूची लोड करने की सुविधा जल्द उपलब्ध होगी।",
+  action_pending: "नीचे अपना वार्ड चुनें।",
   status_offline_ready: "ऑफ़लाइन उपयोग के लिए तैयार।",
   status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",
 };
@@ -63,9 +63,14 @@ function setStatus(key) {
 
 var primaryAction = document.getElementById("primary-action");
 if (primaryAction) {
-  // The ward picker is a later deliverable; until then the button says so.
+  // The roll is loaded by picking a ward below (js/picker.js); the button
+  // points there and moves focus to the first dropdown.
   primaryAction.addEventListener("click", function () {
     setStatus("action_pending");
+    var first = document.getElementById("picker-district");
+    if (first && typeof first.focus === "function") {
+      first.focus();
+    }
   });
 }
 

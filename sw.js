@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -17,6 +17,13 @@ const PRECACHE = [
   "config/constituency.json",
   "src/picker/wardPicker.js",
   "src/ui/wardPickerScreen.js",
+  // Roll flow: enough to reopen a stored roll offline. The decoder is
+  // fetched only when a new PDF is downloaded, which needs the network anyway.
+  "src/roll/fetchRoll.js",
+  "src/roll/rollStore.js",
+  "src/roll/rollFlow.js",
+  "src/ui/rollList.js",
+  "src/ui/dom.js",
   "src/strings.hi.json",
   "fonts/noto-sans-devanagari-subset.woff2",
   "icons/icon-192.png",

@@ -1,5 +1,65 @@
 # panchayat-ward-canvass
 
+## Ward roll: download, decode, encrypted offline copy
+
+Picking a ward in the picker loads that ward's voter roll. There is no upload
+path and no file-input element; `test/noFileUpload.test.js` scans the repo for
+one.
+
+1. `src/roll/fetchRoll.js` downloads the PDF for the selection's `pdfUrl`.
+   The transport is `ROLL_TRANSPORT`, which must equal the verdict line at the
+   end of `docs/research/sec-roll-source.md` (a test pins it). The verdict is
+   `relay-required` (the SEC server sends no CORS header), so the browser
+   requests the same-origin `/roll?url=<encoded pdfUrl>`.
+2. `decodeRoll` from `src/decoder/` turns the bytes into entries on the text
+   layer. The decoder and its glyph table are imported only when a PDF has to
+   be decoded.
+3. `src/roll/rollStore.js` keeps only `serial, name, relative, age, gender,
+   house` of each live entry. Struck-off (deleted) entries, EPIC numbers and
+   the PDF are never stored. The entries are encrypted with WebCrypto AES-GCM
+   (256-bit, fresh 12-byte IV per write, ward key as additional data) and
+   written to IndexedDB (`ward-canvass`). The key is generated on the device
+   as a non-extractable `CryptoKey` and kept in the same database.
+   Struck-off serials are left out because the benchmark roll
+   (`fixtures/badli-ward1-expected.json`, 297 voters) does not list them.
+4. `src/ui/rollList.js` renders the entries as a virtualised list: fixed
+   100 px rows, with only the rows in view (plus 6 above and below) in the
+   DOM. Text uses the page's Noto Sans Devanagari font.
+
+`src/roll/rollFlow.js` ties these together. Picking a ward that is already
+stored shows the encrypted copy without a request. At startup the last stored
+ward is shown again, so the app opens offline once a roll has been fetched.
+A failed download shows a Hindi message with a retry button.
+
+### Roll relay
+
+`relay/rollRelay.mjs` is a fetch-style handler for `GET /roll?url=...`:
+
+- It fetches only URLs listed as a ward `pdfUrl` in
+  `config/constituency.json`. Any other URL, or a missing or repeated `url`,
+  answers 403 without contacting any server. Other methods answer 405.
+- The upstream body is read with a running byte count and cut off at 20 MB,
+  so a response with no Content-Length cannot exhaust memory.
+- The whole upstream exchange (headers and body) is bounded by a 30 s timer;
+  a stalled source answers 502 instead of holding the request open.
+- An upstream error, redirect (the portal answers 302 for a missing ward),
+  non-PDF or oversized body answers 502.
+- It sends no CORS header, so only pages on its own origin can read it.
+
+`relay/server.mjs` serves the shell's static files and the relay from one
+origin. It serves only the shell's files and directories, never `fixtures/`.
+
+```
+PORT=8080 HOST=0.0.0.0 node relay/server.mjs
+curl -s -o /dev/null -w '%{http_code}' 'http://localhost:8080/roll?url=https://example.com/x.pdf'   # 403
+```
+
+The domain in `CNAME` must be served by this server (or the handler mounted
+at `/roll` on the same host), not by a static-only host. A static-only host
+has no relay, so every download fails with the Hindi retry message. That
+deployment, and the Android Chrome check that Badli ward 1 loads, scrolls
+smoothly and reads as correct Hindi, are operator steps outside repo-ci.
+
 ## Search screen
 
 `src/ui/searchScreen.js` is the on-phone voter search screen. It is plain DOM with no framework:
@@ -100,7 +160,7 @@ changed.
 Run locally:
 
 ```
-python3 -m http.server 8080
+node relay/server.mjs   # shell + /roll relay on :8080 (python3 -m http.server has no relay)
 # Chrome DevTools > Application > Manifest: no installability errors
 # DevTools > Network > Offline, reload: shell still renders
 # Device toolbar 360x740, Offline, reload: the Hindi title and empty state
