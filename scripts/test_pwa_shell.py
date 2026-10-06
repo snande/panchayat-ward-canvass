@@ -210,6 +210,15 @@ class PwaShellTest(unittest.TestCase):
         self.edit("js/app.js", lambda s: s.replace('setStatus("action_pending")', 'setStatus("action_waiting")'))
         self.assertError("js/app.js uses string key action_waiting")
 
+    def test_status_key_without_fallback_copy_is_caught(self):
+        self.edit("js/app.js", lambda s: s.replace(
+            '  status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",\n', ""))
+        self.assertError("setStatus key status_offline_failed has no Hindi fallback copy")
+
+    def test_status_fallback_drift_is_caught(self):
+        self.edit_strings(lambda t: t.update(action_pending="जल्द आ रहा है।"))
+        self.assertError("js/app.js action_pending differs")
+
     def test_html_fallback_drift_is_caught(self):
         self.edit_strings(lambda t: t.update(primary_action="सूची लोड करें"))
         self.assertError("data-i18n=primary_action text")
@@ -238,7 +247,7 @@ class PwaShellTest(unittest.TestCase):
         self.assertError("sw.js offline_body differs")
 
     def test_unlisted_hindi_literal_in_js_is_caught(self):
-        self.edit("js/app.js", lambda s: s + '\nsetStatus("तैयार");\n')
+        self.edit("js/app.js", lambda s: s + '\nconsole.log("तैयार");\n')
         self.assertError("js/app.js has Hindi text 'तैयार'")
 
     @unittest.skipUnless(NODE, "node not installed")

@@ -36,13 +36,22 @@ map:
   offline) and applies it.
 - Each element also holds its table string as a fallback, so the page stays
   in Hindi if the table fails to load.
+- Status lines have no element to hold a fallback, so `js/app.js` keeps
+  copies of their strings in `FALLBACK_STRINGS`.
 - `sw.js` keeps copies of `offline_title` and `offline_body` for its
   last-resort offline page, which is served when nothing is cached.
 - The manifest `name` and `short_name` copy `app_title` and `app_short_name`.
 
-Repo-ci fails if any copy drifts from the table, if a used key is missing, or
-if any Hindi literal in the shell is not a table string. To change text, edit
-the table and then its copies.
+Repo-ci fails if:
+
+- any copy drifts from the table
+- a key used in HTML, or passed literally to `t()` or `setStatus()`, is
+  missing from the table
+- a `setStatus()` key has no fallback copy
+- any Hindi literal in the shell is not a table string
+
+Keys passed through variables are not traced. To change text, edit the table
+and then its copies.
 
 ### Font
 
@@ -62,8 +71,8 @@ rebuild it (needs network access and `pip install fonttools brotli`), run:
 sh scripts/build_font.sh
 ```
 
-The script prints which ranges have glyphs and then runs the repo check,
-including the 400 KB budget.
+The script prints how many code points in each range have glyphs and then
+runs the repo check, including the 400 KB budget.
 
 ### Design tokens
 
@@ -106,8 +115,8 @@ The repo checks also cover the Hindi UI shell:
 - the string table and its copies, as described above
 - `index.html` has no other inline text and no English user-visible
   attributes
-- the `@font-face` rule loads a real WOFF2 file from `fonts/` with
-  `font-display: swap`
+- the `@font-face` rule loads a WOFF2 file from `fonts/` (checked by its
+  `wOF2` header) with `font-display: swap`
 - the font preload matches the `@font-face` URL
 - the font and the string table are precached
 - `:root` has colour, spacing, radius and type-scale tokens

@@ -7,8 +7,21 @@
 var STRINGS_URL = "src/strings.hi.json";
 var strings = {};
 
+// Status lines have no element in index.html to hold a fallback, so these are
+// copies of their src/strings.hi.json entries, used only if the table fails to
+// load. repo-ci fails if a copy drifts from the table.
+var FALLBACK_STRINGS = {
+  action_pending: "वार्ड सूची लोड करने की सुविधा जल्द उपलब्ध होगी।",
+  status_offline_ready: "ऑफ़लाइन उपयोग के लिए तैयार।",
+  status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",
+};
+
+function lookup(table, key) {
+  return Object.prototype.hasOwnProperty.call(table, key) ? table[key] : "";
+}
+
 function t(key) {
-  return Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : "";
+  return lookup(strings, key) || lookup(FALLBACK_STRINGS, key);
 }
 
 function applyStrings(root) {
@@ -39,8 +52,6 @@ var stringsReady = fetch(STRINGS_URL)
     console.error("string table failed to load", err);
   });
 
-// Status lines exist only in the table; without it the status stays empty
-// rather than showing an untranslated key.
 function setStatus(key) {
   return stringsReady.then(function () {
     var status = document.getElementById("status");

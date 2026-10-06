@@ -39,10 +39,11 @@ function element(attrs = {}, text = '') {
   };
 }
 
-function runApp(fetch) {
+function runApp(fetch, navigator = {}) {
   const nodes = i18n.map(([key, fallback]) => element({ 'data-i18n': key }, fallback));
   const status = element();
   const button = element();
+  const window = element();
   const document = {
     title: '',
     querySelectorAll: (sel) => (sel === '[data-i18n]' ? nodes : []),
@@ -50,17 +51,17 @@ function runApp(fetch) {
   };
   const errors = [];
   const ctx = vm.createContext({
-    document, fetch, navigator: {}, window: {}, console: { error: (...a) => errors.push(a) },
+    document, fetch, navigator, window, console: { error: (...a) => errors.push(a) },
   });
   vm.runInContext(read('js/app.js'), ctx);
-  return { ctx, nodes, status, button, document, errors };
+  return { ctx, nodes, status, button, window, document, errors };
 }
 
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 test('app.js fills the shell from the table at startup', async () => {
   const requested = [];
-  const changed = { ...table, empty_title: 'नया शीर्षक' };
+  const changed = { ...table, empty_title: 'नया शीर्षक', action_pending: 'नई स्थिति' };
   const app = runApp(async (url) => {
     requested.push(url);
     return { ok: true, status: 200, json: async () => changed };
@@ -73,15 +74,16 @@ test('app.js fills the shell from the table at startup', async () => {
 
   app.button.fire('click');
   await settle();
-  assert.equal(app.status.textContent, table.action_pending);
+  assert.equal(app.status.textContent, 'नई स्थिति', 'the loaded table wins over the fallback copy');
 });
 
 for (const [name, fetch] of [
   ['a non-OK response', async () => ({ ok: false, status: 404, json: async () => ({}) })],
   ['a network or cache miss', async () => { throw new TypeError('Failed to fetch'); }],
 ]) {
-  test(`app.js keeps the Hindi fallback text after ${name}`, async () => {
-    const app = runApp(fetch);
+  test(`app.js keeps Hindi text on screen after ${name}`, async () => {
+    const serviceWorker = { register: async () => ({}), ready: Promise.resolve() };
+    const app = runApp(fetch, { serviceWorker });
     await app.ctx.stringsReady;
     i18n.forEach(([key, fallback], i) => {
       assert.equal(app.nodes[i].textContent, fallback, key);
@@ -91,6 +93,11 @@ for (const [name, fetch] of [
 
     app.button.fire('click');
     await settle();
-    assert.equal(app.status.textContent, '', 'no untranslated key is shown');
+    assert.equal(app.status.textContent, table.action_pending, 'button feedback falls back to Hindi');
+
+    app.window.fire('load');
+    await settle();
+    await settle();
+    assert.equal(app.status.textContent, table.status_offline_ready);
   });
 }

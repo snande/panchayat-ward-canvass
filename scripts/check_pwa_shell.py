@@ -40,6 +40,8 @@ SAFE_WIDTH = re.compile(
 VISIBLE_ATTRS = ("alt", "title", "placeholder", "aria-label", "value")
 # A JS string literal (double, single or template quoted).
 JS_STRING = re.compile(r""""((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`""")
+# Literal string-key arguments of the shell's lookup helpers.
+JS_KEY_CALL = re.compile(r"""\b(setStatus|t)\(\s*["']([A-Za-z0-9_.-]+)["']""")
 # Absolute URLs (any host, including localhost and IPs), plus protocol-relative
 # URLs that open a string literal, an attribute value or url(...).
 URL_RE = re.compile(
@@ -296,11 +298,19 @@ def check_html_strings(html, table, errors):
 
 
 def check_js_strings(rel, source, table, errors):
-    """Every string key a script uses must exist, and every Hindi literal in
-    it must be a copy of a table string (keyed copies must match their key)."""
-    for key in re.findall(r"""(?:\bsetStatus|\bt)\(\s*["']([A-Za-z0-9_.-]+)["']""", source):
-        if key not in table:
-            errors.append("%s uses string key %s, which is not in %s" % (rel, key, STRINGS_REL))
+    """Check a shell script's use of the string table.
+
+    - Every key passed literally to ``t()`` or ``setStatus()`` must exist.
+    - Every Hindi literal must be a copy of a table string; a copy written as
+      ``key: "..."`` with a table key must equal that key's string.
+    - Every ``setStatus()`` key needs such a keyed copy, so status lines still
+      show Hindi when the table fails to load.
+
+    Limit: keys passed through variables (e.g. the ``data-i18n`` lookup in
+    ``applyStrings``) are not traced. Those keys come from index.html and are
+    checked there by ``check_html_strings``.
+    """
+    copies = {}
     values = set(table.values())
     for m in JS_STRING.finditer(source):
         literal = next(g for g in m.groups() if g is not None)
@@ -308,10 +318,16 @@ def check_js_strings(rel, source, table, errors):
             continue
         keyed = re.search(r"(\w+)\s*:\s*$", source[:m.start()])
         if keyed and keyed.group(1) in table:
+            copies[keyed.group(1)] = literal
             if literal != table[keyed.group(1)]:
                 errors.append("%s %s differs from %s" % (rel, keyed.group(1), STRINGS_REL))
         elif literal not in values:
             errors.append("%s has Hindi text %r that is not in %s" % (rel, literal[:40], STRINGS_REL))
+    for fn, key in JS_KEY_CALL.findall(source):
+        if key not in table:
+            errors.append("%s uses string key %s, which is not in %s" % (rel, key, STRINGS_REL))
+        elif fn == "setStatus" and key not in copies:
+            errors.append("%s setStatus key %s has no Hindi fallback copy" % (rel, key))
 
 
 def check(root=ROOT):
