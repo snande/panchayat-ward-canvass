@@ -48,7 +48,12 @@ URL_RE = re.compile(
     r"""https?://[^\s"'<>)]+|(?<=["'(])//[A-Za-z0-9\[][^\s"'<>)]*""", re.I
 )
 # Namespace/spec URLs that are identifiers, not network requests.
-URL_ALLOWLIST = ("http://www.w3.org/",)
+# The one data origin: the SEC roll PDF URLs listed in config/constituency.json
+# (data, not a third-party asset; see docs/research/sec-roll-source.md).
+URL_ALLOWLIST = (
+    "http://www.w3.org/",
+    "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/",
+)
 # One JS token inside the PRECACHE array: a string literal, a comment, or the
 # closing bracket. Matching strings first means `//` or `]` inside an entry
 # cannot be mistaken for a comment or the end of the list.

@@ -1,0 +1,57 @@
+{
+  "districts": [
+    {
+      "id": "17",
+      "label": "जयपुर",
+      "samitis": [
+        {
+          "id": "125",
+          "label": "चाकसू",
+          "panchayats": [
+            {
+              "id": "6313",
+              "label": "बडली",
+              "wards": [
+                {
+                  "id": "1",
+                  "label": "वार्ड 1",
+                  "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/125/BADLI-Ward%20No-001.pdf"
+                },
+                {
+                  "id": "2",
+                  "label": "वार्ड 2",
+                  "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/125/BADLI-Ward%20No-002.pdf"
+                },
+                {
+                  "id": "3",
+                  "label": "वार्ड 3",
+                  "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/125/BADLI-Ward%20No-003.pdf"
+                },
+                {
+                  "id": "4",
+                  "label": "वार्ड 4",
+                  "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/125/BADLI-Ward%20No-004.pdf"
+                },
+                {
+                  "id": "5",
+                  "label": "वार्ड 5",
+                  "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/125/BADLI-Ward%20No-005.pdf"
+                },
+                {
+                  "id": "6",
+                  "label": "वार्ड 6",
+                  "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/125/BADLI-Ward%20No-006.pdf"
+                },
+                {
+                  "id": "7",
+                  "label": "वार्ड 7",
+                  "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/125/BADLI-Ward%20No-007.pdf"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
