@@ -1,0 +1,7560 @@
+{
+"meta": {
+"source": "Arial Unicode MS (macOS /System/Library/Fonts/Supplemental/Arial Unicode.ttf)",
+"unitsPerEm": 2048,
+"glyphs": 811,
+"scope": "Devanagari U+0900-097F, basic Latin, Latin-1, general punctuation, U+25CC, plus every glyph reachable from them through GSUB",
+"hash": "sha256 hex of the canonical outline string; see CANONICAL_OUTLINE.md"
+},
+"glyphs": {
+"a5d4fb50402c7da2b4db3276623f4ee12da38ccbbe370e0ff3a39a97705cdbb9": {
+"gid": 4,
+"name": "exclam",
+"kind": "base",
+"codepoints": [
+33
+]
+},
+"4a6da4d3cf17391f5404d675dbe1dfcad385e672c08c204e9ef9d235f2feb5e4": {
+"gid": 5,
+"name": "quotedbl",
+"kind": "base",
+"codepoints": [
+34
+]
+},
+"924abada166739d6cc401eb1289e98fb63693f10828b56a368dff1a2b13438f3": {
+"gid": 6,
+"name": "numbersign",
+"kind": "base",
+"codepoints": [
+35
+]
+},
+"a1d47b17f0cfc7cd9efbb9420a136bceffe060ff929676d70b777bf0bed1dcdf": {
+"gid": 7,
+"name": "dollar",
+"kind": "base",
+"codepoints": [
+36
+]
+},
+"e45e1922fa9a0c2d159e3a962d172ec56fe4e902ab33dee0d74fd339192af002": {
+"gid": 8,
+"name": "percent",
+"kind": "base",
+"codepoints": [
+37
+]
+},
+"dd5c370dfca29735bc3b6593daaed06d88c8ee7f54044125ac1410d18932b07b": {
+"gid": 9,
+"name": "ampersand",
+"kind": "base",
+"codepoints": [
+38
+]
+},
+"11a69618234c590d5110b42244aa42963e97d3794e759042f11ea978252e45b0": {
+"gid": 10,
+"name": "quotesingle",
+"kind": "base",
+"codepoints": [
+39
+]
+},
+"1a34ea34f51c0350197c7376e4b70d1895e12aada3ee3d343298f8d50df864bf": {
+"gid": 11,
+"name": "parenleft",
+"kind": "base",
+"codepoints": [
+40
+]
+},
+"518dd955042e27813c54c8fbfae7aa27b94135b5a8017321c99a6fb1c5788311": {
+"gid": 12,
+"name": "parenright",
+"kind": "base",
+"codepoints": [
+41
+]
+},
+"8333559df818aed06264c9dca90591a9498805bd5c1bf8cb1157a6a3ac8155ba": {
+"gid": 13,
+"name": "asterisk",
+"kind": "base",
+"codepoints": [
+42
+]
+},
+"32eb311cef1aeea27b1d0ef9f1fc9575c5f3a6045812877991dba15a27cfcd71": {
+"gid": 14,
+"name": "plus",
+"kind": "base",
+"codepoints": [
+43
+]
+},
+"19b19bac1b0d518c93f773666fa82ea59fcbaf343daf77be262f415f60bd862d": {
+"gid": 15,
+"name": "comma",
+"kind": "base",
+"codepoints": [
+44
+]
+},
+"6002d40788694b966286b00623afedd08489183e1530a9e99cc3617197172440": {
+"gid": 16,
+"name": "hyphen",
+"kind": "base",
+"codepoints": [
+45
+]
+},
+"6fec1a1e22885607382422da3881f54fddd27096210e4b4786a793006d016265": {
+"gid": 17,
+"name": "period",
+"kind": "base",
+"codepoints": [
+46
+]
+},
+"799da76807517f0cb21e3f9bcc37852576dbc9ac5e90348ad5b926056cc3aae1": {
+"gid": 18,
+"name": "slash",
+"kind": "base",
+"codepoints": [
+47
+]
+},
+"f00996b36605a3a83e739fa970bc32899d87639fda21c58d33960181bbcc5064": {
+"gid": 19,
+"name": "zero",
+"kind": "base",
+"codepoints": [
+48
+]
+},
+"eaecd84d87a67c8b7e6bd756d55818a0296184921e155374cc514a5dd9fe8d24": {
+"gid": 20,
+"name": "one",
+"kind": "base",
+"codepoints": [
+49
+]
+},
+"09a6a592f3dc163379b8fba5ecd8d6803ee2a8e6fc6450ea4370d8b5173baf3d": {
+"gid": 21,
+"name": "two",
+"kind": "base",
+"codepoints": [
+50
+]
+},
+"fd723dd19ae2da4d6e6c17b69e65ce99e5c8a9182e6c1e7fd421e02c4f822951": {
+"gid": 22,
+"name": "three",
+"kind": "base",
+"codepoints": [
+51
+]
+},
+"86d6d3b631b205a486f57022e22668fc2371265bf754742b7148e4063e73434a": {
+"gid": 23,
+"name": "four",
+"kind": "base",
+"codepoints": [
+52
+]
+},
+"1be5eb1dc615b8e07bcc007f0f00050234d0f33abb21193a4bb8783a2faed094": {
+"gid": 24,
+"name": "five",
+"kind": "base",
+"codepoints": [
+53
+]
+},
+"a204bcad0aac7fbe8306372a40baa17fbdb5559457df999bd4a51c9d25a6cae0": {
+"gid": 25,
+"name": "six",
+"kind": "base",
+"codepoints": [
+54
+]
+},
+"6e6a9d360dc9cd8150ea66794971d6b9fefc608fb4491d60217baf60a445dcd7": {
+"gid": 26,
+"name": "seven",
+"kind": "base",
+"codepoints": [
+55
+]
+},
+"dc6d16894bcbb22a2919a2be514210e4917931cfe8f084c5cee45ea0244afda4": {
+"gid": 27,
+"name": "eight",
+"kind": "base",
+"codepoints": [
+56
+]
+},
+"7e9128a15311478fb170d23e9012fe1f53db47ec9871edf48383fe280debb783": {
+"gid": 28,
+"name": "nine",
+"kind": "base",
+"codepoints": [
+57
+]
+},
+"b6b56a85588dd75b55d3460aef5c3c143e8f505bc95e3ec46a9b922a214301f0": {
+"gid": 29,
+"name": "colon",
+"kind": "base",
+"codepoints": [
+58
+]
+},
+"9a890b46a72a996357b5e5e7916ce69312f4c777555640287c724be90b255115": {
+"gid": 30,
+"name": "semicolon",
+"kind": "base",
+"codepoints": [
+59
+]
+},
+"1ff73e0133391f40cfe3543b805ab5664c00e2279546dd1b05f20bcbdd2cd1d5": {
+"gid": 31,
+"name": "less",
+"kind": "base",
+"codepoints": [
+60
+]
+},
+"af2bbeff88fdd4a23698dd43677d9030ebbd38f023bb501b3eb44484f115fafc": {
+"gid": 32,
+"name": "equal",
+"kind": "base",
+"codepoints": [
+61
+]
+},
+"f9a4405627b0638fb57fbbd06ed02b262537fbddca5edc410db94965135516e5": {
+"gid": 33,
+"name": "greater",
+"kind": "base",
+"codepoints": [
+62
+]
+},
+"920c2d4e5e69bc01e0dbecd48afa4cb507f5f4800d88fff2d6f8b6197191a9d5": {
+"gid": 34,
+"name": "question",
+"kind": "base",
+"codepoints": [
+63
+]
+},
+"5b49c9d3479d91e421e48848fa4d13884b8e2bac0bdd17724116556595ca7139": {
+"gid": 35,
+"name": "at",
+"kind": "base",
+"codepoints": [
+64
+]
+},
+"8bf5e36546f498193856930ba348b4c48bdd36643451837420b9dce7084ad5f5": {
+"gid": 36,
+"name": "A",
+"kind": "base",
+"codepoints": [
+65
+]
+},
+"1af4ba4f36282f1bb450f940e07d38f534953fb99a944d6d5dd1a15aa36e2be2": {
+"gid": 37,
+"name": "B",
+"kind": "base",
+"codepoints": [
+66
+]
+},
+"1fb4fbb27c8620023cee4ce406e5a8400bd1c78dd234f40a5c9066499330ddd0": {
+"gid": 38,
+"name": "C",
+"kind": "base",
+"codepoints": [
+67
+]
+},
+"7d496f61843520cd28dd2f7d96a0d96c32ad6293bc0b93e78ffd3122add395ec": {
+"gid": 39,
+"name": "D",
+"kind": "base",
+"codepoints": [
+68
+]
+},
+"4c6055a499b5be6d4093b9bfacde14a8201eab97b5825e4371d24eae1a211502": {
+"gid": 40,
+"name": "E",
+"kind": "base",
+"codepoints": [
+69
+]
+},
+"e50ccc03f58e18175985ae46649608e0512d0089cd6541e0c9254ffc80740511": {
+"gid": 41,
+"name": "F",
+"kind": "base",
+"codepoints": [
+70
+]
+},
+"a9a8b1dfb92f13b231e93d87d7496a6b37074a2023cda7befce24ace655b8496": {
+"gid": 42,
+"name": "G",
+"kind": "base",
+"codepoints": [
+71
+]
+},
+"fc0c96231993aac066d9d5d5984fb3ed241f866b851041d58400f5604dee69cd": {
+"gid": 43,
+"name": "H",
+"kind": "base",
+"codepoints": [
+72
+]
+},
+"4a1815a93c2497b14bb216c80a4ac50a4b3825227e395c7a0e61a029269178d2": {
+"gid": 44,
+"name": "I",
+"kind": "base",
+"codepoints": [
+73
+]
+},
+"c7c957c88171e1c0f932cdeeb86ad316d43ae19b6b7b55052d8288a10cb154b2": {
+"gid": 45,
+"name": "J",
+"kind": "base",
+"codepoints": [
+74
+]
+},
+"09a1af6c23f15185f633199606451e2ac727a9930a72f94867770b1850ddee20": {
+"gid": 46,
+"name": "K",
+"kind": "base",
+"codepoints": [
+75
+]
+},
+"06bc275269d0f3bc8afc60c935f26fe216715eef21121996c5bb4a08ed383bbf": {
+"gid": 47,
+"name": "L",
+"kind": "base",
+"codepoints": [
+76
+]
+},
+"6b468ed1d5bc20b275ac6379099b34060da1927f4a91c9ada568a45ea116a3ec": {
+"gid": 48,
+"name": "M",
+"kind": "base",
+"codepoints": [
+77
+]
+},
+"623b22b31a17c047d441a2a812b18814ef733fc95cee77229f06af0c115c418b": {
+"gid": 49,
+"name": "N",
+"kind": "base",
+"codepoints": [
+78
+]
+},
+"e6899a13251b53fb4328090797c90044255df87f709f722b85708cecbff9380b": {
+"gid": 50,
+"name": "O",
+"kind": "base",
+"codepoints": [
+79
+]
+},
+"8cd4d14efdf96731073eed662c70106c6a4c0af6ffda7f4e7509d6bbd8beffe3": {
+"gid": 51,
+"name": "P",
+"kind": "base",
+"codepoints": [
+80
+]
+},
+"f7add2079f12ed8f53b0c7302a0db20949603c931690a59ef8e912ce0548ae32": {
+"gid": 52,
+"name": "Q",
+"kind": "base",
+"codepoints": [
+81
+]
+},
+"55a13d73a77d2017cf551418905d7a9c293593f4fbba7daf8d39b138d245779e": {
+"gid": 53,
+"name": "R",
+"kind": "base",
+"codepoints": [
+82
+]
+},
+"1a38513171b1e771576ce694615a35f6ef5abc84a9aa7bf09d8f371c2234df48": {
+"gid": 54,
+"name": "S",
+"kind": "base",
+"codepoints": [
+83
+]
+},
+"6458c54fa3896e347b3dce261d9e45790d65cffaafd3273ccfe1be29f732c044": {
+"gid": 55,
+"name": "T",
+"kind": "base",
+"codepoints": [
+84
+]
+},
+"7eaabd454d9c35b25ec872856e6ea7395cbadccdc0908637e336e38915a232e3": {
+"gid": 56,
+"name": "U",
+"kind": "base",
+"codepoints": [
+85
+]
+},
+"90e3b94734bad1a482c726a5c7482ac3e560b18b3e8c0ee4acefc1264ad4a32e": {
+"gid": 57,
+"name": "V",
+"kind": "base",
+"codepoints": [
+86
+]
+},
+"7fa6d6ce73b8d67c83047c987a8523b132e9b5fea198f19137efd1b68d2a6075": {
+"gid": 58,
+"name": "W",
+"kind": "base",
+"codepoints": [
+87
+]
+},
+"58ed634dc58287c439cfb445b06127761103420b08167ea9e30182c8b36996e6": {
+"gid": 59,
+"name": "X",
+"kind": "base",
+"codepoints": [
+88
+]
+},
+"079e39b87833679fd55deab6f46c7e34bdc18e5ea4ee5f5438aba15d068d9ac3": {
+"gid": 60,
+"name": "Y",
+"kind": "base",
+"codepoints": [
+89
+]
+},
+"1bbf0684c3580275a0ca7dc02ec86e84609f267af72f8a409bfe7edf2f287915": {
+"gid": 61,
+"name": "Z",
+"kind": "base",
+"codepoints": [
+90
+]
+},
+"f11bb46401f8a8f20a49972f0a4007114defb7753aaa80dca15efdd0b54ffcc6": {
+"gid": 62,
+"name": "bracketleft",
+"kind": "base",
+"codepoints": [
+91
+]
+},
+"3cfa16942846c27cb3251313aee8f500d9e2de656f32a4861f03dcd6434bab1e": {
+"gid": 63,
+"name": "backslash",
+"kind": "base",
+"codepoints": [
+92
+]
+},
+"722d9fa9640c35e0b40a018542e51729dfae5a291f47d10637ae877ab5ed7c19": {
+"gid": 64,
+"name": "bracketright",
+"kind": "base",
+"codepoints": [
+93
+]
+},
+"0e7bcca4983e553ec81bde4342f74f46c69743e1d5757ed6d9702452d039686a": {
+"gid": 65,
+"name": "asciicircum",
+"kind": "base",
+"codepoints": [
+94
+]
+},
+"69937fc543f0891a54dbd3df50a2a572888f453a1ebe0d474400b1349010997f": {
+"gid": 66,
+"name": "underscore",
+"kind": "base",
+"codepoints": [
+95
+]
+},
+"19ff8df009f1c1f52b1ac30ff512198d25b15ab162ebd8c46635f2fe3a43804a": {
+"gid": 67,
+"name": "grave",
+"kind": "base",
+"codepoints": [
+96
+]
+},
+"bdbf81552c39bb70fab5bc73a4b75e77d71c448ddd5252e013d93d5f566d78bf": {
+"gid": 68,
+"name": "a",
+"kind": "base",
+"codepoints": [
+97
+]
+},
+"c71e6e84fa2defb282aab7227db2f0f8891183562ce016ad7e37c7b80ca73334": {
+"gid": 69,
+"name": "b",
+"kind": "base",
+"codepoints": [
+98
+]
+},
+"083c57b11820cf34f2474bb1a06ca14f7523f85263e17adaf5e4bcdb1918fa65": {
+"gid": 70,
+"name": "c",
+"kind": "base",
+"codepoints": [
+99
+]
+},
+"2d6bf959240589e06dc2e6f42b0cecf9f40f5d2d3beb1253791e1629d464eab3": {
+"gid": 71,
+"name": "d",
+"kind": "base",
+"codepoints": [
+100
+]
+},
+"7d14334c6401d23375d736d83b43d7f0858dbe49ca876601ca63db90341b7227": {
+"gid": 72,
+"name": "e",
+"kind": "base",
+"codepoints": [
+101
+]
+},
+"0bbaecdec05ee10b37658f51b27d1a43c3284dca2e885c193e41fdf3a41b5494": {
+"gid": 73,
+"name": "f",
+"kind": "base",
+"codepoints": [
+102
+]
+},
+"f27861c945a5e98967a9c51813a53b6e12e4e613aa547641db274b783b07e994": {
+"gid": 74,
+"name": "g",
+"kind": "base",
+"codepoints": [
+103
+]
+},
+"b881492eccb6c0b5013f144b4f06fecf7a7378fcccaf25ce5a0f0c9f79bd00ac": {
+"gid": 75,
+"name": "h",
+"kind": "base",
+"codepoints": [
+104
+]
+},
+"613b1588b479d5e7a3e7a06eba1b20458a81ca3745f8b535983f7832515a26e6": {
+"gid": 76,
+"name": "i",
+"kind": "base",
+"codepoints": [
+105
+]
+},
+"17d9566921004f14a0fff497827a5a401ba43ecfff6ebc93f2ee7c08e13e2d1d": {
+"gid": 77,
+"name": "j",
+"kind": "base",
+"codepoints": [
+106
+]
+},
+"73bc68464d1d142e1a3c50ee19b2f45b097320024529748e65449d9ed86a8f07": {
+"gid": 78,
+"name": "k",
+"kind": "base",
+"codepoints": [
+107
+]
+},
+"4d87d1ac30a272d96d1b6c851c8d29b1e496cd92a0e12ad7d9cea923a2926f66": {
+"gid": 79,
+"name": "l",
+"kind": "base",
+"codepoints": [
+108
+]
+},
+"acfbdbf5d22b6067121909770618a835fa2816ce489d8385bef86f47cb58e59d": {
+"gid": 80,
+"name": "m",
+"kind": "base",
+"codepoints": [
+109
+]
+},
+"1fa05ecab80893b4af67422d2d219eec30f2396f38e761af6aa96479499bce1f": {
+"gid": 81,
+"name": "n",
+"kind": "base",
+"codepoints": [
+110
+]
+},
+"7c66de6131cca4d433fb03720ea45874fa5a7e077b8d1a35a6f1acd43b75f1ad": {
+"gid": 82,
+"name": "o",
+"kind": "base",
+"codepoints": [
+111
+]
+},
+"c6047f80fe320c41b6ab5a8b26f92a415553aac31af38960a57ac944567acfe5": {
+"gid": 83,
+"name": "p",
+"kind": "base",
+"codepoints": [
+112
+]
+},
+"0001598e61bff97ed44f74eea3b1b0b6569a951d476ee6aa8b234815ea95de55": {
+"gid": 84,
+"name": "q",
+"kind": "base",
+"codepoints": [
+113
+]
+},
+"77fef373b71d71845e27ae9761c9e489deb7d034c3e4b54a3b477cc34e0bc534": {
+"gid": 85,
+"name": "r",
+"kind": "base",
+"codepoints": [
+114
+]
+},
+"11970e36feec3deb30ba73483cd25886f9fb009d3ab08da5b0c592412c4ec264": {
+"gid": 86,
+"name": "s",
+"kind": "base",
+"codepoints": [
+115
+]
+},
+"6e0f94ec54c7a0f192d385a38308cd17d85eaf9f298ebe4cde8673f47c9949f4": {
+"gid": 87,
+"name": "t",
+"kind": "base",
+"codepoints": [
+116
+]
+},
+"6435fa89c6ee76d5aab02459ef577efaeba9fce519a6893dddf6ccc636b85ddc": {
+"gid": 88,
+"name": "u",
+"kind": "base",
+"codepoints": [
+117
+]
+},
+"e7e16999af71a1803729c8b9e527f39e432b17cc7aefa4f92945ff77c94e1ccb": {
+"gid": 89,
+"name": "v",
+"kind": "base",
+"codepoints": [
+118
+]
+},
+"8018548e757565c2c46f3d93af4d4c146de1638f0f4845e444e88a613b9ddb03": {
+"gid": 90,
+"name": "w",
+"kind": "base",
+"codepoints": [
+119
+]
+},
+"6ede7324d75c170dd0f8513ee84104fd4100f0052358a4188f44773cf183089f": {
+"gid": 91,
+"name": "x",
+"kind": "base",
+"codepoints": [
+120
+]
+},
+"b0c475d444851d6ef6cae62b856c5067996595170f1e837d4fa78ebb79c7ba2d": {
+"gid": 92,
+"name": "y",
+"kind": "base",
+"codepoints": [
+121
+]
+},
+"c3899a7a00fb176d40dc4bee4668b28f8efd8c6b344f4df25a556d40675db30b": {
+"gid": 93,
+"name": "z",
+"kind": "base",
+"codepoints": [
+122
+]
+},
+"1d38781897e804d1a1e3fed0e571d0769feed3cf87b97832e2260ad6bb495151": {
+"gid": 94,
+"name": "braceleft",
+"kind": "base",
+"codepoints": [
+123
+]
+},
+"c3a9e90106594af70f42c1c25207b91e4eb68e5362061eb0411563d3490deabe": {
+"gid": 95,
+"name": "bar",
+"kind": "base",
+"codepoints": [
+124
+]
+},
+"3ee5b26bbb185effca35004c33f5bbbc81ebb6f88cd7adec6806128c57b27f68": {
+"gid": 96,
+"name": "braceright",
+"kind": "base",
+"codepoints": [
+125
+]
+},
+"c1f6572fb5f5c441c7587cbf115b73871a55999f82a65d2934d267898bb049fe": {
+"gid": 97,
+"name": "asciitilde",
+"kind": "base",
+"codepoints": [
+126
+]
+},
+"4434afee7ae5db0bd210fd5dddf109c4eac3fd9040d6e89d84daa115ef803066": {
+"gid": 99,
+"name": "exclamdown",
+"kind": "base",
+"codepoints": [
+161
+]
+},
+"5ab896580a94ad4a132d271957bb69c73991dcdb2fa706c007242c41f47df3e8": {
+"gid": 100,
+"name": "cent",
+"kind": "base",
+"codepoints": [
+162
+]
+},
+"685bd074886995a3026bcaf19911783dfae4d9d211e4b70d6679790e0b29311e": {
+"gid": 101,
+"name": "sterling",
+"kind": "base",
+"codepoints": [
+163
+]
+},
+"73a8711b32264bfdf2afd1d4b9f40289691b87e5c3c978e7f3c8f1539e71c9d1": {
+"gid": 102,
+"name": "currency",
+"kind": "base",
+"codepoints": [
+164
+]
+},
+"7b98ce126baf46563c90643b517c5773adcaccfa5786633585a27bafb5a992d6": {
+"gid": 103,
+"name": "yen",
+"kind": "base",
+"codepoints": [
+165
+]
+},
+"c5fa619850474bd66b7cd1af2708cad2f8666e6ed84238fe90b9ae5c1512c5c0": {
+"gid": 104,
+"name": "brokenbar",
+"kind": "base",
+"codepoints": [
+166
+]
+},
+"d144aff841c428cdb375592dfb45ce2983c0c9ba3b188decf0566afa74ad1535": {
+"gid": 105,
+"name": "section",
+"kind": "base",
+"codepoints": [
+167
+]
+},
+"f4239a31cade873a76a4fa15d7c38b51dd05dabff90eac3b5b520464314ff33d": {
+"gid": 106,
+"name": "dieresis",
+"kind": "base",
+"codepoints": [
+168
+]
+},
+"514a9c486958067376c502d87442119e0a7a0f654983062f97d4227e3cc25bdd": {
+"gid": 107,
+"name": "copyright",
+"kind": "base",
+"codepoints": [
+169
+]
+},
+"000ae9efdd7d13542ac9834d3a1cb0a6650b5ba42fe8383ded77366bc2f53c45": {
+"gid": 108,
+"name": "ordfeminine",
+"kind": "base",
+"codepoints": [
+170
+]
+},
+"59bfbbee8240668e6b5de265dc15f4a65e6dbd86f4a3c3f230e7059d87c03d9c": {
+"gid": 109,
+"name": "guillemotleft",
+"kind": "base",
+"codepoints": [
+171
+]
+},
+"f8efed049577313433af4de758943c29183191756a642d057d07dc363b806713": {
+"gid": 110,
+"name": "logicalnot",
+"kind": "base",
+"codepoints": [
+172
+]
+},
+"ca64865e2b945f67e3d66d86118481cd237c1d064ba7462d32d610d0f44898e3": {
+"gid": 112,
+"name": "registered",
+"kind": "base",
+"codepoints": [
+174
+]
+},
+"06a8f37cbef2fbd28d84d8483ff82fc9f4e9ad5dfc6e74f27a50a85dd725d86d": {
+"gid": 113,
+"name": "macron",
+"kind": "base",
+"codepoints": [
+175
+]
+},
+"9e320e2b29720741e5b700ffb2441fc750cbb6bf10a1c4a6d334facface21b5e": {
+"gid": 114,
+"name": "degree",
+"kind": "base",
+"codepoints": [
+176
+]
+},
+"044f0aca433ee349a6ffd933b90ba54402f308cb1d2b4f1e1868d15e2dd46d01": {
+"gid": 115,
+"name": "plusminus",
+"kind": "base",
+"codepoints": [
+177
+]
+},
+"7ffeee7f9955edd3b01aafd4f1d98b8fcccc25ecb0161e4e06783e55ac012abc": {
+"gid": 116,
+"name": "uni00B2",
+"kind": "base",
+"codepoints": [
+178
+]
+},
+"a963b405cac90d76580023b6ef70ef6c6c3f33e84e7fb8529e141832c844b5b6": {
+"gid": 117,
+"name": "uni00B3",
+"kind": "base",
+"codepoints": [
+179
+]
+},
+"d91c3bfdf559017441895e34981fef5454d03c45b8dc76d6cde35b5dc697a7ff": {
+"gid": 118,
+"name": "acute",
+"kind": "base",
+"codepoints": [
+180
+]
+},
+"088811218b4a3903e3ed4840dd6349b3fe42dc9a59b70c91e20ec1b9e5a2ac54": {
+"gid": 119,
+"name": "mu",
+"kind": "base",
+"codepoints": [
+181
+]
+},
+"71155e3ef33f605e52f1b1bbb3e02dad30af2dbe5012e6ebbd02442b2c181c54": {
+"gid": 120,
+"name": "paragraph",
+"kind": "base",
+"codepoints": [
+182
+]
+},
+"e671b3121e7340faf5d04697c90ef9dce9ee3b2966210792924c69a982bf35a6": {
+"gid": 121,
+"name": "periodcentered",
+"kind": "base",
+"codepoints": [
+183
+]
+},
+"9871d64ab8cc914a193e3803e429bd02a5fe42c531db0cb115a4879e2dccd176": {
+"gid": 122,
+"name": "cedilla",
+"kind": "base",
+"codepoints": [
+184
+]
+},
+"6f8a2d0381ae6ff727c3f89b437aeb6c77f7eb0271e16ae8d59224c907f5f496": {
+"gid": 123,
+"name": "uni00B9",
+"kind": "base",
+"codepoints": [
+185
+]
+},
+"24724a11635ed87a48b3338baf6905858d524665413a126affaf62e058b86d68": {
+"gid": 124,
+"name": "ordmasculine",
+"kind": "base",
+"codepoints": [
+186
+]
+},
+"df5c52806ea67868a89ad424611cd3c2ddf22c3eb79c3b09ac01642274e077a7": {
+"gid": 125,
+"name": "guillemotright",
+"kind": "base",
+"codepoints": [
+187
+]
+},
+"ac164e89f43c2ab09f8bd7946bb27a5fab204320ca332153e46d620fa6e04c50": {
+"gid": 126,
+"name": "onequarter",
+"kind": "base",
+"codepoints": [
+188
+]
+},
+"fe77b9f257991540e7363d0d1753b4b5e615754cbbefbc4f3eb019b89b1698cc": {
+"gid": 127,
+"name": "onehalf",
+"kind": "base",
+"codepoints": [
+189
+]
+},
+"d03a13c2790aa7c114e3ca3093c447b85d43a022a3bdc34d6b53f68fc8987860": {
+"gid": 128,
+"name": "threequarters",
+"kind": "base",
+"codepoints": [
+190
+]
+},
+"479031a91f01366bd7e454a6d29b09c6bb64b28350ddebce1550bc716d899b2d": {
+"gid": 129,
+"name": "questiondown",
+"kind": "base",
+"codepoints": [
+191
+]
+},
+"91b560144934f44ba85696dece30320ac12c30216b98ff0f3ed35eeac4fcd89c": {
+"gid": 130,
+"name": "Agrave",
+"kind": "base",
+"codepoints": [
+192
+]
+},
+"b04ba44bfe35ada260e0597fd27d6ab3fe0ecbdd45e54052067143de44fbf702": {
+"gid": 131,
+"name": "Aacute",
+"kind": "base",
+"codepoints": [
+193
+]
+},
+"9f14e0e3560294a864a099bd9539b7c242a1b94b897b42696e71ed81988f7acd": {
+"gid": 132,
+"name": "Acircumflex",
+"kind": "base",
+"codepoints": [
+194
+]
+},
+"35557d39f8d6f36ec722ba51f576f0eda717bb76b0ab5044a7dfb8437aa4f1cb": {
+"gid": 133,
+"name": "Atilde",
+"kind": "base",
+"codepoints": [
+195
+]
+},
+"e851d25fb448f2db7d46a681521dfe623ba99f3007feeb91c12d1582ba432f97": {
+"gid": 134,
+"name": "Adieresis",
+"kind": "base",
+"codepoints": [
+196
+]
+},
+"9fa29e00b8226a6c24111aa80d07b5b75f71ef05dad32dbba37978ea17279e9c": {
+"gid": 135,
+"name": "Aring",
+"kind": "base",
+"codepoints": [
+197
+]
+},
+"c40ba52764d177df89ed8b789af48742d0641a9836dc8fe7d8e1ea84c65b2836": {
+"gid": 136,
+"name": "AE",
+"kind": "base",
+"codepoints": [
+198
+]
+},
+"1925a36c49d1d71e3a1a68ff55fd6294f460a2ff8fc43a8d36006e27b40b3dad": {
+"gid": 137,
+"name": "Ccedilla",
+"kind": "base",
+"codepoints": [
+199
+]
+},
+"6ae008223c0c712b443d8bed67aaabbad589837d6629dbb14333e5bada188a53": {
+"gid": 138,
+"name": "Egrave",
+"kind": "base",
+"codepoints": [
+200
+]
+},
+"6fea3254e1c3f1c3b685338ab2d79d0aaa346f895b761548d5269b845856435f": {
+"gid": 139,
+"name": "Eacute",
+"kind": "base",
+"codepoints": [
+201
+]
+},
+"fa0ca97592ae450b6069397dc495cc0e27eb3e78d97b6c0a85f68d05c9c97eaa": {
+"gid": 140,
+"name": "Ecircumflex",
+"kind": "base",
+"codepoints": [
+202
+]
+},
+"17f5835ba5b12dfea0ec419346d1cbbfa23d82fc99df9fd4630b963a03a25f0e": {
+"gid": 141,
+"name": "Edieresis",
+"kind": "base",
+"codepoints": [
+203
+]
+},
+"4bad29e76c328fd5bf194c960bd324863f78e96afee65012821fbdbd88007d53": {
+"gid": 142,
+"name": "Igrave",
+"kind": "base",
+"codepoints": [
+204
+]
+},
+"9b3ee8c93e4786700a4b72670e060d68ea32414cdcaac64ecafeb85c87580957": {
+"gid": 143,
+"name": "Iacute",
+"kind": "base",
+"codepoints": [
+205
+]
+},
+"7fe524dac1e00a136d503e651ccf776d6b0a45d195aa984a55984eb81685909f": {
+"gid": 144,
+"name": "Icircumflex",
+"kind": "base",
+"codepoints": [
+206
+]
+},
+"d440bebade236a2f347cdc469938b9dcad3a8d25b76ffb7ba6e7fee372730d3c": {
+"gid": 145,
+"name": "Idieresis",
+"kind": "base",
+"codepoints": [
+207
+]
+},
+"e94a99f0f25523e00117744f192b58b4168d955d7da0e2e53752229c85599ca6": {
+"gid": 146,
+"name": "Eth",
+"kind": "base",
+"codepoints": [
+208
+]
+},
+"1cf0af75a456d58f959bef9db8e1c5f049ad1984c3874caeb281ce7a17225dc1": {
+"gid": 147,
+"name": "Ntilde",
+"kind": "base",
+"codepoints": [
+209
+]
+},
+"e5ce2195c6604e3ff011626b9e2da9f01af10ee38bca0defb608450e18f3d043": {
+"gid": 148,
+"name": "Ograve",
+"kind": "base",
+"codepoints": [
+210
+]
+},
+"8b62a7fa8d24d33c7e4b6f67393deaf2c86536c69e8f3ae505c34ca0b5f0e5ec": {
+"gid": 149,
+"name": "Oacute",
+"kind": "base",
+"codepoints": [
+211
+]
+},
+"6872e55764f33a88564216562bacbc20570839b2a5c958d799a4049890463209": {
+"gid": 150,
+"name": "Ocircumflex",
+"kind": "base",
+"codepoints": [
+212
+]
+},
+"bfa009cc4cda2d2cfd4e8a33065bda21b5b8b0dc70bc44f0a89c51905e139ad4": {
+"gid": 151,
+"name": "Otilde",
+"kind": "base",
+"codepoints": [
+213
+]
+},
+"05541d31ec2663c6aa0c79f30812f40bb2eb12216eccf0511ad0415bcdf16854": {
+"gid": 152,
+"name": "Odieresis",
+"kind": "base",
+"codepoints": [
+214
+]
+},
+"94e262b9706b8455115771fbf744e6d14c170b5892ec6af17bf708f25ec38f0c": {
+"gid": 153,
+"name": "multiply",
+"kind": "base",
+"codepoints": [
+215
+]
+},
+"f835e7fc7513a55e1e05b947682ca4e36d48e6caff175947dcfacba1381475e0": {
+"gid": 154,
+"name": "Oslash",
+"kind": "base",
+"codepoints": [
+216
+]
+},
+"fc27f3d33dd8a772a54a7264a80145494244d0e8c33f371e83d2a2875d840bca": {
+"gid": 155,
+"name": "Ugrave",
+"kind": "base",
+"codepoints": [
+217
+]
+},
+"1a81c29e612086da220eba576e9d6e2b7f3ce9e661d3bd06263ffab94f07726f": {
+"gid": 156,
+"name": "Uacute",
+"kind": "base",
+"codepoints": [
+218
+]
+},
+"231004d554d544618a0767237b3623c48c7c6ec0cf727dabece4f47591aee555": {
+"gid": 157,
+"name": "Ucircumflex",
+"kind": "base",
+"codepoints": [
+219
+]
+},
+"958491fbbbce252fe6e12ed1eadfa33654a2398175615b054c6f2349bffa5066": {
+"gid": 158,
+"name": "Udieresis",
+"kind": "base",
+"codepoints": [
+220
+]
+},
+"be0c550562689f7981ef7c11458537d555eb7b97213efd54b6bcee6ca83c9738": {
+"gid": 159,
+"name": "Yacute",
+"kind": "base",
+"codepoints": [
+221
+]
+},
+"7a2cdeb082cdca8e78ce818c0152f1f701c41c94ab3f8519e69a1a345c97a467": {
+"gid": 160,
+"name": "Thorn",
+"kind": "base",
+"codepoints": [
+222
+]
+},
+"01c5227d253ca611825da1b747e510a5296cb94f4d92b8e79f36e441c845cfc2": {
+"gid": 161,
+"name": "germandbls",
+"kind": "base",
+"codepoints": [
+223
+]
+},
+"15aee7d5dc1050cebf07f8e6a44d47dbf575178ebb06bf9ef4cb430acf0a9f2d": {
+"gid": 162,
+"name": "agrave",
+"kind": "base",
+"codepoints": [
+224
+]
+},
+"8428aa8d46688a71a528067f65abe135d963c269b8cfda10c694e51bbdbff512": {
+"gid": 163,
+"name": "aacute",
+"kind": "base",
+"codepoints": [
+225
+]
+},
+"3118aa87581ef1d536259f04d0b879031795263dc228f66530d8eb501f944766": {
+"gid": 164,
+"name": "acircumflex",
+"kind": "base",
+"codepoints": [
+226
+]
+},
+"528a766bbc1f4f7ab224ad3a4965bc4f621a5b576891892c45bada14d6c4add7": {
+"gid": 165,
+"name": "atilde",
+"kind": "base",
+"codepoints": [
+227
+]
+},
+"6097e9f0b5a35a00d724d4915e1571fde8cb69ab2011a43e5d94384d140968d0": {
+"gid": 166,
+"name": "adieresis",
+"kind": "base",
+"codepoints": [
+228
+]
+},
+"22cd122bcf949179ffdbe83a8dafc93ac9e613bd36ba669b091fb7543502c7a4": {
+"gid": 167,
+"name": "aring",
+"kind": "base",
+"codepoints": [
+229
+]
+},
+"a6134061705505c9bf67a00d7e3e802d459b25c893644386231c1cf8b1db1365": {
+"gid": 168,
+"name": "ae",
+"kind": "base",
+"codepoints": [
+230
+]
+},
+"adc2fe66c2b139a26796714065f4032ac864b1f62a54249fef60abdb7b00478d": {
+"gid": 169,
+"name": "ccedilla",
+"kind": "base",
+"codepoints": [
+231
+]
+},
+"03e0794612c85195a71b456e9f236bc939c98276b5a6eccba722ddee90f96aa0": {
+"gid": 170,
+"name": "egrave",
+"kind": "base",
+"codepoints": [
+232
+]
+},
+"c380735fa4b0f6a2bb4294c4ae41bf330263f184db7657b955e8d368bd7eba71": {
+"gid": 171,
+"name": "eacute",
+"kind": "base",
+"codepoints": [
+233
+]
+},
+"0042cfc78ece977a9246489630bbd289286d6dbd49d8488af4cacae95d7d3fb5": {
+"gid": 172,
+"name": "ecircumflex",
+"kind": "base",
+"codepoints": [
+234
+]
+},
+"5665dc0273d8b6229228a39c1a02f35df7012d4e1b322ffcbe4a15294314d3dc": {
+"gid": 173,
+"name": "edieresis",
+"kind": "base",
+"codepoints": [
+235
+]
+},
+"11cceaa9fccd83e4bcd9983988e48873b38d0654c951247f7bcb048a5babbfc2": {
+"gid": 174,
+"name": "igrave",
+"kind": "base",
+"codepoints": [
+236
+]
+},
+"ede5661d2869e3f8a4ad6fbda8a1d4f66eb619d40d26ec69fdc8706712a17546": {
+"gid": 175,
+"name": "iacute",
+"kind": "base",
+"codepoints": [
+237
+]
+},
+"9a98163733d2b43fd1af67c8d461309784d50fc32313bb84b1587290e67c40db": {
+"gid": 176,
+"name": "icircumflex",
+"kind": "base",
+"codepoints": [
+238
+]
+},
+"59986dd5025d130b85c46b64970d09c52478d5f23eb3d0b95bbcd668fa9616fb": {
+"gid": 177,
+"name": "idieresis",
+"kind": "base",
+"codepoints": [
+239
+]
+},
+"d062ea87149bfcc54a3f129b20636f513e6dd258ab7fe5d7a20c8a41136d1959": {
+"gid": 178,
+"name": "eth",
+"kind": "base",
+"codepoints": [
+240
+]
+},
+"4c028a33d63a4e7445b533b22626d78eb707bb1ecf2f4b7f51fef553e8afa1ca": {
+"gid": 179,
+"name": "ntilde",
+"kind": "base",
+"codepoints": [
+241
+]
+},
+"1a12f1d556729a031d78a7bde1085ff6532e9cbf892f2a5aa4e8b555ac720824": {
+"gid": 180,
+"name": "ograve",
+"kind": "base",
+"codepoints": [
+242
+]
+},
+"8cba0fc41676b2db82b039b24e79682c2bfb6d9bcfa597dbbe0a845989f96a14": {
+"gid": 181,
+"name": "oacute",
+"kind": "base",
+"codepoints": [
+243
+]
+},
+"fc849d57067807b28f26fc7f5bae0b7509fea58505e31bf987027f83d90fcd8b": {
+"gid": 182,
+"name": "ocircumflex",
+"kind": "base",
+"codepoints": [
+244
+]
+},
+"65eb7f9c0ead9f45926aea5fe434ca90931040c2f30dd66dfdf9b400036610e9": {
+"gid": 183,
+"name": "otilde",
+"kind": "base",
+"codepoints": [
+245
+]
+},
+"7825e2371695aff9026cd33dacc05e46282cc911a8e2c0e9593454f611a94811": {
+"gid": 184,
+"name": "odieresis",
+"kind": "base",
+"codepoints": [
+246
+]
+},
+"e62f421b45335e1ba7600d78b1c1ef9a2d3536b7be0452cf1ae9fbc86e838548": {
+"gid": 185,
+"name": "divide",
+"kind": "base",
+"codepoints": [
+247
+]
+},
+"e2418e2902d8668cdbb8eb5da3d870495c69407cdc9517a5b2a3ccdce079ab49": {
+"gid": 186,
+"name": "oslash",
+"kind": "base",
+"codepoints": [
+248
+]
+},
+"ea093e096368a8a3f314e23aaf79e158eed387e536137317f840ce89644076a0": {
+"gid": 187,
+"name": "ugrave",
+"kind": "base",
+"codepoints": [
+249
+]
+},
+"873ea27aced357f664e181aaa0a7d58b20bc0f77469e2c2e2456489e8b6e0860": {
+"gid": 188,
+"name": "uacute",
+"kind": "base",
+"codepoints": [
+250
+]
+},
+"baa9df004b66f13fe8144e96ddd3101d025437762156393bef7441b914835278": {
+"gid": 189,
+"name": "ucircumflex",
+"kind": "base",
+"codepoints": [
+251
+]
+},
+"92c5d2d81051a5b0d053a97eac3d2269f30dde87af2b98d76feea79b0e342c3e": {
+"gid": 190,
+"name": "udieresis",
+"kind": "base",
+"codepoints": [
+252
+]
+},
+"420d8e5dc3f87653c177d97ee74ba8b17f54a3a61e339e7b41e47dd3806118e0": {
+"gid": 191,
+"name": "yacute",
+"kind": "base",
+"codepoints": [
+253
+]
+},
+"a39ad8029ada8c46f6a9bb6fa2f8e579bb169f9ca886b3a11a983aa859c907a4": {
+"gid": 192,
+"name": "thorn",
+"kind": "base",
+"codepoints": [
+254
+]
+},
+"7ac7dbb560cf6685cfa114403983344e873c7167b00c9e88d1fa726b89294ae9": {
+"gid": 193,
+"name": "ydieresis",
+"kind": "base",
+"codepoints": [
+255
+]
+},
+"0005c29f57e4609f69213eff79aa397431692147b8a2c236a36321db6c89d5d0": {
+"gid": 1380,
+"name": "uni0901",
+"kind": "base",
+"codepoints": [
+2305
+]
+},
+"6295b6808da8da03ae0fb009ac1da1a309269fa06369b3b5009648a5380363af": {
+"gid": 1381,
+"name": "uni0902",
+"kind": "base",
+"codepoints": [
+2306
+]
+},
+"e281ce686495d752e7693881ae83e001e8dc5d7eee1a1243bdf44c86ca5b6ffe": {
+"gid": 1382,
+"name": "uni0903",
+"kind": "base",
+"codepoints": [
+2307
+]
+},
+"2158cff78d7c45b07ce895a1c4dea90c07def5b8067af20d435a6141923faa97": {
+"gid": 1383,
+"name": "uni0905",
+"kind": "base",
+"codepoints": [
+2309
+]
+},
+"0015bfcf5450a262ba1be191c1c1d852198f2b5851225115ef48964779ba814b": {
+"gid": 1384,
+"name": "uni0906",
+"kind": "base",
+"codepoints": [
+2310
+]
+},
+"275c0d19c14da3da2f58ea4045c2a37c260efb394237e82672a7e6238343c70e": {
+"gid": 1385,
+"name": "uni0907",
+"kind": "base",
+"codepoints": [
+2311
+]
+},
+"2fe0c6097a507e4be7f92eb057bdb0b4ebb4613abac35fdf05a5828aa26084d1": {
+"gid": 1386,
+"name": "uni0908",
+"kind": "base",
+"codepoints": [
+2312
+]
+},
+"9d64dc67217fde00bf82fbbb1243d55963f149b4f5fbffb44f67fdf1fa9268e2": {
+"gid": 1387,
+"name": "uni0909",
+"kind": "base",
+"codepoints": [
+2313
+]
+},
+"8bc05942acba62e3f3f03af106b59afa8859a144038707102fc255bd8e413ed0": {
+"gid": 1388,
+"name": "uni090A",
+"kind": "base",
+"codepoints": [
+2314
+]
+},
+"885cef7f4534533d1df0fca01823fa923ecefcc6ec5ba456c9c19534d1f671b4": {
+"gid": 1389,
+"name": "uni090B",
+"kind": "base",
+"codepoints": [
+2315
+]
+},
+"dd0b107f91ffe48c39cf5171db70c0bbbe01e33aa881e1b7a650c6818431ab3f": {
+"gid": 1390,
+"name": "uni090C",
+"kind": "base",
+"codepoints": [
+2316
+]
+},
+"2defec77eb7cbe5295bef1ce6c491b281219bd49d5df3d387d7d670ce168afb8": {
+"gid": 1391,
+"name": "uni090D",
+"kind": "base",
+"codepoints": [
+2317
+]
+},
+"7fad0f3cc9d0a82aa2bbcf30df070894e2a9d0127b4fd14deec8f0e70a0ce5bc": {
+"gid": 1392,
+"name": "uni090E",
+"kind": "base",
+"codepoints": [
+2318
+]
+},
+"834ef232fbd6ec20c7693b06b338f8858c53de31c3bb28f85ae053a33860ce0e": {
+"gid": 1393,
+"name": "uni090F",
+"kind": "base",
+"codepoints": [
+2319
+]
+},
+"94918d2c70dfda1b5c99328dcc8f56016a9005d7edb825b73428dee5f0180409": {
+"gid": 1394,
+"name": "uni0910",
+"kind": "base",
+"codepoints": [
+2320
+]
+},
+"2a2d99dcb48a40f6e13e439583aac29395f4da8fa8740af8cd2b9211d41d95ca": {
+"gid": 1395,
+"name": "uni0911",
+"kind": "base",
+"codepoints": [
+2321
+]
+},
+"a1eb74f8a18f3fa3053fc3739210dbec49413721598efd08e304b4e789f2b39f": {
+"gid": 1396,
+"name": "uni0912",
+"kind": "base",
+"codepoints": [
+2322
+]
+},
+"966fc2890491857547c5f8ff2520db93baa183e6271727f7f6b839ef7d917d98": {
+"gid": 1397,
+"name": "uni0913",
+"kind": "base",
+"codepoints": [
+2323
+]
+},
+"a62a7288af0d42c38d3cf8f36f982a139f802f3334f94f1959c9504fc80b1a2a": {
+"gid": 1398,
+"name": "uni0914",
+"kind": "base",
+"codepoints": [
+2324
+]
+},
+"73896064818a1e59877d133866c7137716842823f31f384af70b1b7229752bf8": {
+"gid": 1399,
+"name": "uni0915",
+"kind": "base",
+"codepoints": [
+2325
+]
+},
+"49dd7f40cc5136e9c6bf41240d2851a2b329fac5b01f1396b30d9319c7a50e50": {
+"gid": 1400,
+"name": "uni0916",
+"kind": "base",
+"codepoints": [
+2326
+]
+},
+"eaad4123a307fd79da4d8b05c43b52d91a421af6d24d6860ab7f030c3412354f": {
+"gid": 1401,
+"name": "uni0917",
+"kind": "base",
+"codepoints": [
+2327
+]
+},
+"b9cdf9860c6b9cd1ee13ad76e5885d1ddb33ab2f9b05908ab9268c2476d1c39d": {
+"gid": 1402,
+"name": "uni0918",
+"kind": "base",
+"codepoints": [
+2328
+]
+},
+"643ae715f5b3c2dd426769c071c768d7b1cf3705c86f72b2a8cde659f8f14a68": {
+"gid": 1403,
+"name": "uni0919",
+"kind": "base",
+"codepoints": [
+2329
+]
+},
+"9331b858282754899fa7d6a95dba3d3828a66b0d00514d5ce981cdc3ef8f085f": {
+"gid": 1404,
+"name": "uni091A",
+"kind": "base",
+"codepoints": [
+2330
+]
+},
+"1d29c36f56618dc73ecce353317e5250e99ebe1cb19ec84b12a9f3be5efe21a3": {
+"gid": 1405,
+"name": "uni091B",
+"kind": "base",
+"codepoints": [
+2331
+]
+},
+"d1675f4bc2bf23d078661ae125656c68a0ef6f4d5e465c0db9d9e16f65570ca5": {
+"gid": 1406,
+"name": "uni091C",
+"kind": "base",
+"codepoints": [
+2332
+]
+},
+"93e1c085dd572852f86866fef4d57fee466d39f40debdfb5d527a70f7822e225": {
+"gid": 1407,
+"name": "uni091D",
+"kind": "base",
+"codepoints": [
+2333
+]
+},
+"d782ec82b8fb4fa22b96149fd1811ac2328b172dba855596f00125572c599248": {
+"gid": 1408,
+"name": "uni091E",
+"kind": "base",
+"codepoints": [
+2334
+]
+},
+"e88f31c47f9a4d57bd57a3c45adb2198b24e4536d5d10278f8c1a0c72e428c35": {
+"gid": 1409,
+"name": "uni091F",
+"kind": "base",
+"codepoints": [
+2335
+]
+},
+"3d06235ef7d58d544c9dc293ecc13ced2f8a6824104209dd79c3bbd57bee51b8": {
+"gid": 1410,
+"name": "uni0920",
+"kind": "base",
+"codepoints": [
+2336
+]
+},
+"8f58ed175b24d8054f41dfaa47dbad8c93bebb64fe8a7c477840b020f96dd443": {
+"gid": 1411,
+"name": "uni0921",
+"kind": "base",
+"codepoints": [
+2337
+]
+},
+"0a593ebbc834aa51064de22bb2d7db90ed3e5901beab61042ba4b3d9e6202032": {
+"gid": 1412,
+"name": "uni0922",
+"kind": "base",
+"codepoints": [
+2338
+]
+},
+"d26f7e40b95c4f55d4e795274875e9e4f4c82b65f1ff9fd86a61f1b7ce86e60d": {
+"gid": 1413,
+"name": "uni0923",
+"kind": "base",
+"codepoints": [
+2339
+]
+},
+"3509fcdc04e6cb34c398bc3efdf11a375dd63be0a6aa49a891f4928b27a095d0": {
+"gid": 1414,
+"name": "uni0924",
+"kind": "base",
+"codepoints": [
+2340
+]
+},
+"20208569bc1c7f389a7825ba45f15f62806fd3fbcc2dce12b5a0d94260d8f83b": {
+"gid": 1415,
+"name": "uni0925",
+"kind": "base",
+"codepoints": [
+2341
+]
+},
+"2086d33e93263321026ced1bc68ef4ab4a483d42bf7f892ed50ab20414f5388b": {
+"gid": 1416,
+"name": "uni0926",
+"kind": "base",
+"codepoints": [
+2342
+]
+},
+"0ffedc2fcb5d3a1f12781b93acfef52fa08e41f5e140dbb8a40766c7a059c43d": {
+"gid": 1417,
+"name": "uni0927",
+"kind": "base",
+"codepoints": [
+2343
+]
+},
+"0ddfdc155780ee63edef5f5999f8e3be34f1e19103d6bf4b81ffb1955a5dbbe4": {
+"gid": 1418,
+"name": "uni0928",
+"kind": "base",
+"codepoints": [
+2344
+]
+},
+"c766796f230616e29e33b03e6bd32e862a9cf792b5a988143c4318afb4fbfae7": {
+"gid": 1419,
+"name": "uni0929",
+"kind": "base",
+"codepoints": [
+2345
+]
+},
+"fa9109f8341f91f96b459029c7c25c46cccb8afc3f0e495f490b7af334c89ae5": {
+"gid": 1420,
+"name": "uni092A",
+"kind": "base",
+"codepoints": [
+2346
+]
+},
+"3aa6fe49e564edf347d42afca51cd28e06b13458bf4b13304c39c2d5cad25405": {
+"gid": 1421,
+"name": "uni092B",
+"kind": "base",
+"codepoints": [
+2347
+]
+},
+"69c52700f4ffee50cec20ab87d8087a09cb760f4f3685bb9864b054001f12c07": {
+"gid": 1422,
+"name": "uni092C",
+"kind": "base",
+"codepoints": [
+2348
+]
+},
+"de27427fc5d6adff8ea62ac4cdea9fe9e021e70a314d3a12d5a90c649cd0c779": {
+"gid": 1423,
+"name": "uni092D",
+"kind": "base",
+"codepoints": [
+2349
+]
+},
+"4a1c46566287b484c10f25be67dea844d114eca6fed5a5505a351bb4ba177909": {
+"gid": 1424,
+"name": "uni092E",
+"kind": "base",
+"codepoints": [
+2350
+]
+},
+"11f4028ee96460fa70207ab01b8d7f5613e686d497bde8b0f2abe1d90cbcb852": {
+"gid": 1425,
+"name": "uni092F",
+"kind": "base",
+"codepoints": [
+2351
+]
+},
+"24ace3ec03233f89eb47d01bd840d8cc2b52417ddf285fd29f2ad3603b1a78e0": {
+"gid": 1426,
+"name": "uni0930",
+"kind": "base",
+"codepoints": [
+2352
+]
+},
+"e187cb9ecb5826e489f02f8ed96946f36e6e0da5ff324ebc5efaf5555949270e": {
+"gid": 1427,
+"name": "uni0931",
+"kind": "base",
+"codepoints": [
+2353
+]
+},
+"69dda0e434d41858bccf327dce1c16d76cb6cd8d39e8ba1ff7f0777f115ed680": {
+"gid": 1428,
+"name": "uni0932",
+"kind": "base",
+"codepoints": [
+2354
+]
+},
+"d80ce16b66d67b8617079291764ce571722a276896803b1103e90023c6290251": {
+"gid": 1429,
+"name": "uni0933",
+"kind": "base",
+"codepoints": [
+2355
+]
+},
+"37d03e342f6ed58a4032e6109a94c831da11c6fa191d72e53c1b4bd72d9f9380": {
+"gid": 1430,
+"name": "uni0934",
+"kind": "base",
+"codepoints": [
+2356
+]
+},
+"de143ed0026ba93b0b92ea54ee2e5b0c95cf96ea194fd4620400d4503c14a3cb": {
+"gid": 1431,
+"name": "uni0935",
+"kind": "base",
+"codepoints": [
+2357
+]
+},
+"a6a973a8960a2c92f2b158cffff1d70fd55e2c39ad49997d531ca8b44f30d66c": {
+"gid": 1432,
+"name": "uni0936",
+"kind": "base",
+"codepoints": [
+2358
+]
+},
+"1f7d57791812b9fb35a8c764ceacd203eaa4cefd8a39d2190d6af6e54bfe6bfe": {
+"gid": 1433,
+"name": "uni0937",
+"kind": "base",
+"codepoints": [
+2359
+]
+},
+"abbb6b46cb98caf79ac2aba4efb88a11dc5af42f6524a0625eb78f4d3f1ab548": {
+"gid": 1434,
+"name": "uni0938",
+"kind": "base",
+"codepoints": [
+2360
+]
+},
+"0f5b56997d46e35e72b2db974031d9ef60878eee1a3c8073dd0ff28474cfbff4": {
+"gid": 1435,
+"name": "uni0939",
+"kind": "base",
+"codepoints": [
+2361
+]
+},
+"b14467e85f7c2e0808262ff3728fd1d2d7784bf2f7e9f6268f533e9899bb3a2d": {
+"gid": 1436,
+"name": "uni093C",
+"kind": "base",
+"codepoints": [
+2364
+]
+},
+"17c11366975b532494c64c9263eb0d83f4dbe4a0439829f3cde06d02c567d8e2": {
+"gid": 1437,
+"name": "uni093D",
+"kind": "base",
+"codepoints": [
+2365
+]
+},
+"49d324b11e38d2f437f446a74293a8e569b7ae2a0f004813656a0e1943d95682": {
+"gid": 1438,
+"name": "uni093E",
+"kind": "base",
+"codepoints": [
+2366
+]
+},
+"fe40ec9ad5dc958934d8fa21eacaf0fd543d2a58e81b8073b16c4d8da3eb5436": {
+"gid": 1439,
+"name": "uni093F",
+"kind": "base",
+"codepoints": [
+2367
+]
+},
+"7ad4570e01536a3e44c9d5b7a9834c068e99d149e2e962c123092bf46796d6f6": {
+"gid": 1440,
+"name": "uni0940",
+"kind": "base",
+"codepoints": [
+2368
+]
+},
+"4ccb9c600943b122f6b06ef08bef1bee7676adeb6bdf745ef32f5fb09441f467": {
+"gid": 1441,
+"name": "uni0941",
+"kind": "base",
+"codepoints": [
+2369
+]
+},
+"cd0d9b02ff96b65f68a11031215724c26b7a75faee90434e0b5b0c30be1c77a2": {
+"gid": 1442,
+"name": "uni0942",
+"kind": "base",
+"codepoints": [
+2370
+]
+},
+"ad9b013227f088d1903413b63e604742bacf47ff639d57a5c2584529645efb10": {
+"gid": 1443,
+"name": "uni0943",
+"kind": "base",
+"codepoints": [
+2371
+]
+},
+"485dfa3324ecdf9735d62cae38984a7e7de292721704b7c1880eb4809193ef37": {
+"gid": 1444,
+"name": "uni0944",
+"kind": "base",
+"codepoints": [
+2372
+]
+},
+"763db4ea83aa1c35c30e6db9ce79d33751bc84e0ed93704dbc840185d0c1d77a": {
+"gid": 1445,
+"name": "uni0945",
+"kind": "base",
+"codepoints": [
+2373
+]
+},
+"25f38fc0df4e4a9359a0f656a26703711af018ecd6001876f65e1e6190e96f42": {
+"gid": 1446,
+"name": "uni0946",
+"kind": "base",
+"codepoints": [
+2374
+]
+},
+"467fe1c88d019bad3a474f4f186c9ee1434d9041f8e2ba252e1336963ffc162d": {
+"gid": 1447,
+"name": "uni0947",
+"kind": "base",
+"codepoints": [
+2375
+]
+},
+"68804642c4cca209800ee15a604bdd6903192c9b96f9cc7d788e4b52f121fc6b": {
+"gid": 1448,
+"name": "uni0948",
+"kind": "base",
+"codepoints": [
+2376
+]
+},
+"1024a2aeb48d75e0e37f50b29c8ad89db72d453aa68ac7d22a3685bf777442e4": {
+"gid": 1449,
+"name": "uni0949",
+"kind": "base",
+"codepoints": [
+2377
+]
+},
+"d822e1630efecc6c6d15d5e06f6b31adb37cdca5ef77b25c3b68afa2e2df7afb": {
+"gid": 1450,
+"name": "uni094A",
+"kind": "base",
+"codepoints": [
+2378
+]
+},
+"37ef4c3e300f056816b86cd0876d4135e77f75d58f8b28ea3a6c75296d3f5ad5": {
+"gid": 1451,
+"name": "uni094B",
+"kind": "base",
+"codepoints": [
+2379
+]
+},
+"4b038c97afa581c5a59c21a9ed41c3fcdc4bfd52452e401efdac11245af923b0": {
+"gid": 1452,
+"name": "uni094C",
+"kind": "base",
+"codepoints": [
+2380
+]
+},
+"b73eb53abebfd71470f8e8573d7621b2213d33902f9da2ddb86c74f0a367db8b": {
+"gid": 1453,
+"name": "uni094D",
+"kind": "base",
+"codepoints": [
+2381
+]
+},
+"a9c9ce245a6edfa60734992840b574c0760f76a5b487e059e95240a183ccdc4e": {
+"gid": 1454,
+"name": "uni0950",
+"kind": "base",
+"codepoints": [
+2384
+]
+},
+"29a413ecace4c618df2639f8768259ebbd0c0f0bdf355f4e8ee6f30859676c9c": {
+"gid": 1455,
+"name": "uni0951",
+"kind": "base",
+"codepoints": [
+2385
+]
+},
+"d63a6e0ce0b039d42e2c3f3537bdefb7d6a0645e2cf1f320d34cbd170d7ab1d0": {
+"gid": 1456,
+"name": "uni0952",
+"kind": "base",
+"codepoints": [
+2386
+]
+},
+"f75fddc37700fd31fa42c00651c767f0c2c213917525be552e57a21b6a87c154": {
+"gid": 1457,
+"name": "uni0953",
+"kind": "base",
+"codepoints": [
+2387
+]
+},
+"220b4570fa3c4b903619402f08c0e40961a5894eaf19a4788f0c239d4bd77127": {
+"gid": 1458,
+"name": "uni0954",
+"kind": "base",
+"codepoints": [
+2388
+]
+},
+"43655bcecc76f179977f291d1337defaf006c52afba7c4b1ac2a289c95e5fa47": {
+"gid": 1459,
+"name": "uni0958",
+"kind": "base",
+"codepoints": [
+2392
+]
+},
+"67ccfbc4b0faa2c6d8f33cdd26f823c7e78bc5b4cfc6f21279f799e85817b652": {
+"gid": 1460,
+"name": "uni0959",
+"kind": "base",
+"codepoints": [
+2393
+]
+},
+"338de4d253201b0d00f7cf0ce1f640587b01c37e4aa507fea9f71075d81cf8b2": {
+"gid": 1461,
+"name": "uni095A",
+"kind": "base",
+"codepoints": [
+2394
+]
+},
+"53adcf04014b5b3cfa31ad503c9f6b23dfdb422ffd09226ef68a4e4d2b40f00b": {
+"gid": 1462,
+"name": "uni095B",
+"kind": "base",
+"codepoints": [
+2395
+]
+},
+"b1405eee5dd33108c7da7e3f7b24da6bfe0924c29c6c7c6ce1f8bb4c832104c5": {
+"gid": 1463,
+"name": "uni095C",
+"kind": "base",
+"codepoints": [
+2396
+]
+},
+"a09fcd91258ab4a500387b0578b9a943b1c947039bdbf60a8c48834d452a3098": {
+"gid": 1464,
+"name": "uni095D",
+"kind": "base",
+"codepoints": [
+2397
+]
+},
+"a0f34ab8478fec007b782eb85ab11098c98101ccfca16d1f24b2df33b37b7869": {
+"gid": 1465,
+"name": "uni095E",
+"kind": "base",
+"codepoints": [
+2398
+]
+},
+"33962eea51bd642b03a503c037048695c0037ec37eb9a1fa1c0194d3d1688c2a": {
+"gid": 1466,
+"name": "uni095F",
+"kind": "base",
+"codepoints": [
+2399
+]
+},
+"1e02c259d4a68f6fa63eb75537edb511ec165dcb4af2c66645f89ffebc37ceba": {
+"gid": 1467,
+"name": "uni0960",
+"kind": "base",
+"codepoints": [
+2400
+]
+},
+"a1debee520b642bb9dd1d89449e816a16f29c6cf0bb5a4889e1a05f3daa3b3f0": {
+"gid": 1468,
+"name": "uni0961",
+"kind": "base",
+"codepoints": [
+2401
+]
+},
+"f8d905faf6959fa57f68c0c8aa6576262396aeaa0e6ed11f35e2d6c0ddf2532a": {
+"gid": 1469,
+"name": "uni0962",
+"kind": "base",
+"codepoints": [
+2402
+]
+},
+"d74e13fdbe92ffea57e8a9b779535d2c4ee97d4b70fcd61ca8b473a1ee56b11b": {
+"gid": 1470,
+"name": "uni0963",
+"kind": "base",
+"codepoints": [
+2403
+]
+},
+"ccefff5f3f959f1d37e19067c06835e9f6c0b83e842799f1e23df0f4bbc87074": {
+"gid": 1471,
+"name": "uni0964",
+"kind": "base",
+"codepoints": [
+2404
+]
+},
+"ebde64a6bbd98da8815456793b23045cfbb92685a9589a92210a06c77993c9ef": {
+"gid": 1472,
+"name": "uni0965",
+"kind": "base",
+"codepoints": [
+2405
+]
+},
+"d5760884a7f260ebe63f67cb89ae13315a61d91d6bd470b9a475a271fd72a364": {
+"gid": 1473,
+"name": "uni0966",
+"kind": "base",
+"codepoints": [
+2406
+]
+},
+"05df3141282b60f1ecb51078b744cfb890114c2809b38b64b3a1ef5ca0b99c65": {
+"gid": 1474,
+"name": "uni0967",
+"kind": "base",
+"codepoints": [
+2407
+]
+},
+"5ba5b44a2af5ec5f70d2d0dfd0a865f62a42f0e3f385182be91fb5befc4283c2": {
+"gid": 1475,
+"name": "uni0968",
+"kind": "base",
+"codepoints": [
+2408
+]
+},
+"208b6b7beff29300f649193d7cb2965e3913e93fc6b97a400a628b1278861635": {
+"gid": 1476,
+"name": "uni0969",
+"kind": "base",
+"codepoints": [
+2409
+]
+},
+"35b0cd34734f7ba73ef04582451f4c98a30e7d3e5578303c5acb2a523a2b5ef9": {
+"gid": 1477,
+"name": "uni096A",
+"kind": "base",
+"codepoints": [
+2410
+]
+},
+"88328ea935a0f72571207dc8f7d9c45e58739a22d7152ab72af82a98ffbc04db": {
+"gid": 1478,
+"name": "uni096B",
+"kind": "base",
+"codepoints": [
+2411
+]
+},
+"2512c22ae27c87f0349bc0dd5d4cc01f5dae6439b61c9c2368a4dc82455491c0": {
+"gid": 1479,
+"name": "uni096C",
+"kind": "base",
+"codepoints": [
+2412
+]
+},
+"d6d97b6e072982a0492493e4510bff793fb751b658c5667e06d9fa653069636e": {
+"gid": 1480,
+"name": "uni096D",
+"kind": "base",
+"codepoints": [
+2413
+]
+},
+"cb7632a5a04c45d55d7030eb3ea89b80a705ec612a4a8311dd06bed49ab0843f": {
+"gid": 1481,
+"name": "uni096E",
+"kind": "base",
+"codepoints": [
+2414
+]
+},
+"9a4ec1ae0d20d8847185c361ea480aa62b2cf41661009ca9f9c23594fbbd4591": {
+"gid": 1482,
+"name": "uni096F",
+"kind": "base",
+"codepoints": [
+2415
+]
+},
+"594cf86ddb05712cb8f476b24a731caba1eccb8f160d49523c776907b6a53efa": {
+"gid": 1483,
+"name": "uni0970",
+"kind": "base",
+"codepoints": [
+2416
+]
+},
+"1630dc302f49f9ddd178fb98fce9e24e7e9c8ca204959fe93248a583edfd53f7": {
+"gid": 3237,
+"name": "figuredash",
+"kind": "base",
+"codepoints": [
+8210
+]
+},
+"c4db6fbfbbf40d252b705cd3e32e4e079432f8497557486dade385127bf7df24": {
+"gid": 3238,
+"name": "endash",
+"kind": "base",
+"codepoints": [
+8211
+]
+},
+"8ede5993060b04ccfa582976adf812a5bfaf29532bf4f7d227042bb786da43ce": {
+"gid": 3239,
+"name": "emdash",
+"kind": "base",
+"codepoints": [
+8212
+]
+},
+"6dbcdb70a64ef3a3f87018315e7b037fb0890fc81501dbe7880c9c2daddb9567": {
+"gid": 3240,
+"name": "uni2015",
+"kind": "base",
+"codepoints": [
+8213
+]
+},
+"52772a5f05f32b6e5685353c0652e9bd5eae58005b54da84a39e0084edb4aa11": {
+"gid": 3241,
+"name": "uni2016",
+"kind": "base",
+"codepoints": [
+8214
+]
+},
+"209791adad9fcdda1e8bcfbdbc55c7f1b6fda2e5252c92ec9b8d600a156bd876": {
+"gid": 3242,
+"name": "underscoredbl",
+"kind": "base",
+"codepoints": [
+8215
+]
+},
+"76657ff753f0084c3bfcb227d684c4ea94893ae7b5998b02950e2eaa76d210ff": {
+"gid": 3243,
+"name": "quoteleft",
+"kind": "base",
+"codepoints": [
+8216
+]
+},
+"537589d8aa21f4c0ea2301b9a19cba0140b5a525432beca91a467d50bf50e198": {
+"gid": 3244,
+"name": "quoteright",
+"kind": "base",
+"codepoints": [
+8217
+]
+},
+"27dbf33b1bc8f90a6ffa28c183b62bd12d4869254a12ead0c0c5542c961e5513": {
+"gid": 3245,
+"name": "quotesinglbase",
+"kind": "base",
+"codepoints": [
+8218
+]
+},
+"3542fca68455df77bc6367641f2f273fc126515f055545a116eb4b4fea5794a2": {
+"gid": 3246,
+"name": "quotereversed",
+"kind": "base",
+"codepoints": [
+8219
+]
+},
+"7998d1c30dc24101f0f09e91d75ed0dd0ffb944ee9951ee1e078d87b1e7bffcb": {
+"gid": 3247,
+"name": "quotedblleft",
+"kind": "base",
+"codepoints": [
+8220
+]
+},
+"542fd22313faf99bf4d4da7e561d094a1bdc4275e72b7f30652fd8b6a7b2e6c4": {
+"gid": 3248,
+"name": "quotedblright",
+"kind": "base",
+"codepoints": [
+8221
+]
+},
+"19a2a35a0170b2aceb3e79e7765268dfe14c88f45daf0eaae6fde69aba02ac31": {
+"gid": 3249,
+"name": "quotedblbase",
+"kind": "base",
+"codepoints": [
+8222
+]
+},
+"195e61e0942566a2ab73537081822751df17b23a8d8f27c4586bb1bcf6ebe349": {
+"gid": 3250,
+"name": "uni201F",
+"kind": "base",
+"codepoints": [
+8223
+]
+},
+"e51f26e4564f50cca74eae90d91236324ed48848694bf328d771565c05151683": {
+"gid": 3251,
+"name": "dagger",
+"kind": "base",
+"codepoints": [
+8224
+]
+},
+"137dbcdd405efc0414beb931c2a50dac9982086c060b464b1695a9d06b905e9a": {
+"gid": 3252,
+"name": "daggerdbl",
+"kind": "base",
+"codepoints": [
+8225
+]
+},
+"64623cbd6d48967622f0bc9b320cb49facc0dd8eae15faff02dec911bda11d33": {
+"gid": 3253,
+"name": "bullet",
+"kind": "base",
+"codepoints": [
+8226
+]
+},
+"5ce5813732bec3ae9dbdc2632670ac46a713858e533e6c04ed26c31b275b6b28": {
+"gid": 3254,
+"name": "uni2023",
+"kind": "base",
+"codepoints": [
+8227
+]
+},
+"e53d3ce4cdcf6b3f04ac3416ad00e47e1c900f71a1f32ffc2c9b4157c3c87fed": {
+"gid": 3256,
+"name": "twodotenleader",
+"kind": "base",
+"codepoints": [
+8229
+]
+},
+"a02b9a8268e73892514a219cd604d8153b30d6514da7ee76a348f96e83008f35": {
+"gid": 3257,
+"name": "ellipsis",
+"kind": "base",
+"codepoints": [
+8230
+]
+},
+"5f5b15870c63a846616b4c70e6386f5a2be9a916a2778f2275dd066e3f5e0ae4": {
+"gid": 3261,
+"name": "perthousand",
+"kind": "base",
+"codepoints": [
+8240
+]
+},
+"51a7a883ad79e27595d35e84600f435f672e326e9903994986ff73b25ec453ce": {
+"gid": 3262,
+"name": "uni2031",
+"kind": "base",
+"codepoints": [
+8241
+]
+},
+"9d2f098eb34ae4c9e43bb8dce75764517033db29cecae6cc2c05ca7ff984ac33": {
+"gid": 3263,
+"name": "minute",
+"kind": "base",
+"codepoints": [
+8242
+]
+},
+"42be72cd27887565efa69e484bf2fdd54fafb20dc188aa047a3f14c37d7753b7": {
+"gid": 3264,
+"name": "second",
+"kind": "base",
+"codepoints": [
+8243
+]
+},
+"1236290167d4d20947aa30a44dc949dc8d65749de2e1b563e9344b014f8f34c2": {
+"gid": 3265,
+"name": "uni2034",
+"kind": "base",
+"codepoints": [
+8244
+]
+},
+"0db63c9eaf93958999f9127b2d7a09f49da603ee1bb7bb0f8e0e2f3f5983d94c": {
+"gid": 3266,
+"name": "uni2035",
+"kind": "base",
+"codepoints": [
+8245
+]
+},
+"beb85d16b929474f9c3e460bf8e3d5b59373e4e8dc0bc334b6be71e289f1b6d9": {
+"gid": 3267,
+"name": "uni2036",
+"kind": "base",
+"codepoints": [
+8246
+]
+},
+"2d0dfc103886aca7a416db3b44d41b3558dcb66bb797399befe52a229029861f": {
+"gid": 3268,
+"name": "uni2037",
+"kind": "base",
+"codepoints": [
+8247
+]
+},
+"561ded937ee6b5d6e509862a15dadc178308651e0d9c1d4ef2b22792d501a419": {
+"gid": 3269,
+"name": "uni2038",
+"kind": "base",
+"codepoints": [
+8248
+]
+},
+"f7ec2d72f141712652c0f7f965153a7bf532c1e84bec220ce6fceb18d471641a": {
+"gid": 3270,
+"name": "guilsinglleft",
+"kind": "base",
+"codepoints": [
+8249
+]
+},
+"094dc67d1e1dd26cd76c501c5c476f6ef15ffe1a8543819e06d17d4482ae1620": {
+"gid": 3271,
+"name": "guilsinglright",
+"kind": "base",
+"codepoints": [
+8250
+]
+},
+"fad750e1e382f24509800cc8fd06d741d9bf883be815b5cd9266fe448a275a7d": {
+"gid": 3272,
+"name": "uni203B",
+"kind": "base",
+"codepoints": [
+8251
+]
+},
+"8d3573689ce64489ea805ba793d5e1c38f183ffc5275fd1c293a5ebafe232a9e": {
+"gid": 3273,
+"name": "exclamdbl",
+"kind": "base",
+"codepoints": [
+8252
+]
+},
+"05a1cdf93ad7d3b648f8232feb34f70a3ea13a68b37d4c2ccffe40563145f22b": {
+"gid": 3274,
+"name": "uni203D",
+"kind": "base",
+"codepoints": [
+8253
+]
+},
+"42721ac96b14528fa21e504a8cb527fec8ef41e885a6a732b1cabf77d0904331": {
+"gid": 3275,
+"name": "uni203E",
+"kind": "base",
+"codepoints": [
+8254
+]
+},
+"18e88e5193974ab5639fa92f9f033a53ade3031d8c214f727dff62468415a61a": {
+"gid": 3276,
+"name": "uni203F",
+"kind": "base",
+"codepoints": [
+8255
+]
+},
+"72f47a2323ca8be81beb432377516116b3babf3574c66e3f5e050dfc1750dca6": {
+"gid": 3277,
+"name": "uni2040",
+"kind": "base",
+"codepoints": [
+8256
+]
+},
+"24ef0316efb043e9fa67d75372821c4a7bd5066d48b2d5d2a99a72d2a614c2f9": {
+"gid": 3278,
+"name": "uni2041",
+"kind": "base",
+"codepoints": [
+8257
+]
+},
+"b38dbb7fe6e277d8353a03c0144df3e2b9f9d551047edc4e56031d7a550b9155": {
+"gid": 3279,
+"name": "uni2042",
+"kind": "base",
+"codepoints": [
+8258
+]
+},
+"7c77f79694a820d4ca4c0a47752d29baa2e6b72872cf783a2f2034881a3b1688": {
+"gid": 3280,
+"name": "uni2043",
+"kind": "base",
+"codepoints": [
+8259
+]
+},
+"593560989dd95e6a2af9d41924206389f0caeb7cd75eb3c920286930d3d0ec47": {
+"gid": 3281,
+"name": "fraction",
+"kind": "base",
+"codepoints": [
+8260
+]
+},
+"fc8b913366ae6d3b0b9efd19356d66e8f0e14ecb884bfa9571b1567002aba031": {
+"gid": 3282,
+"name": "uni2045",
+"kind": "base",
+"codepoints": [
+8261
+]
+},
+"9e8397a2518c74e7f3542d654ff0f0518fd3a9b4ab01ab6287cca51e3bdc257b": {
+"gid": 3283,
+"name": "uni2046",
+"kind": "base",
+"codepoints": [
+8262
+]
+},
+"1e535808511a1c041ac5244f5acad23fc80b4814e7885bb81e7a55261cc8031e": {
+"gid": 4285,
+"name": "uni25CC",
+"kind": "base",
+"codepoints": [
+9676
+]
+},
+"95455508dcebeba0e9a931b3004a096519c9b91b57e86a541b1faeab7d5cf5cb": {
+"gid": 6428,
+"name": "uniFE30",
+"kind": "base",
+"codepoints": [
+65072
+]
+},
+"32fe37240876db64e7fefe3fed72a94530c66e687d026aba68e31a59575f0244": {
+"gid": 6429,
+"name": "uniFE31",
+"kind": "base",
+"codepoints": [
+65073
+]
+},
+"abd4344ebc0e480545d6a8477ccaa13d09e6a3214afdd170cef84cb83d7b799d": {
+"gid": 6430,
+"name": "uniFE32",
+"kind": "base",
+"codepoints": [
+65074
+]
+},
+"5f66b3665c6a66a53af329867d6eeae8ee0bd4d03fe7aa5edf2ac02d89d6131a": {
+"gid": 6431,
+"name": "uniFE33",
+"kind": "base",
+"codepoints": [
+65075
+]
+},
+"0554cc839a3d4e7e5803c581ca1fa1da3cef4a42107e979e88ac384ab7081d5e": {
+"gid": 6433,
+"name": "uniFE35",
+"kind": "base",
+"codepoints": [
+65077
+]
+},
+"847c87a5328eb545cfb118b13c5e3935ba42774088439a6cc7aacdd69df62078": {
+"gid": 6434,
+"name": "uniFE36",
+"kind": "base",
+"codepoints": [
+65078
+]
+},
+"5d5cbe9c711702ff41bcceca30ee938a0bd2f8a2686f013ffc11bdf5c032f94e": {
+"gid": 6435,
+"name": "uniFE37",
+"kind": "base",
+"codepoints": [
+65079
+]
+},
+"dd77687d129d1af370d14c10d522d3b7020ccb3b7d050700c42ef7b424a82739": {
+"gid": 6436,
+"name": "uniFE38",
+"kind": "base",
+"codepoints": [
+65080
+]
+},
+"f2c6cf4872cc92d5b74c7c403086d4a4a6cf6d9c26f3b12e976e2c63389737ef": {
+"gid": 6942,
+"name": "glyph06942",
+"kind": "ligature",
+"codepoints": [
+2309,
+2364
+]
+},
+"3cbd56e663295a389f414a371644612b4d1fbaa89aa1d2b8f82a30e7b15a221e": {
+"gid": 6943,
+"name": "glyph06943",
+"kind": "ligature",
+"codepoints": [
+2310,
+2364
+]
+},
+"dc6591aa372f9e98b7772c7664ee50904adbd222558d71552a3c614d1274a684": {
+"gid": 6944,
+"name": "glyph06944",
+"kind": "ligature",
+"codepoints": [
+2311,
+2364
+]
+},
+"46266b62f2974310c961ef480244c70906c9e501c50a1262e9e8c127d89ed85d": {
+"gid": 6945,
+"name": "glyph06945",
+"kind": "ligature",
+"codepoints": [
+2312,
+2364
+]
+},
+"928efec9241e738f19afe0fec216b55b8c505326b4590ca5e140fff7bc7fe836": {
+"gid": 6946,
+"name": "glyph06946",
+"kind": "ligature",
+"codepoints": [
+2313,
+2364
+]
+},
+"eb4a974cb1b60f7164cde21dac1c3da7f05ddfda08e1a2d98ac211ab9f2fd4f2": {
+"gid": 6947,
+"name": "glyph06947",
+"kind": "ligature",
+"codepoints": [
+2314,
+2364
+]
+},
+"021b0b5aff238e12fee805ad1fd7d9064a678e5f20e699f632f40946230f75b9": {
+"gid": 6948,
+"name": "glyph06948",
+"kind": "ligature",
+"codepoints": [
+2317,
+2364
+]
+},
+"ab4e890475b956994dc337a3c6fa4c6920245f7dcbcc61cc879e18750985d387": {
+"gid": 6949,
+"name": "glyph06949",
+"kind": "ligature",
+"codepoints": [
+2318,
+2364
+]
+},
+"7ed6ab0adfb2de92a95275fddc619d04213994f06ea7f2f06a73a62f89a68ddf": {
+"gid": 6950,
+"name": "glyph06950",
+"kind": "ligature",
+"codepoints": [
+2319,
+2364
+]
+},
+"70db5a93ec6e16df5850b4429c4c509b753bc267600fbece977457245c16b2d9": {
+"gid": 6951,
+"name": "glyph06951",
+"kind": "ligature",
+"codepoints": [
+2320,
+2364
+]
+},
+"1cf542c4e0c640b76df5719c24a927acde68c3c169ce6a72c2996d2338c510d0": {
+"gid": 6952,
+"name": "glyph06952",
+"kind": "ligature",
+"codepoints": [
+2321,
+2364
+]
+},
+"80d4423aeed72ac60fbfa99939daecb2df6df9233d807e15bfb2ca8a3af82783": {
+"gid": 6953,
+"name": "glyph06953",
+"kind": "ligature",
+"codepoints": [
+2322,
+2364
+]
+},
+"0f927c2b91eac3566dce9a14f84855542bd2e78af1d1a6947f828d7d2adc738f": {
+"gid": 6954,
+"name": "glyph06954",
+"kind": "ligature",
+"codepoints": [
+2323,
+2364
+]
+},
+"ea6674d2eca10641ef059c362f32c99e89b9ff43058ba7875ea838c97026e1f9": {
+"gid": 6955,
+"name": "glyph06955",
+"kind": "ligature",
+"codepoints": [
+2324,
+2364
+]
+},
+"6c3e5665d2af244e74144dfa9b51ea2c44de19d0bfb886b8178bb6949f436d32": {
+"gid": 6956,
+"name": "glyph06956",
+"kind": "ligature",
+"codepoints": [
+2328,
+2364
+]
+},
+"63bf2af602cb7aa9baeba06f33386f04bbb9a57f2e0ec1603a6ef64011fda2c0": {
+"gid": 6957,
+"name": "glyph06957",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364
+]
+},
+"80ec145af787381125194a916faff4a6a41338b5ed958ed3fa3e9539a8251b2a": {
+"gid": 6958,
+"name": "glyph06958",
+"kind": "ligature",
+"codepoints": [
+2330,
+2364
+]
+},
+"b2c5c76cff4e3da60a0595d59380b059be46c067c51b3e4e5d87f6de13b58dea": {
+"gid": 6959,
+"name": "glyph06959",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364
+]
+},
+"874f2f21ce04274a50764914c78ccb3d33d661382fafbe703dd3d11a23c30087": {
+"gid": 6960,
+"name": "glyph06960",
+"kind": "ligature",
+"codepoints": [
+2333,
+2364
+]
+},
+"c618944d82fe15f31bde44ad0b59c4211e57d876d3c4b9558a428dc898456902": {
+"gid": 6961,
+"name": "glyph06961",
+"kind": "ligature",
+"codepoints": [
+2334,
+2364
+]
+},
+"aec57056ebb3e6d6ade96a032136aa2eb1b66eb74244357ac7e6121a94a26f52": {
+"gid": 6962,
+"name": "glyph06962",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364
+]
+},
+"7cf0e2c2c5265e4fd7f68be0e7d51beff216eb790ae1020bb558c958068361df": {
+"gid": 6963,
+"name": "glyph06963",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364
+]
+},
+"49d660c1f4f2149a2744153f2775c8b13644e8d75e204dbed5526e4cacb367d0": {
+"gid": 6964,
+"name": "glyph06964",
+"kind": "ligature",
+"codepoints": [
+2339,
+2364
+]
+},
+"d8b09f3e14c8a548c7cd988b82b35ebdf3fd5cbd7b18be4ab4a8d0dad2dff646": {
+"gid": 6965,
+"name": "glyph06965",
+"kind": "ligature",
+"codepoints": [
+2340,
+2364
+]
+},
+"44763dc288cf5399189766d453e0990a913f3431463ed5b8964c0d74d8557fe8": {
+"gid": 6966,
+"name": "glyph06966",
+"kind": "ligature",
+"codepoints": [
+2341,
+2364
+]
+},
+"446c3e139d417e26894cd9119274568032eb952bb36547456cd1f81227571fc5": {
+"gid": 6967,
+"name": "glyph06967",
+"kind": "ligature",
+"codepoints": [
+2342,
+2364
+]
+},
+"af0ba0441b8db13836c0ab5707b7bfbcddde5b86b6c20d589ba8aab54cd4b3cd": {
+"gid": 6968,
+"name": "glyph06968",
+"kind": "ligature",
+"codepoints": [
+2343,
+2364
+]
+},
+"2e630e42dd6e57b1d6e55781f25551ed9ea11f5cd9a5709ad12fb0aaddcfe179": {
+"gid": 6969,
+"name": "glyph06969",
+"kind": "ligature",
+"codepoints": [
+2346,
+2364
+]
+},
+"81f0257b0ffa0f858cec22a629124c37cfebb536e167f76776c1f79c3345df82": {
+"gid": 6970,
+"name": "glyph06970",
+"kind": "ligature",
+"codepoints": [
+2348,
+2364
+]
+},
+"e853fde8e7f4d4aedd97f0d91c25103a0b22d34d5ce0c92016f4c797348e01ea": {
+"gid": 6971,
+"name": "glyph06971",
+"kind": "ligature",
+"codepoints": [
+2349,
+2364
+]
+},
+"79435625726b4f82c6ca3350335fa502be8728d3df77dbf21fb8b70a7e768467": {
+"gid": 6972,
+"name": "glyph06972",
+"kind": "ligature",
+"codepoints": [
+2350,
+2364
+]
+},
+"c5655b3631e0338dd2a30ae4e42c948ea5765ae8f9bb609d08ab93810c1a789a": {
+"gid": 6973,
+"name": "glyph06973",
+"kind": "ligature",
+"codepoints": [
+2354,
+2364
+]
+},
+"90fa206ef5acb02f4fb5cb85888ef7034ea5b96cec1327c6fde4832a19e711df": {
+"gid": 6974,
+"name": "glyph06974",
+"kind": "ligature",
+"codepoints": [
+2357,
+2364
+]
+},
+"0e7880a36f6830efbfa557876c40665c5c0cba090cfb8dc4d47b26600949e6dc": {
+"gid": 6975,
+"name": "glyph06975",
+"kind": "ligature",
+"codepoints": [
+2358,
+2364
+]
+},
+"e78126865dce5916990de762f73297e480b42c08489adecc665e7f752eec11af": {
+"gid": 6976,
+"name": "glyph06976",
+"kind": "ligature",
+"codepoints": [
+2359,
+2364
+]
+},
+"205f38f36d21a1abe1d6f8f5d26614a821ac73a81e6079c762b00169bb615cb4": {
+"gid": 6977,
+"name": "glyph06977",
+"kind": "ligature",
+"codepoints": [
+2360,
+2364
+]
+},
+"a1fe844b5d6120d4a281c5778f55af861a9eaf77b71ec5f3fbbe95c640b47364": {
+"gid": 6978,
+"name": "glyph06978",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364
+]
+},
+"32af26ecc2a65049ca0b682881ecbeca9e2ab44b1170dd04010734b99bc941fd": {
+"gid": 6979,
+"name": "glyph06979",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2359
+]
+},
+"402a1ad38480c36de3ee138f782434ac627ea10fc1f933f3151f17f38bcc2779": {
+"gid": 6980,
+"name": "glyph06980",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2334
+]
+},
+"d44df2540ad1e19ee5d7b9f1c84c38f3f13ab5f69c5fe9a69e382bf42db9de43": {
+"gid": 6981,
+"name": "glyph06981",
+"kind": "ligature",
+"codepoints": [
+2352,
+2381
+]
+},
+"ae9c5c32017128831bc45ffef955d252c828caac201b4458dd6d7ea2373688a3": {
+"gid": 6982,
+"name": "glyph06982",
+"kind": "ligature",
+"codepoints": [
+2352,
+2381
+]
+},
+"cb65c0505eef0e8aed0d98f1168d1ab1ee21ab42ce338deb5734236f5537a8ce": {
+"gid": 6989,
+"name": "glyph06989",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381
+]
+},
+"b191262597da2efa51dd8211f89e70efe2260ba2b3c5a8cc332d4a6c0d0eb6d1": {
+"gid": 6990,
+"name": "glyph06990",
+"kind": "ligature",
+"codepoints": [
+2326,
+2381
+]
+},
+"1538ec505b0dd01e8aa310549e82728676e7f0b9f4d4f62b8822abc8336e6ff0": {
+"gid": 6991,
+"name": "glyph06991",
+"kind": "ligature",
+"codepoints": [
+2327,
+2381
+]
+},
+"0b31f7a0eee0723f04099facd4566247981b7bc2456619435b377e369f1caae7": {
+"gid": 6992,
+"name": "glyph06992",
+"kind": "ligature",
+"codepoints": [
+2328,
+2381
+]
+},
+"639040b271d6ba36af66da3bf320edd8008bc971bd85e7b9759a8b23a485e74a": {
+"gid": 6993,
+"name": "glyph06993",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381
+]
+},
+"b961274b28cd5cc538ce459a92dd23c24c45b4ed73545de96cb17b2515587709": {
+"gid": 6994,
+"name": "glyph06994",
+"kind": "ligature",
+"codepoints": [
+2330,
+2381
+]
+},
+"238171e058c0f70ddd4d0b4e8de2f66597139f0f4de668a80ce7f661de0183ca": {
+"gid": 6995,
+"name": "glyph06995",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381
+]
+},
+"c2d8d8e7451885225ee2b67db2de284ce88036eceb666fecb071f80b79a37ef1": {
+"gid": 6996,
+"name": "glyph06996",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381
+]
+},
+"2b1d3eac9f1d8f6b663c5904e84abf2a21c6a662e9238b7b5c4e501b39b2aa82": {
+"gid": 6997,
+"name": "glyph06997",
+"kind": "ligature",
+"codepoints": [
+2333,
+2381
+]
+},
+"ca2e7e84a75b9187490e5163a86bcb58e7c5c66e4d754d27fd7b2bb36dcd8d28": {
+"gid": 6998,
+"name": "glyph06998",
+"kind": "ligature",
+"codepoints": [
+2334,
+2381
+]
+},
+"7dfb6cbac6a83c72df7f5b8db8b08c1b51f44f194f04264dc7a0d00af54741df": {
+"gid": 6999,
+"name": "glyph06999",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381
+]
+},
+"d50cca4b7a0b9b2e8c312a46d1c0967bc752917391b6fec09c4a7e83ea4af107": {
+"gid": 7000,
+"name": "glyph07000",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381
+]
+},
+"ad4560a71d0651a3109f9c3aa67d14b3b579dbe3b7111c827531d4bd266f6c05": {
+"gid": 7001,
+"name": "glyph07001",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381
+]
+},
+"f4d88c33517d11120786276f480331d9460b5d50caf0dc942c9e06b2e1b423c6": {
+"gid": 7002,
+"name": "glyph07002",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381
+]
+},
+"3050ab389f006361e8210a5dfedeedcf1ee2c32547163bff4e5e8f07b46d5d99": {
+"gid": 7003,
+"name": "glyph07003",
+"kind": "ligature",
+"codepoints": [
+2339,
+2381
+]
+},
+"8ab2e71ef2dff4ad2f9ef8e38a641c7e44bbc3fccc4e31ff23d1848c95f0042f": {
+"gid": 7004,
+"name": "glyph07004",
+"kind": "ligature",
+"codepoints": [
+2340,
+2381
+]
+},
+"a310a65fcac26068039eecba2bde888c36229f78558f4436ca9f1ae1b0e2c68e": {
+"gid": 7005,
+"name": "glyph07005",
+"kind": "ligature",
+"codepoints": [
+2341,
+2381
+]
+},
+"eb8f9e607f83988cb27ff7d61060c1ced3663bdc48b8c839f3a7a8279aae57aa": {
+"gid": 7006,
+"name": "glyph07006",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381
+]
+},
+"1782d5023efe7c9415c452bcc7208986771ae2298133346bcc327b0683f05cfc": {
+"gid": 7007,
+"name": "glyph07007",
+"kind": "ligature",
+"codepoints": [
+2343,
+2381
+]
+},
+"8a8028e77a2eadedc1fc88ef5e7fd51e9b3f887cd1597ed6c7ee2f9af1ddabe4": {
+"gid": 7008,
+"name": "glyph07008",
+"kind": "ligature",
+"codepoints": [
+2344,
+2381
+]
+},
+"90c7436d749c221091e627b635c1653f412422e36ae57e4260e1fbd945825d79": {
+"gid": 7009,
+"name": "glyph07009",
+"kind": "ligature",
+"codepoints": [
+2346,
+2381
+]
+},
+"d513d9979f8025ff9e24ca59ba77afa5d6a2354cd4bb910253497bb476dec2c9": {
+"gid": 7010,
+"name": "glyph07010",
+"kind": "ligature",
+"codepoints": [
+2347,
+2381
+]
+},
+"0c5ac87c4ba7c11e6f8c3dab22a96e6902e148c3be1172b914a050c139bdb180": {
+"gid": 7011,
+"name": "glyph07011",
+"kind": "ligature",
+"codepoints": [
+2348,
+2381
+]
+},
+"e89c6329363d494eb2139ef037dee6f730f9ac186172fcef9129aae25c24cfc0": {
+"gid": 7012,
+"name": "glyph07012",
+"kind": "ligature",
+"codepoints": [
+2349,
+2381
+]
+},
+"b2e89ea83a8d59d726cbe904f5eeb83190a7c9c39958d5e5713f03b88038ca01": {
+"gid": 7013,
+"name": "glyph07013",
+"kind": "ligature",
+"codepoints": [
+2350,
+2381
+]
+},
+"d20db54c76932ef284e350e83dbbbc97de50d23c8cff5404da785089d9d5bdb3": {
+"gid": 7014,
+"name": "glyph07014",
+"kind": "ligature",
+"codepoints": [
+2351,
+2381
+]
+},
+"51a41c0c7b806a59b0e160941b031edf5255eabb2dd842956065900c3ffe3ed3": {
+"gid": 7015,
+"name": "glyph07015",
+"kind": "ligature",
+"codepoints": [
+2352,
+2381
+]
+},
+"cdd0a6994d32548f12110c8932197c01ed41b55d1f4782f33aa173cd937eac6b": {
+"gid": 7016,
+"name": "glyph07016",
+"kind": "ligature",
+"codepoints": [
+2354,
+2381
+]
+},
+"2bea53c11f4da27e5d4147ba4fa70a0a0bc30883bb798d4fddd5d43e6c2babad": {
+"gid": 7017,
+"name": "glyph07017",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381
+]
+},
+"a0d4c39da6bb043a09bfd865b743556314f131a63ea8966ebd0de1f3c0587ece": {
+"gid": 7018,
+"name": "glyph07018",
+"kind": "ligature",
+"codepoints": [
+2357,
+2381
+]
+},
+"dfe228da6300c814dd217566dc41d9f6e051ccfa48933c11a71bbeca7f86df06": {
+"gid": 7019,
+"name": "glyph07019",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381
+]
+},
+"f5ec34309f55dcb31468ade3c238f74e17a06be85002dffac54da386235450a9": {
+"gid": 7020,
+"name": "glyph07020",
+"kind": "ligature",
+"codepoints": [
+2359,
+2381
+]
+},
+"33996525b250c1c999241fdc9c96b594c69cd56f9381b771e69f89a8f090d3df": {
+"gid": 7021,
+"name": "glyph07021",
+"kind": "ligature",
+"codepoints": [
+2360,
+2381
+]
+},
+"edef34c4024644e547eb2f13f3db5218d9a6f71470e6d449e0fa7555d6d504c5": {
+"gid": 7022,
+"name": "glyph07022",
+"kind": "ligature",
+"codepoints": [
+2361,
+2381
+]
+},
+"93c7965d23eecda31c2cd481d013649e81f10e24a85f7d7c22e3bffa9c4563aa": {
+"gid": 7023,
+"name": "glyph07023",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2359,
+2381
+]
+},
+"50299335c6e996bb03496596f3a7f3324b09ecb4569f1364304849c0e0a85071": {
+"gid": 7024,
+"name": "glyph07024",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2334,
+2381
+]
+},
+"7e22c50b2f8d61aa187c60d13ddf33990a67be94311cfa7438765f2e28ae49f9": {
+"gid": 7025,
+"name": "glyph07025",
+"kind": "ligature",
+"codepoints": [
+2392,
+2381
+]
+},
+"cb9503cc61541d1b6852e3dfc4818dadbbc09ca579206dfbcc6c30fe94b6a3b7": {
+"gid": 7026,
+"name": "glyph07026",
+"kind": "ligature",
+"codepoints": [
+2393,
+2381
+]
+},
+"5be929e42792664cd53cc88a5a971f88b1dd34e4a682d6e6449743a4d3587242": {
+"gid": 7027,
+"name": "glyph07027",
+"kind": "ligature",
+"codepoints": [
+2394,
+2381
+]
+},
+"49c5e6711c9fd8ee7531251b9eac82e4178bf7883ed087c827a44f6f7f94ac5d": {
+"gid": 7028,
+"name": "glyph07028",
+"kind": "ligature",
+"codepoints": [
+2328,
+2364,
+2381
+]
+},
+"50814c8c15536d2aeeda212e01c6086790b0fece71817c727400ff4e198bbe78": {
+"gid": 7029,
+"name": "glyph07029",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364,
+2381
+]
+},
+"3c16bffb63ad9e255314ad1a2f53fe0f72a624cb2a47652c5976831f0b36986c": {
+"gid": 7030,
+"name": "glyph07030",
+"kind": "ligature",
+"codepoints": [
+2330,
+2364,
+2381
+]
+},
+"fd71be2d6285159b7e561d8baa24f5c9bb45fc051eb4b039ed05aeb753211c70": {
+"gid": 7031,
+"name": "glyph07031",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364,
+2381
+]
+},
+"b01a0abc81fd4ee5651d3853d43b59f841744518213749414003cbf778106d66": {
+"gid": 7032,
+"name": "glyph07032",
+"kind": "ligature",
+"codepoints": [
+2395,
+2381
+]
+},
+"7c3ef08c6460e92c573a61849bb2a37b894efcee4fd9a930fecfabf2521d6871": {
+"gid": 7033,
+"name": "glyph07033",
+"kind": "ligature",
+"codepoints": [
+2333,
+2364,
+2381
+]
+},
+"0f612a30e0005c5f6d0e3641067ecce4f43df65d3da04a4ae0acd8e772f4c6c3": {
+"gid": 7034,
+"name": "glyph07034",
+"kind": "ligature",
+"codepoints": [
+2334,
+2364,
+2381
+]
+},
+"fb8c6a937e0a264cff194eb7ac3db175b6c95b7f89e864f33244a57db835195d": {
+"gid": 7035,
+"name": "glyph07035",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364,
+2381
+]
+},
+"2fec22f1b6c148472e578f63f06ddc2afab5a9cda3bd5216a5a5145cb2aa9b6d": {
+"gid": 7036,
+"name": "glyph07036",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364,
+2381
+]
+},
+"da4465d20b990e3255f37a8bca227afb9c5eea0753dbc268a5732b9e3deb2b13": {
+"gid": 7037,
+"name": "glyph07037",
+"kind": "ligature",
+"codepoints": [
+2396,
+2381
+]
+},
+"c6a00b7b8dcf302725674e5480dfe6afdf439c2690963f42462f84545ceb29f9": {
+"gid": 7038,
+"name": "glyph07038",
+"kind": "ligature",
+"codepoints": [
+2397,
+2381
+]
+},
+"69ed56450d151d23990cc1eb9c859ed5156dd034a74220c292a5845ffc460f42": {
+"gid": 7039,
+"name": "glyph07039",
+"kind": "ligature",
+"codepoints": [
+2339,
+2364,
+2381
+]
+},
+"c245dc554b6c13c61a36ddd75ccccb0c0aa0d6a2d3a67c5002b1239cff5ba9e7": {
+"gid": 7040,
+"name": "glyph07040",
+"kind": "ligature",
+"codepoints": [
+2340,
+2364,
+2381
+]
+},
+"fe89c42337653cf3bd7ce91c0c922733dc5f83d35dcda7a381cb3a02dec57718": {
+"gid": 7041,
+"name": "glyph07041",
+"kind": "ligature",
+"codepoints": [
+2341,
+2364,
+2381
+]
+},
+"fc72a054a147e2e46d56e2b9ae35cb9f6059bb1ca1fe62b6cf5d877330045e07": {
+"gid": 7042,
+"name": "glyph07042",
+"kind": "ligature",
+"codepoints": [
+2342,
+2364,
+2381
+]
+},
+"915decdb3984161fd4ea103b339404255c6332fcecc228c1ea55dc1fceb2095d": {
+"gid": 7043,
+"name": "glyph07043",
+"kind": "ligature",
+"codepoints": [
+2343,
+2364,
+2381
+]
+},
+"8610a7fdbd20d68b8e8257549cbe2685fe62d2b37bda83df46b24210ea1587ef": {
+"gid": 7044,
+"name": "glyph07044",
+"kind": "ligature",
+"codepoints": [
+2345,
+2381
+]
+},
+"2f271c1f1ed4db8cf2b9d689a6443ba8d76aabf06b8ac75946d128ae29268bfb": {
+"gid": 7045,
+"name": "glyph07045",
+"kind": "ligature",
+"codepoints": [
+2346,
+2364,
+2381
+]
+},
+"8c7ffb72c01d9880acffdfafc302bcedaf4b48b26b85d2abc64156ddbc1c5a7c": {
+"gid": 7046,
+"name": "glyph07046",
+"kind": "ligature",
+"codepoints": [
+2398,
+2381
+]
+},
+"1ecce3aa4db4fe9b1b10a7304221cc435fbf586a74dd3c42d457f19f1896f7ad": {
+"gid": 7047,
+"name": "glyph07047",
+"kind": "ligature",
+"codepoints": [
+2348,
+2364,
+2381
+]
+},
+"9e99840be9cc1ab369025e04cb8fd91b57fe6cc0a61c89f62f2e23b489d61e9c": {
+"gid": 7048,
+"name": "glyph07048",
+"kind": "ligature",
+"codepoints": [
+2349,
+2364,
+2381
+]
+},
+"7ab7e85732ba97cd503798f5509fa03e732d910ae25f93117b527b7fe3678462": {
+"gid": 7049,
+"name": "glyph07049",
+"kind": "ligature",
+"codepoints": [
+2350,
+2364,
+2381
+]
+},
+"604f464e467d8cd70c9f23f34b0eac3f0db6e50f0e8b59afd91851f60e9fc2a7": {
+"gid": 7050,
+"name": "glyph07050",
+"kind": "ligature",
+"codepoints": [
+2399,
+2381
+]
+},
+"745e888547d92007b6328c6f41995e4e29bb622406bba1f6785cd1451f1d2a53": {
+"gid": 7051,
+"name": "glyph07051",
+"kind": "ligature",
+"codepoints": [
+2353,
+2381
+]
+},
+"5aa135befda8bf128017d503b982fee571dcbbb74ae028fc54669b62d550f182": {
+"gid": 7052,
+"name": "glyph07052",
+"kind": "ligature",
+"codepoints": [
+2354,
+2364,
+2381
+]
+},
+"fd8e1767e80559ae0e32270d637e811d97f622d6f81ef8396d35940ad4d6a14f": {
+"gid": 7053,
+"name": "glyph07053",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381
+]
+},
+"faf5b202b45f8faa8977a5a7457d45cb3ed5185b94f71375efa794734b0c962a": {
+"gid": 7054,
+"name": "glyph07054",
+"kind": "ligature",
+"codepoints": [
+2357,
+2364,
+2381
+]
+},
+"e30b35050e176233725486eae45bdcb15bcab8e0c92dcca3fc5ac698a162b968": {
+"gid": 7055,
+"name": "glyph07055",
+"kind": "ligature",
+"codepoints": [
+2358,
+2364,
+2381
+]
+},
+"53234b65c98a3c4660abf24c3ebdebba4263aa26baf4250a41880100adef98e0": {
+"gid": 7056,
+"name": "glyph07056",
+"kind": "ligature",
+"codepoints": [
+2359,
+2364,
+2381
+]
+},
+"9cdef466da507b4fd084e6b6d075aac172dee82dd3710241e208d9a020dfae47": {
+"gid": 7057,
+"name": "glyph07057",
+"kind": "ligature",
+"codepoints": [
+2360,
+2364,
+2381
+]
+},
+"167d5d582da9ccdb5a444041b00c3c0400a61637ad01bf6c311f2ffe94b2d49f": {
+"gid": 7058,
+"name": "glyph07058",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2381
+]
+},
+"5e6b98927e14565196e6f72a621cd372033ce09e8659e2edaa7081c13a1bfe0f": {
+"gid": 7059,
+"name": "glyph07059",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2352
+]
+},
+"4f955839a3538ae8ab55bead693d91b5dface217988155abea456177e09bfcda": {
+"gid": 7060,
+"name": "glyph07060",
+"kind": "ligature",
+"codepoints": [
+2326,
+2381,
+2352
+]
+},
+"80967d4478ca7247ce9e8e58cf970820035b95cca44a52c6cf59a6ef86357d0b": {
+"gid": 7061,
+"name": "glyph07061",
+"kind": "ligature",
+"codepoints": [
+2327,
+2381,
+2352
+]
+},
+"b4624bfc0e42f5e49115a014ee62ceea443ce8340731c79eb33c9d71c7d6f7c3": {
+"gid": 7062,
+"name": "glyph07062",
+"kind": "ligature",
+"codepoints": [
+2328,
+2381,
+2352
+]
+},
+"b8be54f3819f4187825a682dcc851d1e093b003015684fa9a259dbef853ea55e": {
+"gid": 7063,
+"name": "glyph07063",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2352
+]
+},
+"5745e852bc5ef815b60792f10291a7af6bd053d3d0cff83efee7b60a5ff1fa9e": {
+"gid": 7064,
+"name": "glyph07064",
+"kind": "ligature",
+"codepoints": [
+2330,
+2381,
+2352
+]
+},
+"ca3fa3d4321e22e04029cad6c1f1c69c3de90130f74fe920e32f46295edd469d": {
+"gid": 7065,
+"name": "glyph07065",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381,
+2352
+]
+},
+"1b81b081adab23eeb30dcc874e8c070cea1bd1e12cde1b05b531e58c3395b9b8": {
+"gid": 7066,
+"name": "glyph07066",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2352
+]
+},
+"b265f182421a32bc8d2259f35f24f929e5c4ec28ca9a5a2e14e3ad1639e5ad19": {
+"gid": 7067,
+"name": "glyph07067",
+"kind": "ligature",
+"codepoints": [
+2333,
+2381,
+2352
+]
+},
+"632bbd1955d1316dd83ae2c4118701e2f6aaf3317fba79a2fb2e351bafa1b12e": {
+"gid": 7068,
+"name": "glyph07068",
+"kind": "ligature",
+"codepoints": [
+2334,
+2381,
+2352
+]
+},
+"f30d69c347678faae9bc6fb2bb4b30a30fa7fda49da92777760666f214c9d3be": {
+"gid": 7069,
+"name": "glyph07069",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2352
+]
+},
+"1aa36a41684c54c513b65e3aecde4fc5bfc52e23a93adbb875baec1c8301e60a": {
+"gid": 7070,
+"name": "glyph07070",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2352
+]
+},
+"0b5192f0e81fcb1539ecdd4ea1509af6bc905a2dbc94096a94116b04626e8db0": {
+"gid": 7071,
+"name": "glyph07071",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2352
+]
+},
+"12d8c61204240e6b24b655f06f8462f9f69f7e319b0879344ec8d22261c45a5b": {
+"gid": 7072,
+"name": "glyph07072",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2352
+]
+},
+"a6471d5174e60d6dde391a28b010389fc67b145d5359ae4bb5e951f338e5c78b": {
+"gid": 7073,
+"name": "glyph07073",
+"kind": "ligature",
+"codepoints": [
+2339,
+2381,
+2352
+]
+},
+"9bf257ce3e83d8fb10b99f155131e2e07dfebe71c4859c0702c9e3391a7bd942": {
+"gid": 7074,
+"name": "glyph07074",
+"kind": "ligature",
+"codepoints": [
+2340,
+2381,
+2352
+]
+},
+"3953c05b61aedc05b667bf4f70212e14d931b17e61ba84a4987a6eb31a0e8cbf": {
+"gid": 7075,
+"name": "glyph07075",
+"kind": "ligature",
+"codepoints": [
+2341,
+2381,
+2352
+]
+},
+"7718c539bcabdd98647dd07489995dd4afa3a2e23c6f5c56dc249237c1ac740b": {
+"gid": 7076,
+"name": "glyph07076",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2352
+]
+},
+"0963aad935bb49a880eb2432859f6922183df0e949510a5f75f43531c9608e1e": {
+"gid": 7077,
+"name": "glyph07077",
+"kind": "ligature",
+"codepoints": [
+2343,
+2381,
+2352
+]
+},
+"5c896f59825c64d6a9815d79fe488445d25d9bbbdc68c1b82bed5f9202e8e47d": {
+"gid": 7078,
+"name": "glyph07078",
+"kind": "ligature",
+"codepoints": [
+2344,
+2381,
+2352
+]
+},
+"4a077ab97968f38b56ab7780c910040d6058fc5142778a23862ab6a5a735b191": {
+"gid": 7079,
+"name": "glyph07079",
+"kind": "ligature",
+"codepoints": [
+2346,
+2381,
+2352
+]
+},
+"faf5e9f2f1e0b945b5dfa33569dceeb2a7aa366c67607460bfa2c0976e5aa673": {
+"gid": 7080,
+"name": "glyph07080",
+"kind": "ligature",
+"codepoints": [
+2347,
+2381,
+2352
+]
+},
+"b48990f68cdfd024d5127f414e01fb594e80649239b348c06971bd2eac128ba0": {
+"gid": 7081,
+"name": "glyph07081",
+"kind": "ligature",
+"codepoints": [
+2348,
+2381,
+2352
+]
+},
+"c76e83e84a1a079d1884d72f438f306fd661dac8757f14cdc0d7a5a4e2befa62": {
+"gid": 7082,
+"name": "glyph07082",
+"kind": "ligature",
+"codepoints": [
+2349,
+2381,
+2352
+]
+},
+"ecc6527b8d43e55017b701c790233c327ae6657102b06bb69f92475f106ba17c": {
+"gid": 7083,
+"name": "glyph07083",
+"kind": "ligature",
+"codepoints": [
+2350,
+2381,
+2352
+]
+},
+"f09558bc5615569f60cb49000372dece57f9c65640903f528424e521501d89f9": {
+"gid": 7084,
+"name": "glyph07084",
+"kind": "ligature",
+"codepoints": [
+2351,
+2381,
+2352
+]
+},
+"1402bc4d38e22a82fcbe70394ee3ca89fbc7488a8004d55a6b066116582399dc": {
+"gid": 7085,
+"name": "glyph07085",
+"kind": "ligature",
+"codepoints": [
+2354,
+2381,
+2352
+]
+},
+"9b1fd730a7248c90a170b852e135d2f3b407faf4a2439431e1d6a02760f3e5da": {
+"gid": 7086,
+"name": "glyph07086",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381,
+2352
+]
+},
+"b72431a6ab51535619d16cb4a1c3819a5f162a2a9f1e7ce9f0955326a6957ba8": {
+"gid": 7087,
+"name": "glyph07087",
+"kind": "ligature",
+"codepoints": [
+2357,
+2381,
+2352
+]
+},
+"dd16ccdeae583e9fa0182c10b4bf337ca9e08322970cb1873d6b42c83ce570f8": {
+"gid": 7088,
+"name": "glyph07088",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2352
+]
+},
+"9a3a0f4bd5d339d621d8e0ee82946b50a5fb479766aed193b0d2ac70d67ed92f": {
+"gid": 7089,
+"name": "glyph07089",
+"kind": "ligature",
+"codepoints": [
+2359,
+2381,
+2352
+]
+},
+"9b374af05e4f71f3dd0757528b0248460f57f7005639194172c66bca8d431adf": {
+"gid": 7090,
+"name": "glyph07090",
+"kind": "ligature",
+"codepoints": [
+2360,
+2381,
+2352
+]
+},
+"31158970a55ecdc1fcbe5c5204c210d62a0ec0e7ab0ac8c423bede75f396e0eb": {
+"gid": 7091,
+"name": "glyph07091",
+"kind": "ligature",
+"codepoints": [
+2361,
+2381,
+2352
+]
+},
+"3270bc1097dcdb761201fa667c0d31942b5314f7685485aa83734ffb80eb1439": {
+"gid": 7092,
+"name": "glyph07092",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2359,
+2381,
+2352
+]
+},
+"051ad9b55b820090ffc800bb94f95ed2451a4a2404b13447327d9f7624745677": {
+"gid": 7093,
+"name": "glyph07093",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2334,
+2381,
+2352
+]
+},
+"108ec96e37ca2b521526133570b48ecb3b92d8e98ca1d4c7f81f87bfef2af4eb": {
+"gid": 7094,
+"name": "glyph07094",
+"kind": "ligature",
+"codepoints": [
+2392,
+2381,
+2352
+]
+},
+"20647f694999997cc7ae49270aed337ad9197add1693753c67adf8bdf131297c": {
+"gid": 7095,
+"name": "glyph07095",
+"kind": "ligature",
+"codepoints": [
+2393,
+2381,
+2352
+]
+},
+"6682b0c024406ece09ff602692aa2b77ab22701f7f46737f7b7c42fe04338cd3": {
+"gid": 7096,
+"name": "glyph07096",
+"kind": "ligature",
+"codepoints": [
+2394,
+2381,
+2352
+]
+},
+"606e45eebf712999a1be61e1bd57001ea18316abb6af072daa00066a098b36d3": {
+"gid": 7097,
+"name": "glyph07097",
+"kind": "ligature",
+"codepoints": [
+2328,
+2364,
+2352,
+2381
+]
+},
+"0cfd2dacc97387a36d1f23f2bb25d2a3e1f7e19662b73eac1c50fbed7f5309ca": {
+"gid": 7098,
+"name": "glyph07098",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364,
+2352,
+2381
+]
+},
+"298d1636a62271141d94a133b88870b21994d3c14ab6827a850d7c7131ad7c49": {
+"gid": 7099,
+"name": "glyph07099",
+"kind": "ligature",
+"codepoints": [
+2330,
+2364,
+2352,
+2381
+]
+},
+"23c2efa5601710867073e2d39e9602e28cd9cfd33b88650bfc64cefbd5ef1a49": {
+"gid": 7100,
+"name": "glyph07100",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364,
+2352,
+2381
+]
+},
+"b7b176132dee42aeb9c5f41e39b0478121819af3e5b3c0954b1da6f7de3e821b": {
+"gid": 7101,
+"name": "glyph07101",
+"kind": "ligature",
+"codepoints": [
+2395,
+2381,
+2352
+]
+},
+"b2526fdcb28d392573b56648842c5fc79ea3b61a015e6e8b29f6657a0f320fbe": {
+"gid": 7102,
+"name": "glyph07102",
+"kind": "ligature",
+"codepoints": [
+2333,
+2364,
+2352,
+2381
+]
+},
+"46c710e73e83c822713bf425e45c1607aa4bb864c99387c751a26416a83a5089": {
+"gid": 7103,
+"name": "glyph07103",
+"kind": "ligature",
+"codepoints": [
+2334,
+2364,
+2352,
+2381
+]
+},
+"04be38e6a2064822c3ac1bb45e57543f9529785fa1d105dbeb3a204db2d82796": {
+"gid": 7104,
+"name": "glyph07104",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364,
+2352,
+2381
+]
+},
+"f799fe700b43c3cbcc7527d32aa8882d1bb85197a5b2b4b4053b8f9bbcfbd533": {
+"gid": 7105,
+"name": "glyph07105",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364,
+2352,
+2381
+]
+},
+"b5c2fd14a8bfd690a9355657c91018e524a936d52babe4e48914f80ef51b7c8d": {
+"gid": 7106,
+"name": "glyph07106",
+"kind": "ligature",
+"codepoints": [
+2396,
+2381,
+2352
+]
+},
+"4d7da4274822d4ec2084c7f51fd5028777d87e13efef3e434b4f60c16f05aa46": {
+"gid": 7107,
+"name": "glyph07107",
+"kind": "ligature",
+"codepoints": [
+2397,
+2381,
+2352
+]
+},
+"a268840c952e8d8aee8327f2dd5cd71be4065916d5ea0e98ccfd509589bc56aa": {
+"gid": 7108,
+"name": "glyph07108",
+"kind": "ligature",
+"codepoints": [
+2339,
+2364,
+2352,
+2381
+]
+},
+"bc06b7b5a2dec8167b0b5bf54aa77b185744231f44668db8e1deb707730041e6": {
+"gid": 7109,
+"name": "glyph07109",
+"kind": "ligature",
+"codepoints": [
+2340,
+2364,
+2352,
+2381
+]
+},
+"b441744fa3f302dfeadfbe87a38766395e345abc9cb383248f1e8c463ce1d717": {
+"gid": 7110,
+"name": "glyph07110",
+"kind": "ligature",
+"codepoints": [
+2341,
+2364,
+2352,
+2381
+]
+},
+"611e093d3ea6c5a8cd8e24b091c50548ae6c33a954ea8d3daf81e8034c35f947": {
+"gid": 7111,
+"name": "glyph07111",
+"kind": "ligature",
+"codepoints": [
+2342,
+2364,
+2352,
+2381
+]
+},
+"3615a86ed112bb736f7006930abc7a84c77763b66d95d462cd1d34a507cd4c7f": {
+"gid": 7112,
+"name": "glyph07112",
+"kind": "ligature",
+"codepoints": [
+2343,
+2364,
+2352,
+2381
+]
+},
+"d5a00e76f3fe9792b64c8ec1d43caa68df07566c9283ac89226d590ebb9d1286": {
+"gid": 7113,
+"name": "glyph07113",
+"kind": "ligature",
+"codepoints": [
+2345,
+2381,
+2352
+]
+},
+"45679e95f356e33677bf1fd666d00cc313227f90b2bbecafc0103599020f37b5": {
+"gid": 7114,
+"name": "glyph07114",
+"kind": "ligature",
+"codepoints": [
+2346,
+2364,
+2352,
+2381
+]
+},
+"1cf8554629e03cb99b873a9ea402472bacd6af062e982d374d4230c2fcd03da7": {
+"gid": 7115,
+"name": "glyph07115",
+"kind": "ligature",
+"codepoints": [
+2398,
+2381,
+2352
+]
+},
+"87bbb5ed05691ffa439a00c6fdd2345304927cccbbc24c590d5e699ea29268c8": {
+"gid": 7116,
+"name": "glyph07116",
+"kind": "ligature",
+"codepoints": [
+2348,
+2364,
+2352,
+2381
+]
+},
+"dcb389ca86975641a2ca7d3d7a9c523fb2002f6f6cba5084e04140418a0f84bf": {
+"gid": 7117,
+"name": "glyph07117",
+"kind": "ligature",
+"codepoints": [
+2349,
+2364,
+2352,
+2381
+]
+},
+"1bb8f5c9702c56c92cecc8f783eb984ff107638c298903bb6c034b5afc5529e7": {
+"gid": 7118,
+"name": "glyph07118",
+"kind": "ligature",
+"codepoints": [
+2350,
+2364,
+2352,
+2381
+]
+},
+"629618260ddd2439019f86cf3e27e55bee75a964f706e7404b5602f452f909e1": {
+"gid": 7119,
+"name": "glyph07119",
+"kind": "ligature",
+"codepoints": [
+2399,
+2381,
+2352
+]
+},
+"53add7595df6a1a78fa7f9fde5585bed55c631affa35bdc705760d390fbedd16": {
+"gid": 7120,
+"name": "glyph07120",
+"kind": "ligature",
+"codepoints": [
+2354,
+2364,
+2352,
+2381
+]
+},
+"3aeaad37e15acba9e05aadf0d8d3c26ec16f262be9b771fc32a05e6f4d1b6c67": {
+"gid": 7121,
+"name": "glyph07121",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381,
+2352
+]
+},
+"dc02a51d0fb3271a4cc007da759699df94e5c372eae527f3aae03c52d9db3473": {
+"gid": 7122,
+"name": "glyph07122",
+"kind": "ligature",
+"codepoints": [
+2357,
+2364,
+2352,
+2381
+]
+},
+"13f5d40452a2ce45b8193067f08aeb01fb171363a21af75e39dfb06473cb3e64": {
+"gid": 7123,
+"name": "glyph07123",
+"kind": "ligature",
+"codepoints": [
+2358,
+2364,
+2352,
+2381
+]
+},
+"c7457987f5a9878d54c682dfe7018dd129f0e4e78aa07558d4fde26fccc961f4": {
+"gid": 7124,
+"name": "glyph07124",
+"kind": "ligature",
+"codepoints": [
+2359,
+2364,
+2352,
+2381
+]
+},
+"d51a13d9dbb98d3315868685ba090afcef52065f62b312af3c2fb870144c23a0": {
+"gid": 7125,
+"name": "glyph07125",
+"kind": "ligature",
+"codepoints": [
+2360,
+2364,
+2352,
+2381
+]
+},
+"45305cdbd9c9e6bea2771d0e2f12587b47176e2133f4de552fba6f700e6cb5da": {
+"gid": 7126,
+"name": "glyph07126",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2352,
+2381
+]
+},
+"fc01bbdd74d93526d52c0efac484170a5ce8ccd690a1ca045bba07de2c2911f1": {
+"gid": 7127,
+"name": "glyph07127",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2352,
+2381
+]
+},
+"0522b7d11751de3dbc4651696ccb6e7113e0e88d392fb0c41e90155725726fb0": {
+"gid": 7128,
+"name": "glyph07128",
+"kind": "ligature",
+"codepoints": [
+2326,
+2381,
+2352,
+2381
+]
+},
+"31def3346d08a8901b24e4f5f03befcc1e7b1e3fdb1949ceca7a20c985a924df": {
+"gid": 7129,
+"name": "glyph07129",
+"kind": "ligature",
+"codepoints": [
+2327,
+2381,
+2352,
+2381
+]
+},
+"3f4fb74524332a93332f186479f4da25b0a2ada744139836394a28275b5c9ccb": {
+"gid": 7130,
+"name": "glyph07130",
+"kind": "ligature",
+"codepoints": [
+2328,
+2381,
+2352,
+2381
+]
+},
+"9333b85deab675ee9efb12c2d06e9e84f72c1b998d80ec49e9b054f2d90c4d41": {
+"gid": 7131,
+"name": "glyph07131",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2352,
+2381
+]
+},
+"0a81f3d41b2e075adea2c8836fc0e28fc9e0912a78cdd167b9d5aeed8702c99a": {
+"gid": 7132,
+"name": "glyph07132",
+"kind": "ligature",
+"codepoints": [
+2330,
+2381,
+2352,
+2381
+]
+},
+"ac2c165764968d25d9c7ed1981a0ffd9c931cf10a454679c82017d8841dc750c": {
+"gid": 7133,
+"name": "glyph07133",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381,
+2352,
+2381
+]
+},
+"93778c964fd478a267921e8f2b496fb2c997b0cdb8336db00e28418f9d042153": {
+"gid": 7134,
+"name": "glyph07134",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2352,
+2381
+]
+},
+"a1a9e958f17e12824f84f288945ae91d68cc62e32b84f29a8e02ce3f75517492": {
+"gid": 7135,
+"name": "glyph07135",
+"kind": "ligature",
+"codepoints": [
+2333,
+2381,
+2352,
+2381
+]
+},
+"abb353de64663f69c7e4d95d9a7cb22d5022e6a1e5747e035e33b5d1257ea4f9": {
+"gid": 7136,
+"name": "glyph07136",
+"kind": "ligature",
+"codepoints": [
+2334,
+2381,
+2352,
+2381
+]
+},
+"398266d6bfe8a069694f5dcdd29dc208fdc714f8fd7a5aa1844c2bc6e0a2a08f": {
+"gid": 7137,
+"name": "glyph07137",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2352,
+2381
+]
+},
+"9e9635602094e384168a0797ab6552e35eede9d481e7d230aa8098eb0a34ae61": {
+"gid": 7138,
+"name": "glyph07138",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2352,
+2381
+]
+},
+"9fccf0eeeeccf5159731d0ac7276a966759d405baffece9561bc6a3e06658122": {
+"gid": 7139,
+"name": "glyph07139",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2352,
+2381
+]
+},
+"7b79e1e6fb807d23d75d9a1ed30fac7e7729f7749e35a95c1087e2a037b623b9": {
+"gid": 7140,
+"name": "glyph07140",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2352,
+2381
+]
+},
+"11c52d410237763961493d2a5add28daf7563c0c9fbe87f3b6811faf41eab07c": {
+"gid": 7141,
+"name": "glyph07141",
+"kind": "ligature",
+"codepoints": [
+2339,
+2381,
+2352,
+2381
+]
+},
+"0d0acd53cde3428a7aa122099702f1ac3d8800d763e1a28c62f4bbb67df160b6": {
+"gid": 7142,
+"name": "glyph07142",
+"kind": "ligature",
+"codepoints": [
+2340,
+2381,
+2352,
+2381
+]
+},
+"9746dbdbe0609cbf7251f48024f88b18208ea0ecf15a90a3e7899071a091540c": {
+"gid": 7143,
+"name": "glyph07143",
+"kind": "ligature",
+"codepoints": [
+2341,
+2381,
+2352,
+2381
+]
+},
+"23e326c60afe18971fbcde85b766873849b6f05c11e9d2b0037f0d5f499b0c0e": {
+"gid": 7144,
+"name": "glyph07144",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2352,
+2381
+]
+},
+"703e8e0dc6226bf46eaa9361fe52e1a5359722faf699b5be5d3c7823594ef692": {
+"gid": 7145,
+"name": "glyph07145",
+"kind": "ligature",
+"codepoints": [
+2343,
+2381,
+2352,
+2381
+]
+},
+"b8aeaeb5cf528fa50add5d35503e5abaca6daedd0b3f3c78057f997ed2713fc1": {
+"gid": 7146,
+"name": "glyph07146",
+"kind": "ligature",
+"codepoints": [
+2344,
+2381,
+2352,
+2381
+]
+},
+"12a4035bc31fb5a9e42902d60c39d725850e2f3bcc901b56b73852e9d7cb7be6": {
+"gid": 7147,
+"name": "glyph07147",
+"kind": "ligature",
+"codepoints": [
+2346,
+2381,
+2352,
+2381
+]
+},
+"3a07875a855e1dad204b2bf9e5ac480542f9e2527aa6da046adabb9b8234e43d": {
+"gid": 7148,
+"name": "glyph07148",
+"kind": "ligature",
+"codepoints": [
+2347,
+2381,
+2352,
+2381
+]
+},
+"61a2b95d6c6afa2beb623a4ea14b02e17ff35ef322c6964792125d7fce8f7b13": {
+"gid": 7149,
+"name": "glyph07149",
+"kind": "ligature",
+"codepoints": [
+2348,
+2381,
+2352,
+2381
+]
+},
+"4d206291bc707dd6e227b91d034d5a80d143ede820a8001e2c1be1f2261c2acc": {
+"gid": 7150,
+"name": "glyph07150",
+"kind": "ligature",
+"codepoints": [
+2349,
+2381,
+2352,
+2381
+]
+},
+"b0fdcba6086383219e1aebe376813dd28c8b2f9099708f8b30532474844c0514": {
+"gid": 7151,
+"name": "glyph07151",
+"kind": "ligature",
+"codepoints": [
+2350,
+2381,
+2352,
+2381
+]
+},
+"4d323d74ce7d8253fed16e1a15512aee9551eb506fd64ab374f922dae8c96218": {
+"gid": 7152,
+"name": "glyph07152",
+"kind": "ligature",
+"codepoints": [
+2351,
+2381,
+2352,
+2381
+]
+},
+"600f18cecbb60cfe531fd6d1b8fd361753496bc298c45219f93de21423d390d6": {
+"gid": 7153,
+"name": "glyph07153",
+"kind": "ligature",
+"codepoints": [
+2354,
+2381,
+2352,
+2381
+]
+},
+"4f937e4633ae3347a5182db6cc11ac9fecf44d1910f656766c23a3356c4fea5b": {
+"gid": 7154,
+"name": "glyph07154",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381,
+2352,
+2381
+]
+},
+"4f3703eccdae348eacf7fbb2d896130fac5d277164ef04b0b82a337a370ba6cf": {
+"gid": 7155,
+"name": "glyph07155",
+"kind": "ligature",
+"codepoints": [
+2357,
+2381,
+2352,
+2381
+]
+},
+"7b7ada361b9f891615982d6004c5e94f5b70d802895719d39821020c875050d5": {
+"gid": 7156,
+"name": "glyph07156",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2352,
+2381
+]
+},
+"3ac60da3629ad772ea1a11eb9d7728440f6ca0469ac8e57875c94549ac1a88b0": {
+"gid": 7157,
+"name": "glyph07157",
+"kind": "ligature",
+"codepoints": [
+2359,
+2381,
+2352,
+2381
+]
+},
+"ddbf92f47d06b1c3f2d9db415d4af8d0ef6f4764323113667ce21956f17a6978": {
+"gid": 7158,
+"name": "glyph07158",
+"kind": "ligature",
+"codepoints": [
+2360,
+2381,
+2352,
+2381
+]
+},
+"a778f2a96b97d597c6a2cc996d7af7014951d2bf8563fdd7ce04bb007582885f": {
+"gid": 7159,
+"name": "glyph07159",
+"kind": "ligature",
+"codepoints": [
+2361,
+2381,
+2352,
+2381
+]
+},
+"18b080563638e224efaba37795d354198407cb04b0856a1b08eabb7a50aa75a6": {
+"gid": 7160,
+"name": "glyph07160",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2359,
+2381,
+2352,
+2381
+]
+},
+"c73c3d5db9dfd0d02594c880ee6812b35d616ac6b954a483450fe83ed57d6e67": {
+"gid": 7161,
+"name": "glyph07161",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2334,
+2381,
+2352,
+2381
+]
+},
+"e84fd4c483cf8b7af451c5ffb9f6907817d2a3ff2034df9d565f22fca8e9fc0e": {
+"gid": 7162,
+"name": "glyph07162",
+"kind": "ligature",
+"codepoints": [
+2392,
+2381,
+2352,
+2381
+]
+},
+"51b79221126bdc0482143d0a5ef1a12210c7a770e9c7b12a3b457029602f6102": {
+"gid": 7163,
+"name": "glyph07163",
+"kind": "ligature",
+"codepoints": [
+2393,
+2381,
+2352,
+2381
+]
+},
+"fcd64fb2a8625a83991d6226c33d998941f764db982356307ff85d8394c67c20": {
+"gid": 7164,
+"name": "glyph07164",
+"kind": "ligature",
+"codepoints": [
+2394,
+2381,
+2352,
+2381
+]
+},
+"69324e755717f5802804a491feba45467ca57f54ee4b2dea6b2829c2f44ffaab": {
+"gid": 7165,
+"name": "glyph07165",
+"kind": "ligature",
+"codepoints": [
+2328,
+2364,
+2381,
+2352,
+2381
+]
+},
+"a4e5d45b7428611935b1d7335cacfb55b81571e9cbc9fbcd51009fdca82cd7de": {
+"gid": 7166,
+"name": "glyph07166",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364,
+2381,
+2352,
+2381
+]
+},
+"adb028799297de0206d578c79d3c0864d49d6631c6037a45f278d8284c9e0c14": {
+"gid": 7167,
+"name": "glyph07167",
+"kind": "ligature",
+"codepoints": [
+2330,
+2364,
+2381,
+2352,
+2381
+]
+},
+"82c4d222ca0b2abeef2fd2b6531d260157c0453722dcf19978362cbff40967d3": {
+"gid": 7168,
+"name": "glyph07168",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364,
+2381,
+2352,
+2381
+]
+},
+"1c8b46d82987005bb724494d035be9fb9be098f6d20c2c248f6800cd5311c21b": {
+"gid": 7169,
+"name": "glyph07169",
+"kind": "ligature",
+"codepoints": [
+2395,
+2381,
+2352,
+2381
+]
+},
+"ac2291df25edc390e1faad2354fe9fb9f3f241bb51712232243fa32d02ed26fd": {
+"gid": 7170,
+"name": "glyph07170",
+"kind": "ligature",
+"codepoints": [
+2333,
+2364,
+2381,
+2352,
+2381
+]
+},
+"5f2cfefded0782e5464b55472a84ca253065415e74540d8adbe218ec0ea06aca": {
+"gid": 7171,
+"name": "glyph07171",
+"kind": "ligature",
+"codepoints": [
+2334,
+2364,
+2381,
+2352,
+2381
+]
+},
+"793af62ff45f61ced9186fffbc5602a21457c566e18a4d1d54d50c33d97a1503": {
+"gid": 7172,
+"name": "glyph07172",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364,
+2381,
+2352,
+2381
+]
+},
+"deb5ddf25bc46b0e84a31d157d5777016268420fdd5a1383f064066916816765": {
+"gid": 7173,
+"name": "glyph07173",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364,
+2381,
+2352,
+2381
+]
+},
+"8a65fd789e780f2ef55cf92c01b4b41944b0c4332a1870c5cd9d94e7325e1cae": {
+"gid": 7174,
+"name": "glyph07174",
+"kind": "ligature",
+"codepoints": [
+2396,
+2381,
+2352,
+2381
+]
+},
+"fbd28ff7b00dddf57a2115c9e455d0012a86b9d08ecfe91120b05331c898af4f": {
+"gid": 7175,
+"name": "glyph07175",
+"kind": "ligature",
+"codepoints": [
+2397,
+2381,
+2352,
+2381
+]
+},
+"fdd563a3b92a63c44da6474e1a7e2b9e52868d071bac8806100164bbd2e9eadd": {
+"gid": 7176,
+"name": "glyph07176",
+"kind": "ligature",
+"codepoints": [
+2339,
+2364,
+2381,
+2352,
+2381
+]
+},
+"aec0c9825d2a4dfea2f3037991f4b9207067e18178b4b5bebc6231519f024fe4": {
+"gid": 7177,
+"name": "glyph07177",
+"kind": "ligature",
+"codepoints": [
+2340,
+2364,
+2381,
+2352,
+2381
+]
+},
+"0f4fafa646173d4107213d6b25762779797e87931bc12d0deea78ed87937fe02": {
+"gid": 7178,
+"name": "glyph07178",
+"kind": "ligature",
+"codepoints": [
+2341,
+2364,
+2381,
+2352,
+2381
+]
+},
+"d26b7613df732872555b4b50da2ec1ff18f8eb575016372216169c103030abb4": {
+"gid": 7179,
+"name": "glyph07179",
+"kind": "ligature",
+"codepoints": [
+2342,
+2364,
+2381,
+2352,
+2381
+]
+},
+"fbb12c324d31d485f1065cb6e01ff365729a937ee4e17d0ced8b3b6943fe7fdd": {
+"gid": 7180,
+"name": "glyph07180",
+"kind": "ligature",
+"codepoints": [
+2343,
+2364,
+2381,
+2352,
+2381
+]
+},
+"7730d884ef2111a26af02de50403c612e346221eba2a9f0e55929c09217801a6": {
+"gid": 7181,
+"name": "glyph07181",
+"kind": "ligature",
+"codepoints": [
+2345,
+2381,
+2352,
+2381
+]
+},
+"2d53a96c27a49b6d0cf53bee1f8ea4e68561b9eff20c8cccdfa0466fc22a0f3c": {
+"gid": 7182,
+"name": "glyph07182",
+"kind": "ligature",
+"codepoints": [
+2346,
+2364,
+2381,
+2352,
+2381
+]
+},
+"9330706e6bdaa2380ad0a968df9579b7030176793b53df1fdd043d9015250015": {
+"gid": 7183,
+"name": "glyph07183",
+"kind": "ligature",
+"codepoints": [
+2398,
+2381,
+2352,
+2381
+]
+},
+"d5b8ca8654ed5b4296e08ea42f3e8c6226026edb6aeaaa97b11a63cfd20863bb": {
+"gid": 7184,
+"name": "glyph07184",
+"kind": "ligature",
+"codepoints": [
+2348,
+2364,
+2381,
+2352,
+2381
+]
+},
+"e08834643f0ce78492fa8bda1321cf357a94147feeeb414d6f3f7f6bd93968f1": {
+"gid": 7185,
+"name": "glyph07185",
+"kind": "ligature",
+"codepoints": [
+2349,
+2364,
+2381,
+2352,
+2381
+]
+},
+"6be18e0f91c0329f211ded0e50c26aa87e1e4091ef2cfa546d80f679156ccfa7": {
+"gid": 7186,
+"name": "glyph07186",
+"kind": "ligature",
+"codepoints": [
+2350,
+2364,
+2381,
+2352,
+2381
+]
+},
+"896d19f535ec92beeef31515fb197cbba33471ed4fcccafb57b8e6781e709625": {
+"gid": 7187,
+"name": "glyph07187",
+"kind": "ligature",
+"codepoints": [
+2399,
+2381,
+2352,
+2381
+]
+},
+"9a53804fca8165e5ab66d07328fa46c2e18b5b2bc3ec9350e4437c73b36f66ae": {
+"gid": 7188,
+"name": "glyph07188",
+"kind": "ligature",
+"codepoints": [
+2354,
+2364,
+2381,
+2352,
+2381
+]
+},
+"bf36e64bf5aad8e0a179503eecb473dbe30ab328fde3a43d44418c64c942a409": {
+"gid": 7189,
+"name": "glyph07189",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381,
+2352,
+2381
+]
+},
+"7e60a8ff70fb9d01950aac17b30c32a4e4de0b88240eb43f481c0bf2c31ff717": {
+"gid": 7190,
+"name": "glyph07190",
+"kind": "ligature",
+"codepoints": [
+2357,
+2364,
+2381,
+2352,
+2381
+]
+},
+"bfe75ddb853bca92ee35ea26c87d532ae2c3f568d61a921411069115de8dd006": {
+"gid": 7191,
+"name": "glyph07191",
+"kind": "ligature",
+"codepoints": [
+2358,
+2364,
+2381,
+2352,
+2381
+]
+},
+"191b0a9884a02e31fdba41693a770b5c6799f4f14fadb7a3e91d6b510c73880a": {
+"gid": 7192,
+"name": "glyph07192",
+"kind": "ligature",
+"codepoints": [
+2359,
+2364,
+2381,
+2352,
+2381
+]
+},
+"211c3797c3270e376ed2df7458fe19aff055c9063f123615a2a2bb9146912b4e": {
+"gid": 7193,
+"name": "glyph07193",
+"kind": "ligature",
+"codepoints": [
+2360,
+2364,
+2381,
+2352,
+2381
+]
+},
+"051f361ba1dd844df571869b61ee88989cc73f60a2323f76deef2e2c53aeecf9": {
+"gid": 7194,
+"name": "glyph07194",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2381,
+2352,
+2381
+]
+},
+"4a7e1802642d6e3840c49c88067f7a7892b5ca18533065bbf501a03d427d7ee4": {
+"gid": 7195,
+"name": "glyph07195",
+"kind": "variant",
+"codepoints": [
+2369
+]
+},
+"a2953dfcf085c75e7321def06e113ddb4696d84dbf0ada41747bd6fa3e23263c": {
+"gid": 7207,
+"name": "glyph07207",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2352,
+2370
+]
+},
+"558434709e8df3b4b5cc9c9ca2c4c2a4fdb78e72e7feb545a413c35f6b842e17": {
+"gid": 7208,
+"name": "glyph07208",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2352,
+2369
+]
+},
+"0d4e72c481b0bbaa09b3473a18c1f84cf69e841962c45ee675fe2da51ee93ee4": {
+"gid": 7209,
+"name": "glyph07209",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2352,
+2371
+]
+},
+"57ff75ed83cdff20418a38f35eda86d5d45b7ff3bf1eed954386c3ebb08c2fef": {
+"gid": 7210,
+"name": "glyph07210",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2352,
+2372
+]
+},
+"1e2184376270f7c282019000efbd9cc385b18a8acbad62b11bdbc6f61dc2907b": {
+"gid": 7211,
+"name": "glyph07211",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381,
+2352,
+2370
+]
+},
+"d5d6600c4c5c4ca31964c8fc5f53cd079ec4da6d69cf5d0979e1f30677e24bf0": {
+"gid": 7212,
+"name": "glyph07212",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381,
+2352,
+2369
+]
+},
+"4a7b278fa5f8ea6c4c7850711427d26463c562f2d675776c312febeddd1c41c8": {
+"gid": 7213,
+"name": "glyph07213",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381,
+2352,
+2371
+]
+},
+"3e919fb1e74e8f6cab67cd41748f728c8577961bf21a8ce85195c588189223ed": {
+"gid": 7214,
+"name": "glyph07214",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381,
+2352,
+2372
+]
+},
+"eea3f5c882ebe3ec38c7d4c70f6b3c74ff563173a4ca55ff1e97ae3558a1ce55": {
+"gid": 7215,
+"name": "glyph07215",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2352,
+2370
+]
+},
+"214eed691a551e4355d59dbd0b1fb0dce137db6aac30b658c47234c62f75d465": {
+"gid": 7216,
+"name": "glyph07216",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2352,
+2369
+]
+},
+"03c91985c15456b4ed2f7026484d3e4da458f51abac058ab549fcbcc5ddf975a": {
+"gid": 7217,
+"name": "glyph07217",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2352,
+2371
+]
+},
+"12644e53243985cd9bf49610dd4eade9f9f7f7b06b542b0c31702e2396febf5e": {
+"gid": 7218,
+"name": "glyph07218",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2352,
+2372
+]
+},
+"97429ae6b51b69d9acff658a3a7547dd86533ac3ddc7943742b4ddb955527332": {
+"gid": 7219,
+"name": "glyph07219",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2352,
+2370
+]
+},
+"fc523961bb15a8305dc2117c8486eb00c2797186cdc17f623db99171689029cb": {
+"gid": 7220,
+"name": "glyph07220",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2352,
+2369
+]
+},
+"02989266ede6dfee5dccb326e1807edff36219610d014a0de9a93452b3183f3f": {
+"gid": 7221,
+"name": "glyph07221",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2352,
+2371
+]
+},
+"6d28b8db255f09c4ea330fba80f8fdcfb5b7160e5f427872bdb3377eba8a63da": {
+"gid": 7222,
+"name": "glyph07222",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2352,
+2372
+]
+},
+"660abf3bd425d07d5c08d1fe2b6560274a54952c672d1f2ff48af7ae2dc1243f": {
+"gid": 7223,
+"name": "glyph07223",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2352,
+2370
+]
+},
+"8f1462aea4021897e1d64be856e4f847d88d7717beb30e4ec7c0a0818cc0f21c": {
+"gid": 7224,
+"name": "glyph07224",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2352,
+2369
+]
+},
+"b2dfa10f9388907981d64c44cf9fa6ee3849edf12c9d355bae65a13eea0cf46a": {
+"gid": 7225,
+"name": "glyph07225",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2352,
+2371
+]
+},
+"68067529a4660e97837cedd19abd9679fd4caca19260171edb41d69b7e2fab26": {
+"gid": 7226,
+"name": "glyph07226",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2352,
+2372
+]
+},
+"9dde7b0f9e2e5b06800e6f4190df4aab457346ad1190486adba6691c1c872d17": {
+"gid": 7227,
+"name": "glyph07227",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2352,
+2370
+]
+},
+"472374bb1b6ec28765c1ad379236e7c2019d309922dbd512004e0b24de27760e": {
+"gid": 7228,
+"name": "glyph07228",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2352,
+2369
+]
+},
+"62ef1a42739fa920bb64af007622c038f1106afada98924f6e5f9ad73a1c2266": {
+"gid": 7229,
+"name": "glyph07229",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2352,
+2371
+]
+},
+"775d4dda9f8835bf8f572aaa4ded171e4d0bd8e1fc4e2bb7b153813a0de9c6d1": {
+"gid": 7230,
+"name": "glyph07230",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2352,
+2372
+]
+},
+"58b37b94c3aed1cab83460372c7ed7474ae4dbf79897ff322e25611d1a3785f0": {
+"gid": 7231,
+"name": "glyph07231",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381,
+2352,
+2370
+]
+},
+"e8f4463ca77acf41144084ba97db81d78f00f84b43e56d03f97e71da5e2b5674": {
+"gid": 7232,
+"name": "glyph07232",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381,
+2352,
+2369
+]
+},
+"692c2380f9054cebc349f51f75b5f69f6401964169e1c58a726179435b4d3ef5": {
+"gid": 7233,
+"name": "glyph07233",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381,
+2352,
+2371
+]
+},
+"947ebcceb402d4f64ebb340d867f557e79c12f3a6bc4179be86ec751fb8d035d": {
+"gid": 7234,
+"name": "glyph07234",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381,
+2352,
+2372
+]
+},
+"f9a713f357b716b9a3ef0296ae658c03f2d608d9dd543a7d0b3991f6ffb9a38c": {
+"gid": 7235,
+"name": "glyph07235",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364,
+2352,
+2381,
+2370
+]
+},
+"f59df99b8312f787462302d595364064ea5cee824e83f9c4f72a3678ad29675e": {
+"gid": 7236,
+"name": "glyph07236",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364,
+2352,
+2381,
+2369
+]
+},
+"777e6fd266e9b2302d356dd522616a6973e7b52b84a60c910749d8538152a2a7": {
+"gid": 7237,
+"name": "glyph07237",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364,
+2352,
+2381,
+2371
+]
+},
+"628f6ecbaca67317fc2a48260e1cf58d5c8659025b98f2d60d8d08da20d79442": {
+"gid": 7238,
+"name": "glyph07238",
+"kind": "ligature",
+"codepoints": [
+2329,
+2364,
+2352,
+2381,
+2372
+]
+},
+"458db60e5b344f75080eb4997c69d9fb2a77e78b1d469e7dc1a4feafb0bd61be": {
+"gid": 7239,
+"name": "glyph07239",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364,
+2352,
+2381,
+2370
+]
+},
+"7ad34cd9e72aee7478d3e01484519a9ff326b4d889111986aeb3048cdcc119b2": {
+"gid": 7240,
+"name": "glyph07240",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364,
+2352,
+2381,
+2369
+]
+},
+"7a45d05c0c4e1521ef8acbc22792e1d41de4f59e616df719775ab8c3daa4cd46": {
+"gid": 7241,
+"name": "glyph07241",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364,
+2352,
+2381,
+2371
+]
+},
+"2ad51329174e8691bdb00973c9b0173453429430d1f39b7ba5a88c50b76e33b3": {
+"gid": 7242,
+"name": "glyph07242",
+"kind": "ligature",
+"codepoints": [
+2331,
+2364,
+2352,
+2381,
+2372
+]
+},
+"f78ec2e41f062e8e2258510ab10455d58beb841777e6a2c39a7da3b1b4dabda7": {
+"gid": 7243,
+"name": "glyph07243",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364,
+2352,
+2381,
+2370
+]
+},
+"63f3a9251f93d3e0607bab49f0a60c73a91df05b88425b9baf97ff230e099036": {
+"gid": 7244,
+"name": "glyph07244",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364,
+2352,
+2381,
+2369
+]
+},
+"7b28324ec15d9a37cfb466183d5dc61ce6e1cc6237c70f1f22a2665858a37aeb": {
+"gid": 7245,
+"name": "glyph07245",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364,
+2352,
+2381,
+2371
+]
+},
+"d6312b3428ee5344b46574303efbb756de9e112c0d7e25b69aa2ffae82b05574": {
+"gid": 7246,
+"name": "glyph07246",
+"kind": "ligature",
+"codepoints": [
+2335,
+2364,
+2352,
+2381,
+2372
+]
+},
+"faba1d9c41c5a531b836f4032cf3ece79ec3c41d9431d881bba6014100a8a6c5": {
+"gid": 7247,
+"name": "glyph07247",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364,
+2352,
+2381,
+2370
+]
+},
+"d3998185b757a24f6b32e2273d16eee3bfcf9123a0b7a9959ead1c2dde3c794c": {
+"gid": 7248,
+"name": "glyph07248",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364,
+2352,
+2381,
+2369
+]
+},
+"2153fb1ca19e67014e918a9694183e4f2a57d7e3c5d048b9dd65e91335874a96": {
+"gid": 7249,
+"name": "glyph07249",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364,
+2352,
+2381,
+2371
+]
+},
+"f555baca1f71984e5b3425339e782009359e5cc174b3fcb144f527501601b992": {
+"gid": 7250,
+"name": "glyph07250",
+"kind": "ligature",
+"codepoints": [
+2336,
+2364,
+2352,
+2381,
+2372
+]
+},
+"0fbe630e7466ccb473fd6a18620eb387eda4b119c4ad5e9c1c127d0f75b46922": {
+"gid": 7251,
+"name": "glyph07251",
+"kind": "ligature",
+"codepoints": [
+2396,
+2381,
+2352,
+2370
+]
+},
+"0d1414eb60341983a5b8325b8b0a593d1961c16ed81180f6dd31abdacfc4b622": {
+"gid": 7252,
+"name": "glyph07252",
+"kind": "ligature",
+"codepoints": [
+2396,
+2381,
+2352,
+2369
+]
+},
+"77fffd8d0c025cafc289f75db80139f74893bea6a2d336965425c8513c4cd653": {
+"gid": 7253,
+"name": "glyph07253",
+"kind": "ligature",
+"codepoints": [
+2396,
+2381,
+2352,
+2371
+]
+},
+"8970a3f0dc3dd699566e0f0451623b3b62b37343f62e797111b8aa94c5ccce6e": {
+"gid": 7254,
+"name": "glyph07254",
+"kind": "ligature",
+"codepoints": [
+2396,
+2381,
+2352,
+2372
+]
+},
+"6602c3927db3290c6f392aef377ea91fe8f2b70d4628d5477997110feef89b63": {
+"gid": 7255,
+"name": "glyph07255",
+"kind": "ligature",
+"codepoints": [
+2397,
+2381,
+2352,
+2370
+]
+},
+"5c53d6d59b7792f2cf61c5326fb04816129d842cde8976a7e375ce33bcf46663": {
+"gid": 7256,
+"name": "glyph07256",
+"kind": "ligature",
+"codepoints": [
+2397,
+2381,
+2352,
+2369
+]
+},
+"f5cd3521058e557b677bb9cd062562aff90b5a714294bf22e5971f130843039e": {
+"gid": 7257,
+"name": "glyph07257",
+"kind": "ligature",
+"codepoints": [
+2397,
+2381,
+2352,
+2371
+]
+},
+"b3733cc719490ed2eae6c59a7550f3db2af694f55fa3172285d9aa7eaea88c3d": {
+"gid": 7258,
+"name": "glyph07258",
+"kind": "ligature",
+"codepoints": [
+2397,
+2381,
+2352,
+2372
+]
+},
+"ac96408ddfa068480b6dc028f32d1105d1a1929d3d3e170d35aeb60505a4ecf6": {
+"gid": 7259,
+"name": "glyph07259",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381,
+2352,
+2370
+]
+},
+"a8ce6adb58de38d873f14d19b05c8fc3218f515fde9bfcfb3bde3ad61aec753c": {
+"gid": 7260,
+"name": "glyph07260",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381,
+2352,
+2369
+]
+},
+"3309f524daf54dc37fcdcac16adeb65246f57873991e45569368ae168be5daba": {
+"gid": 7261,
+"name": "glyph07261",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381,
+2352,
+2371
+]
+},
+"329c7708177f78ff03fed446cd18d44b7eba97c091f2e5019ae1075b56bb4069": {
+"gid": 7262,
+"name": "glyph07262",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381,
+2352,
+2372
+]
+},
+"c7df38aebe557da92a483489bf1df21e890dd54d541d00a51979bedc4515904f": {
+"gid": 7263,
+"name": "glyph07263",
+"kind": "ligature",
+"codepoints": [
+2361,
+2369
+]
+},
+"0e4735b4faa5a39464f51593adb85383675171c2119f44da0acde333a1417e97": {
+"gid": 7264,
+"name": "glyph07264",
+"kind": "ligature",
+"codepoints": [
+2361,
+2370
+]
+},
+"d539dea00a1a5158a5e7a12e8d8f318b7249f61432ba6afb1086798c407d2b00": {
+"gid": 7265,
+"name": "glyph07265",
+"kind": "ligature",
+"codepoints": [
+2361,
+2371
+]
+},
+"3fae06d8cfeec482ec4a70242dd1373bdf06c58e9da8a67f9de804009e5457ef": {
+"gid": 7266,
+"name": "glyph07266",
+"kind": "ligature",
+"codepoints": [
+2361,
+2372
+]
+},
+"c8ad2e3c48614ed4b93b402feb80f2f839d87fd26130f4844081dda09e9ea570": {
+"gid": 7267,
+"name": "glyph07267",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2369
+]
+},
+"5c0b957b2d80f6d18766f55ac229278436a0ef0fccf31e550a0a3f954b90a517": {
+"gid": 7268,
+"name": "glyph07268",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2370
+]
+},
+"efab03c24445f4668b541c3ab98c18a0983fb4670408ce1bf50821de29bc920c": {
+"gid": 7269,
+"name": "glyph07269",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2371
+]
+},
+"c8d046aaabe40d52dedd06dca655c422464a57f27f5ffe68abcc19c0b237882b": {
+"gid": 7270,
+"name": "glyph07270",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2372
+]
+},
+"4130d1a2dbcf48f161e77700df123c212b6ce4fcde68d2af67033185a0dc902a": {
+"gid": 7271,
+"name": "glyph07271",
+"kind": "ligature",
+"codepoints": [
+2352,
+2369
+]
+},
+"2dfa36745350bb6cec0df3a1d5e9f688c339f86c6d5f716afaaf2ec442ad4451": {
+"gid": 7272,
+"name": "glyph07272",
+"kind": "ligature",
+"codepoints": [
+2352,
+2370
+]
+},
+"99ac19b546c81bc2b1e6ca4dbd7f4091c9e6f1b0e0a5d00f53ef23ccd85ce081": {
+"gid": 7273,
+"name": "glyph07273",
+"kind": "variant",
+"codepoints": [
+2361,
+2381,
+2352
+]
+},
+"a145cd5df327d43d2c3e6a870b0450eaeaf7756b021bdb7a979c96ef4e07365f": {
+"gid": 7274,
+"name": "glyph07274",
+"kind": "variant",
+"codepoints": [
+2361,
+2364,
+2352,
+2381
+]
+},
+"9ef00d87b121c57522b01fc7a52eaa00a554b2a694d6dfb5228da2f1e097a2a6": {
+"gid": 7275,
+"name": "glyph07275",
+"kind": "ligature",
+"codepoints": [
+2340,
+2381,
+2340
+]
+},
+"b90fe546624c4ac912f1715b3486047691abc0ebdc1f743cfed806f3a1e954b5": {
+"gid": 7276,
+"name": "glyph07276",
+"kind": "ligature",
+"codepoints": [
+2340,
+2381,
+2340,
+2381
+]
+},
+"b5819471a81d79969747197b1da0fa80611e774d73b8df60bceda56b865a095b": {
+"gid": 7277,
+"name": "glyph07277",
+"kind": "ligature",
+"codepoints": [
+2368,
+2306
+]
+},
+"ac54430df3481afb4ee5e570ace81f6799caaec90719e10cf37ab5679736fd72": {
+"gid": 7278,
+"name": "glyph07278",
+"kind": "ligature",
+"codepoints": [
+2368,
+2352,
+2381
+]
+},
+"fa6bfe632bd29c687b95959a4a66295830e06a048b98f92b423f6cb8c101eccb": {
+"gid": 7279,
+"name": "glyph07279",
+"kind": "ligature",
+"codepoints": [
+2368,
+2352,
+2381,
+2306
+]
+},
+"949ef65c3b95832597c75a120c29459188a057d9d341c218ab88021c5d97f181": {
+"gid": 7280,
+"name": "glyph07280",
+"kind": "ligature",
+"codepoints": [
+2373,
+2306
+]
+},
+"943a65c8a2f7a617e27e17dc2b18b215ab3f104a6980e483605d9ba1a5a697a5": {
+"gid": 7281,
+"name": "glyph07281",
+"kind": "ligature",
+"codepoints": [
+2373,
+2352,
+2381
+]
+},
+"75a51e03297dadcc9f71c8b64f87c9a82e9b2221b3948ea3e9280043a4870c19": {
+"gid": 7282,
+"name": "glyph07282",
+"kind": "ligature",
+"codepoints": [
+2373,
+2352,
+2381,
+2306
+]
+},
+"1dd856e8b2735b748a0b0a5e74fc36693e82b01941ce86ddf631ca8680a7925f": {
+"gid": 7283,
+"name": "glyph07283",
+"kind": "ligature",
+"codepoints": [
+2374,
+2306
+]
+},
+"05710624e9fed292605f5c67cf786773fc41c720013542c7fa99669b966b8e42": {
+"gid": 7284,
+"name": "glyph07284",
+"kind": "ligature",
+"codepoints": [
+2374,
+2352,
+2381
+]
+},
+"fd469948edb681bcd99a30fc7c51a2e46b0dcd606bac58a5a386e66b94ba4261": {
+"gid": 7285,
+"name": "glyph07285",
+"kind": "ligature",
+"codepoints": [
+2374,
+2352,
+2381,
+2306
+]
+},
+"3617bdbbfa3ebc9a8a6d981cadb82cced2be6cc7db74c33a6d1713051650428a": {
+"gid": 7286,
+"name": "glyph07286",
+"kind": "ligature",
+"codepoints": [
+2375,
+2306
+]
+},
+"13cf9b39aba7aefd76b06f70eada437892a2da06aa532fab3b89ff1b37b3f4c8": {
+"gid": 7287,
+"name": "glyph07287",
+"kind": "ligature",
+"codepoints": [
+2375,
+2352,
+2381
+]
+},
+"4f4637adc0b7217a7b79a586f461421c607daddb275cbf99cc4ab2c58186c9d0": {
+"gid": 7288,
+"name": "glyph07288",
+"kind": "ligature",
+"codepoints": [
+2375,
+2352,
+2381,
+2306
+]
+},
+"cf494f5163f7d17fbf43a00e70e21c030d83e410e378281facc60c3e9a4d7d92": {
+"gid": 7289,
+"name": "glyph07289",
+"kind": "ligature",
+"codepoints": [
+2376,
+2306
+]
+},
+"8ef4a5032b80c604a94136e7f6604a2ad2944f3f3b030dc8b878adbc84a6e820": {
+"gid": 7290,
+"name": "glyph07290",
+"kind": "ligature",
+"codepoints": [
+2376,
+2352,
+2381
+]
+},
+"f1ebaa631d443eac8d958190a045c78d22280b06b9c3349a4462488536ab689d": {
+"gid": 7291,
+"name": "glyph07291",
+"kind": "ligature",
+"codepoints": [
+2376,
+2352,
+2381,
+2306
+]
+},
+"b4986b9a1d3d82d0dd6f3bc1cb5744ae324d42919081c3e213f02214c88e8511": {
+"gid": 7292,
+"name": "glyph07292",
+"kind": "ligature",
+"codepoints": [
+2377,
+2306
+]
+},
+"ea2889556842321a6eeca577d2da90fe7a4b00e0feabeb1f361b74d1c070e39f": {
+"gid": 7293,
+"name": "glyph07293",
+"kind": "ligature",
+"codepoints": [
+2377,
+2352,
+2381
+]
+},
+"468b2777c4c4c7bb73ca1b79c613565deed902e9937fc4f8a9a8651a5c01a17e": {
+"gid": 7294,
+"name": "glyph07294",
+"kind": "ligature",
+"codepoints": [
+2377,
+2352,
+2381,
+2306
+]
+},
+"cd377c1b170ff9620b8fb01e6d15e66d3884d8dd6e2f7fb8af8c4d91b4d04d4a": {
+"gid": 7295,
+"name": "glyph07295",
+"kind": "ligature",
+"codepoints": [
+2378,
+2306
+]
+},
+"e8d77ff2c3b0098992adb256b75a1c15d4ee6689ee2dfa464c13552e2c7e2107": {
+"gid": 7296,
+"name": "glyph07296",
+"kind": "ligature",
+"codepoints": [
+2378,
+2352,
+2381
+]
+},
+"67f5f447fc7915a9cff857b7538b937fe1eaab6b6967393313836a84f52db157": {
+"gid": 7297,
+"name": "glyph07297",
+"kind": "ligature",
+"codepoints": [
+2378,
+2352,
+2381,
+2306
+]
+},
+"42b7da48d8d88ae1d17cf08ae74834c910d6d5443500dcc17e548952a108425a": {
+"gid": 7298,
+"name": "glyph07298",
+"kind": "ligature",
+"codepoints": [
+2379,
+2306
+]
+},
+"960d945538b247459c244da033e4ccdd0c346b9e41ce218b047637c67f32cfa5": {
+"gid": 7299,
+"name": "glyph07299",
+"kind": "ligature",
+"codepoints": [
+2379,
+2352,
+2381
+]
+},
+"fbbd4959a4645d05de2e9471d5b94b96f2681fb35c3fff072c2326c309bbbc53": {
+"gid": 7300,
+"name": "glyph07300",
+"kind": "ligature",
+"codepoints": [
+2379,
+2352,
+2381,
+2306
+]
+},
+"62d0f458e3185a1ea2e8727e4383fa4db50388104c4b49fb204d94b3ddb7dfde": {
+"gid": 7301,
+"name": "glyph07301",
+"kind": "ligature",
+"codepoints": [
+2380,
+2306
+]
+},
+"a393ee9013987dd77cf25084386e5143c77155ccd35e1977c2ad2ffeabc4b958": {
+"gid": 7302,
+"name": "glyph07302",
+"kind": "ligature",
+"codepoints": [
+2380,
+2352,
+2381
+]
+},
+"f4263d89da60889635518f2913e93be36bce272436f5bd5b0fe783903d171787": {
+"gid": 7303,
+"name": "glyph07303",
+"kind": "ligature",
+"codepoints": [
+2380,
+2352,
+2381,
+2306
+]
+},
+"ff715e8dc31bfe2419b565623095129c77ebfd921fbb515667ebbe1917131abc": {
+"gid": 7304,
+"name": "glyph07304",
+"kind": "ligature",
+"codepoints": [
+2352,
+2381,
+2306
+]
+},
+"68878a61772b3a13b9388eda9e1183eee77e53e8ba977cc9529d27358aa7bd3f": {
+"gid": 7306,
+"name": "glyph07306",
+"kind": "ligature",
+"codepoints": [
+2312,
+2306
+]
+},
+"8421cd355d8e324e9d381009390691ba14e06a50ad035147d6e44db68fa006be": {
+"gid": 7307,
+"name": "glyph07307",
+"kind": "ligature",
+"codepoints": [
+2317,
+2306
+]
+},
+"a783b3379f3e85f6c420c625e21397ac1f6e360892d022f85958a1c87a87eb98": {
+"gid": 7308,
+"name": "glyph07308",
+"kind": "ligature",
+"codepoints": [
+2318,
+2306
+]
+},
+"8d1fe4bad430776ae5cf130ea464a6ea2fe0e2e7386a6640b690c22c3895c7e9": {
+"gid": 7309,
+"name": "glyph07309",
+"kind": "ligature",
+"codepoints": [
+2320,
+2306
+]
+},
+"ef5661650a583c05c419b903b3d870a27325f5560ebeaba4ac791c13e61321d1": {
+"gid": 7310,
+"name": "glyph07310",
+"kind": "ligature",
+"codepoints": [
+2321,
+2306
+]
+},
+"d54c5ddba77947ba365cf92953dfc288f64b9629ae12b9b35cb1fbcd7e96b5ce": {
+"gid": 7311,
+"name": "glyph07311",
+"kind": "ligature",
+"codepoints": [
+2322,
+2306
+]
+},
+"c44703938469fb9d52b5c965f9de270bc8ce16a8b863fddaa766815591b94bc6": {
+"gid": 7312,
+"name": "glyph07312",
+"kind": "ligature",
+"codepoints": [
+2323,
+2306
+]
+},
+"6066e05c17937ca8490809adcb1c415fc039f9c1c537098d43fe5fab02ab1951": {
+"gid": 7313,
+"name": "glyph07313",
+"kind": "ligature",
+"codepoints": [
+2324,
+2306
+]
+},
+"78e01b81b618cf8d67b0ce28fb39e10df02f944db5ff9be8795f95ed2d342924": {
+"gid": 7314,
+"name": "glyph07314",
+"kind": "ligature",
+"codepoints": [
+2312,
+2364,
+2306
+]
+},
+"a9e0478fe8e0c01b3231d43de85e5e043b672311afd1670ced5a36f55c912216": {
+"gid": 7315,
+"name": "glyph07315",
+"kind": "ligature",
+"codepoints": [
+2317,
+2364,
+2306
+]
+},
+"1291a4a4a87344cc80fbe5c1f5ff6b81ceb4789b3591ae8b0833460d80049710": {
+"gid": 7316,
+"name": "glyph07316",
+"kind": "ligature",
+"codepoints": [
+2318,
+2364,
+2306
+]
+},
+"ef1757459194bcd1a9a161d6823a071cce53f2eee7de1f421e1b83f5640bae2b": {
+"gid": 7317,
+"name": "glyph07317",
+"kind": "ligature",
+"codepoints": [
+2320,
+2364,
+2306
+]
+},
+"2be00abed3be7c73b793067f50911288bf919a4077f512e5132e8b1bec9507c7": {
+"gid": 7318,
+"name": "glyph07318",
+"kind": "ligature",
+"codepoints": [
+2321,
+2364,
+2306
+]
+},
+"97a6e4f7fe3c859ae92efb3eb93ec80c51179d7b960bdb7325f9299b87f8dbc8": {
+"gid": 7319,
+"name": "glyph07319",
+"kind": "ligature",
+"codepoints": [
+2322,
+2364,
+2306
+]
+},
+"e3bce213f5186d6d89abfb0eba4b272e442d1f85441fabec6a409db3360af7f2": {
+"gid": 7320,
+"name": "glyph07320",
+"kind": "ligature",
+"codepoints": [
+2323,
+2364,
+2306
+]
+},
+"fb8cf351754ce4c486eb45aa92e99d7e7cdff06c151292a25ce0cc83a61cf4dd": {
+"gid": 7321,
+"name": "glyph07321",
+"kind": "ligature",
+"codepoints": [
+2324,
+2364,
+2306
+]
+},
+"73efcb1bd961e2c527d5b6ccb27282bb36524e17d59a0b582ddfff45a0764ad0": {
+"gid": 7322,
+"name": "glyph07322",
+"kind": "ligature",
+"codepoints": [
+2355,
+2381,
+2352,
+2381
+]
+},
+"0f6fb0ce90969cc618f893309b500f3e91ba343560999877c04aded084f6e7f1": {
+"gid": 7323,
+"name": "glyph07323",
+"kind": "ligature",
+"codepoints": [
+2356,
+2381,
+2352,
+2381
+]
+},
+"b139a0e843e054f257bcd0daa52fa49904d17b143717e5c5927f0c5a71e06abf": {
+"gid": 7325,
+"name": "glyph07325",
+"kind": "ligature",
+"codepoints": [
+2361,
+2381
+]
+},
+"4bb8a61c59f2a67e5b442d87887b4d77bea9dfe9e266a9d5c651aabf94b5bacd": {
+"gid": 7326,
+"name": "glyph07326",
+"kind": "ligature",
+"codepoints": [
+2361,
+2364,
+2381
+]
+},
+"7e1d4773455eb57aeca8224dcf813c64143ac71c6d80710420c1ef489e5cc730": {
+"gid": 7327,
+"name": "glyph07327",
+"kind": "ligature",
+"codepoints": [
+2352,
+2381,
+2352
+]
+},
+"8b20d878fc80a96f7ec2ec36273da42ada0a17a7c89e41cb8463cb1acb9101d7": {
+"gid": 7328,
+"name": "glyph07328",
+"kind": "ligature",
+"codepoints": [
+2353,
+2381,
+2352
+]
+},
+"70868b34dc398dc5f52cf9de9218e598a7fc64917a8db93121d627449b73841a": {
+"gid": 7329,
+"name": "glyph07329",
+"kind": "ligature",
+"codepoints": [
+2352,
+2381,
+2352,
+2381
+]
+},
+"b939b928e7cbad9cb4a0af983d961e8166b16e7b03ad6ecbe831a3b77b701c9e": {
+"gid": 7330,
+"name": "glyph07330",
+"kind": "ligature",
+"codepoints": [
+2353,
+2381,
+2352,
+2381
+]
+},
+"d92dc740ce72f4af170db5160fc4be1a9035fb747bd8e7634802fa77da7aee0f": {
+"gid": 7331,
+"name": "glyph07331",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2344
+]
+},
+"77b5c09ea76691c98a53921264d14a18ac679ee43dd1f34b0f6b60346e33bb64": {
+"gid": 7332,
+"name": "glyph07332",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2357
+]
+},
+"328c6666c6913d553efa42cd708369da5797bb84627789c80d55a92fc7ecc0b1": {
+"gid": 7333,
+"name": "glyph07333",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2325
+]
+},
+"226505b41f9376ca72a82240814aa155dd9a65bf0de479033b6cfe429744326a": {
+"gid": 7334,
+"name": "glyph07334",
+"kind": "ligature",
+"codepoints": [
+2325,
+2381,
+2340
+]
+},
+"0e824f7e47e60335e044980924ed3054aec05a9bb152aa44e6b9c27eac1dbe87": {
+"gid": 7335,
+"name": "glyph07335",
+"kind": "ligature",
+"codepoints": [
+2326,
+2381,
+2344
+]
+},
+"d27bdf956d818082ed67ad03bbbc26c9a35a4af477b25608a2a5f54b51e52a4a": {
+"gid": 7336,
+"name": "glyph07336",
+"kind": "ligature",
+"codepoints": [
+2327,
+2381,
+2344
+]
+},
+"db4ead4b91d1e761a08524fdc12ae66aacc56dc454e3b28beead1150c8b75adf": {
+"gid": 7337,
+"name": "glyph07337",
+"kind": "ligature",
+"codepoints": [
+2328,
+2381,
+2344
+]
+},
+"ecc92156153af12f073c65053898ee7db3ea458ecbee1e3d2f4dcfa27447efe7": {
+"gid": 7338,
+"name": "glyph07338",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2350
+]
+},
+"c7ad0cd556bb6a18934486c23d92045ee36d916768cf83f9d08325aadca66b0b": {
+"gid": 7339,
+"name": "glyph07339",
+"kind": "ligature",
+"codepoints": [
+2329,
+2381,
+2351
+]
+},
+"28713d1bb8a3ce0ef0e926c37713d1ab518db9cdaadbcd4eb6a0e7a13ca50af5": {
+"gid": 7340,
+"name": "glyph07340",
+"kind": "ligature",
+"codepoints": [
+2330,
+2381,
+2330
+]
+},
+"b97a31533751b1649d02a7ad04e2a1dda08be9234c35fd84f9655425baaf536f": {
+"gid": 7341,
+"name": "glyph07341",
+"kind": "ligature",
+"codepoints": [
+2330,
+2381,
+2330,
+2381
+]
+},
+"52367571d279033878d9966474c16845fa09d9d9c92d0f5b1db0eb5c7c0e54ef": {
+"gid": 7342,
+"name": "glyph07342",
+"kind": "ligature",
+"codepoints": [
+2331,
+2381,
+2351
+]
+},
+"3f80db539b46a02554081a90ee66f3b1f099ad9550767634eac3da56e2124994": {
+"gid": 7343,
+"name": "glyph07343",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2332
+]
+},
+"16c576cc04a674c4f17f64cafa9be9fa4c8159510860d1c36600c46a3e2fa8c2": {
+"gid": 7344,
+"name": "glyph07344",
+"kind": "ligature",
+"codepoints": [
+2332,
+2381,
+2332,
+2381
+]
+},
+"0d7f10963ec0484c3af6807030844f07214fe0679132f9e7bd1699ebb8a84284": {
+"gid": 7345,
+"name": "glyph07345",
+"kind": "ligature",
+"codepoints": [
+2334,
+2381,
+2330
+]
+},
+"af8f4ddd2a79d559f9abd1439d265ef45ec7a838653d2d03640d074f54b4e96e": {
+"gid": 7346,
+"name": "glyph07346",
+"kind": "ligature",
+"codepoints": [
+2334,
+2381,
+2330,
+2381
+]
+},
+"00ed823e8886ffd163a504c20a2b103a2335bc541fcbb8400dec354a63d41af6": {
+"gid": 7347,
+"name": "glyph07347",
+"kind": "ligature",
+"codepoints": [
+2334,
+2381,
+2332
+]
+},
+"99f3913a7543c1678fe1a4f9353f893f6ad868ec44a7b0c07d86f13bc31b3cfd": {
+"gid": 7348,
+"name": "glyph07348",
+"kind": "ligature",
+"codepoints": [
+2334,
+2381,
+2332,
+2381
+]
+},
+"3840d76829c8bf4858fa40ae7dc19afa41392dcd38c7a6be46501a91d961b7d8": {
+"gid": 7349,
+"name": "glyph07349",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2335
+]
+},
+"3aed209ca1a2969c97f3131b4e89db6b40af3de49198ecea63157165e4153a67": {
+"gid": 7350,
+"name": "glyph07350",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2336
+]
+},
+"9ddc4f8849cc059f00f333ec5c360ef25eb2ec1d2e8edf2261d66335095ca89f": {
+"gid": 7351,
+"name": "glyph07351",
+"kind": "ligature",
+"codepoints": [
+2335,
+2381,
+2351
+]
+},
+"13fb281017c417bcc2a26a981803e6a6b3a7c63985a20c66cd7c8277999c06f3": {
+"gid": 7352,
+"name": "glyph07352",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2336
+]
+},
+"f3a5250432ff27e8ac05e188a659fc5b88b803e42419a3116b698630db991bdd": {
+"gid": 7353,
+"name": "glyph07353",
+"kind": "ligature",
+"codepoints": [
+2336,
+2381,
+2351
+]
+},
+"c736c3faa4c272b54366a427a1c6af82827f6f0406668f8fca7cefe636108265": {
+"gid": 7354,
+"name": "glyph07354",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2338
+]
+},
+"dc8cf7fb85551fb5cffa9e7e4df6d80a7e0f6d2577f4a74d03c2f91c65e58c24": {
+"gid": 7355,
+"name": "glyph07355",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2337
+]
+},
+"168bb3d591379caee6169144394b4826e4ab72922837bcfe852fce48c25eb968": {
+"gid": 7356,
+"name": "glyph07356",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2350
+]
+},
+"f9c54da802a0fe50dae25539bf54976dde16204a5850ddf514ee90f598679c67": {
+"gid": 7357,
+"name": "glyph07357",
+"kind": "ligature",
+"codepoints": [
+2337,
+2381,
+2351
+]
+},
+"bec9f3f8240eaaf4d4d62786e55bc3e261917e5ccb72de56d1371da9f95ba280": {
+"gid": 7358,
+"name": "glyph07358",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2338
+]
+},
+"f016092194ac8e46a2929b30786f1073a9e8294a046db8cbf6dc1c379792a7dd": {
+"gid": 7359,
+"name": "glyph07359",
+"kind": "ligature",
+"codepoints": [
+2338,
+2381,
+2351
+]
+},
+"506ee271e1f6e6550e0b9999bc66bf56c5a8402520ce48975473b4e290e0dfb7": {
+"gid": 7360,
+"name": "glyph07360",
+"kind": "ligature",
+"codepoints": [
+2340,
+2381,
+2344
+]
+},
+"59ad33effe900f56ae4c775f9abac314258112e29523fce285d0176688b11822": {
+"gid": 7361,
+"name": "glyph07361",
+"kind": "ligature",
+"codepoints": [
+2340,
+2381,
+2344,
+2381
+]
+},
+"6ab80d628a5c7d98234280e5c086be00ad6bb56d8d0d0c36750301012e6aef2d": {
+"gid": 7362,
+"name": "glyph07362",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2344
+]
+},
+"09f1245cae21bd417ff1be293c619b0f164f23a7ccd8b26374d0781309bd856e": {
+"gid": 7363,
+"name": "glyph07363",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2328
+]
+},
+"21cbb0452c8f634a753bf2adfa0fdae07635112eaa425df51f84a7ec5a28df84": {
+"gid": 7364,
+"name": "glyph07364",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2327
+]
+},
+"ae8b2b4debd618f00b68786d5f9011591355921e2493e5fe77b600368a9e903f": {
+"gid": 7365,
+"name": "glyph07365",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2327,
+2381,
+2352
+]
+},
+"32843c1e17aeded1c9f0cd5a87eee1dc4a2d17e7df074ad8d2f1a05bc2763948": {
+"gid": 7366,
+"name": "glyph07366",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2348
+]
+},
+"f1cde4199cf204812695882f04ef0ad6ff9d6c36398a6653dcb2c4c81b53b7ef": {
+"gid": 7367,
+"name": "glyph07367",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2357
+]
+},
+"e6a6df6bec62d2b595e6069be435dfe16fcd6dd58c4dca73470608afdf7dae87": {
+"gid": 7368,
+"name": "glyph07368",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2357,
+2381,
+2351
+]
+},
+"e4e0b97185f898d4593740391ad9418fb5e22dcc40781f20abbbf490e699f141": {
+"gid": 7369,
+"name": "glyph07369",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2352,
+2381,
+2351
+]
+},
+"2739fe3c30747739264d79f2ddc7138dfe7ef816cb01f9693d93203e5144c584": {
+"gid": 7370,
+"name": "glyph07370",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2349
+]
+},
+"6916ef84820397fb1d81056084a9f17e0bba9cf482699cc997df2c6627053b22": {
+"gid": 7371,
+"name": "glyph07371",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2349,
+2381,
+2352
+]
+},
+"de4c8b76f7efd7e71eb0044764e098baa87878706588cd57ed9efe6aa078fc67": {
+"gid": 7372,
+"name": "glyph07372",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2349,
+2381,
+2351
+]
+},
+"071cb5169b9067b8e1dfdb503d69e35bc4cab7c28c62e704b79557af2517bec7": {
+"gid": 7373,
+"name": "glyph07373",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2343
+]
+},
+"31e0674f11fc186e1e1ed4ca402eb0b96da8a9cdf97c115ed9680aca60d8806a": {
+"gid": 7374,
+"name": "glyph07374",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2342
+]
+},
+"e6042cc7569b30e0083d78810e0fcceffb842578e8b6b5dc87ddd2f5a900c064": {
+"gid": 7375,
+"name": "glyph07375",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2342,
+2381,
+2357
+]
+},
+"b5bc0d02ffbcf0420271f7cf2b8fe076fdbfccf0e2edbf869d2b3cad648c8f1f": {
+"gid": 7376,
+"name": "glyph07376",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2342,
+2381,
+2352
+]
+},
+"fdb562ed97cf374f5f211ef67e36e7183adbdac0ad34c9afd62cf525035cad77": {
+"gid": 7377,
+"name": "glyph07377",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2350
+]
+},
+"83e76f0cff179c8a717f5b45b37984b8bce15437608f65699e05ccfdbe6894f1": {
+"gid": 7378,
+"name": "glyph07378",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2351
+]
+},
+"76fdd5737f38b35191797699c36adc7bae45e9463b035335cbe826a8fff5c615": {
+"gid": 7379,
+"name": "glyph07379",
+"kind": "ligature",
+"codepoints": [
+2342,
+2381,
+2351,
+2381
+]
+},
+"9ab7e4aa3e4423acb054b96a688281a9a34f790a6c5abd8f556d995d55dc55b0": {
+"gid": 7380,
+"name": "glyph07380",
+"kind": "ligature",
+"codepoints": [
+2343,
+2381,
+2344
+]
+},
+"41096bc616690fa69c717cca0f31f149c07c5b42ac1974e185b31018d181f8da": {
+"gid": 7381,
+"name": "glyph07381",
+"kind": "ligature",
+"codepoints": [
+2343,
+2381,
+2344,
+2381
+]
+},
+"86b9913ce97e75a1e2948b3ee26dc0351e7497c43570c2030a045bc32932e535": {
+"gid": 7382,
+"name": "glyph07382",
+"kind": "ligature",
+"codepoints": [
+2344,
+2381,
+2344
+]
+},
+"45192fddb1e518635ec238a5a9cd2ca50f0019b5b33f2f5e47704c6fdd18e9e0": {
+"gid": 7383,
+"name": "glyph07383",
+"kind": "ligature",
+"codepoints": [
+2344,
+2381,
+2344,
+2381
+]
+},
+"51cd935dc3cd7083aea5adabddd553f7f0047581000b0f3b461e3f738a0f6393": {
+"gid": 7384,
+"name": "glyph07384",
+"kind": "ligature",
+"codepoints": [
+2346,
+2381,
+2344
+]
+},
+"cc24dd48f85c9529fe7bb406ad2a4f4da3fc4aaa31e54ad5f3f22dcd48213b01": {
+"gid": 7385,
+"name": "glyph07385",
+"kind": "ligature",
+"codepoints": [
+2346,
+2381,
+2340
+]
+},
+"9ebc4ac58af22af656502110ee350a014c40f29a2a8c0684da704b803f6ffb72": {
+"gid": 7386,
+"name": "glyph07386",
+"kind": "ligature",
+"codepoints": [
+2346,
+2381,
+2340,
+2381
+]
+},
+"1c713a31808bfdf7153ca28f7097874206b4c89b3630578dd8b1124b49a39139": {
+"gid": 7387,
+"name": "glyph07387",
+"kind": "ligature",
+"codepoints": [
+2348,
+2381,
+2344
+]
+},
+"49622f549cd2c7f9993777762d9aec56b875059c8acc44506e2a4d313a0ab768": {
+"gid": 7388,
+"name": "glyph07388",
+"kind": "ligature",
+"codepoints": [
+2350,
+2381,
+2344
+]
+},
+"da31c97fd53ca62668a15025590296be884372941c80f7da8ec5a9be21da0acd": {
+"gid": 7389,
+"name": "glyph07389",
+"kind": "ligature",
+"codepoints": [
+2357,
+2381,
+2344
+]
+},
+"a881725ba3f058248f1f2a6d5f1919a3c68863dffff72ac72b90fa04df762442": {
+"gid": 7390,
+"name": "glyph07390",
+"kind": "ligature",
+"codepoints": [
+2357,
+2381,
+2351
+]
+},
+"663be0f60f0cdabff4e9af2d53e1fc3ddcfc63ad1e31359d4c45ad24d5a0d4b9": {
+"gid": 7391,
+"name": "glyph07391",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2330
+]
+},
+"80fbeb71d15fc7825b66eca968ea05194e2ce313c7b8a9586f289842f571c0b2": {
+"gid": 7392,
+"name": "glyph07392",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2330,
+2381
+]
+},
+"3b7336ace25c4a9058be7fe22d04fdfcc2cf6bc23d2f2e3656915a81e0b3a48c": {
+"gid": 7393,
+"name": "glyph07393",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2357
+]
+},
+"11ec235c582ed89de22e8b09bdbfa20057f9eb2eb9e71819bdda173356a64c97": {
+"gid": 7394,
+"name": "glyph07394",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2357,
+2381
+]
+},
+"76bba67a56635d09fdea83ab7af4df063a8e06de3e87134de6f55a6930b4b18c": {
+"gid": 7395,
+"name": "glyph07395",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2354
+]
+},
+"c690ffa962488160ab20ace69fd32bc354b088fd275aa41ee7a390f61dc5a0a3": {
+"gid": 7396,
+"name": "glyph07396",
+"kind": "ligature",
+"codepoints": [
+2358,
+2381,
+2344
+]
+},
+"e39d6517602ffbda511b097478b40754d59f3c5fa9a0e77038fcbeb44757cb87": {
+"gid": 7397,
+"name": "glyph07397",
+"kind": "ligature",
+"codepoints": [
+2359,
+2381,
+2335
+]
+},
+"297cd5623a4ac3fa4b59a82877884dd522474fedc7aaca034b99bc2ed122b830": {
+"gid": 7398,
+"name": "glyph07398",
+"kind": "ligature",
+"codepoints": [
+2359,
+2381,
+2335,
+2381,
+2352
+]
+},
+"b02d4b7b55ccd9ee245e2042b1867b09f9ad763b5b22cd70ac55b809777014d4": {
+"gid": 7399,
+"name": "glyph07399",
+"kind": "ligature",
+"codepoints": [
+2359,
+2381,
+2336
+]
+},
+"1ce667059968993bbc8597df9b55602922c5bf8bb4cd47b6caf611b8bec36356": {
+"gid": 7400,
+"name": "glyph07400",
+"kind": "ligature",
+"codepoints": [
+2359,
+2381,
+2336,
+2381,
+2352
+]
+},
+"63a25270c406ee7bc8b73b44a4803dbebdb2231e533423772102ebf5e1d1b31c": {
+"gid": 7401,
+"name": "glyph07401",
+"kind": "ligature",
+"codepoints": [
+2360,
+2381,
+2344
+]
+},
+"a66534829d84a0805d4d8166e333b762590942a58ae00a933d8efa08319a86a8": {
+"gid": 7402,
+"name": "glyph07402",
+"kind": "ligature",
+"codepoints": [
+2360,
+2381,
+2344,
+2381
+]
+},
+"9918000c8e8dd22a024908944e8982bcbe967b4c2e320c7c4fcd1f8997397287": {
+"gid": 7403,
+"name": "glyph07403",
+"kind": "ligature",
+"codepoints": [
+2360,
+2381,
+2340,
+2381,
+2352
+]
+},
+"7a59107acf5785521bbafc53914cf1655a8aedd3644340a3ae409afa38aee733": {
+"gid": 7404,
+"name": "glyph07404",
+"kind": "ligature",
+"codepoints": [
+2361,
+2381,
+2350
+]
+},
+"da8877100cb1f6fcf687cae48a293f8bbcc10ff4e48bb0970a243f41837e3406": {
+"gid": 7405,
+"name": "glyph07405",
+"kind": "ligature",
+"codepoints": [
+2361,
+2381,
+2351
+]
+},
+"ffa365f4af5a72dc1190a2a4c3763e4234928abf2e727430dedc8d9fc20f78aa": {
+"gid": 7406,
+"name": "glyph07406",
+"kind": "ligature",
+"codepoints": [
+2361,
+2381,
+2339
+]
+},
+"00f67c3cf5ca3a0a29b49bb1526b93927b9b8674c4f4f060746981df0e54e4ab": {
+"gid": 7407,
+"name": "glyph07407",
+"kind": "variant",
+"codepoints": [
+2367
+]
+},
+"540d8236838279b1725cfaa3d828fc06c045b664a9bd023336bd7b5a5e02ae1f": {
+"gid": 7408,
+"name": "glyph07408",
+"kind": "variant",
+"codepoints": [
+2367
+]
+},
+"ffa39a29db3f23314514939f025591483b1cc9ef1d5ac1896be166d83f346cdb": {
+"gid": 7409,
+"name": "glyph07409",
+"kind": "variant",
+"codepoints": [
+2368
+]
+},
+"26922e5c3b80b9d191c3c268e7316943976eb17db73a8c3c4636d8f0320e7e80": {
+"gid": 7410,
+"name": "glyph07410",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2306
+]
+},
+"2bf8bd2e122d83a0200d71719290077c9750425015f9bba4a8514f32079e5ed9": {
+"gid": 7411,
+"name": "glyph07411",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2306
+]
+},
+"04b73413393be645d6e74082e84b106548dd11f943e11c9d7d6ffc414fe2bba6": {
+"gid": 7412,
+"name": "glyph07412",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2306
+]
+},
+"b633097efa9ae09828b6335a2c418a973371c636af9749e9adbc360c65a51ff0": {
+"gid": 7413,
+"name": "glyph07413",
+"kind": "variant",
+"codepoints": [
+2368,
+2306
+]
+},
+"205745482b47759d799064b4254310d9958d60596c1792cb6eac7d69c2756353": {
+"gid": 7414,
+"name": "glyph07414",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381
+]
+},
+"2b9cb4890c97c9c57a37356e02bef0422cd41eb2b474a257af766153d7a88122": {
+"gid": 7415,
+"name": "glyph07415",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381
+]
+},
+"0eba2d0e8ba34fbf66207db2cb4728b9389c90fbee64b4c985dae829b6dacb9c": {
+"gid": 7416,
+"name": "glyph07416",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381
+]
+},
+"a89f9212289b72141624ef37aa3c9f66c20b0e0285b1eaea2717d3d72930cd96": {
+"gid": 7417,
+"name": "glyph07417",
+"kind": "variant",
+"codepoints": [
+2368,
+2352,
+2381
+]
+},
+"1d7c15161513cf0f319e501ddd51d5a964a7d3f5ee7a38a0228d6f2ac72e4fdc": {
+"gid": 7418,
+"name": "glyph07418",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381,
+2306
+]
+},
+"845ef48d17d594a020bb51d7962050cf64b035454776c5430565a92cabb218c0": {
+"gid": 7419,
+"name": "glyph07419",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381,
+2306
+]
+},
+"9ab8aa6b052abe540c79578bd3606facb78040ae5dcb64587de9d84308c7ff9c": {
+"gid": 7420,
+"name": "glyph07420",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381,
+2306
+]
+},
+"aa8808656476462b916166f0b1358d059c2533b62e5f3805432094212a6d18c7": {
+"gid": 7421,
+"name": "glyph07421",
+"kind": "variant",
+"codepoints": [
+2368,
+2352,
+2381,
+2306
+]
+},
+"64cb394dbee704ca6b8f1f19d8832d1d0acfdce3b30a86c269866fe6017b127c": {
+"gid": 7422,
+"name": "glyph07422",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2305
+]
+},
+"5593126adc98e52f8a6770882fd33fc6f9a890e5113915900bece7d44d47a6bb": {
+"gid": 7423,
+"name": "glyph07423",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2305
+]
+},
+"036ebfe8a54718e1a7c451a37da4ffdc18845b6f924a3c94bd63b925ec8dd3bd": {
+"gid": 7424,
+"name": "glyph07424",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2305
+]
+},
+"62e7b549d24c7810f0115ff54ced88208366c46a558defb81703ca3ff7880b5a": {
+"gid": 7425,
+"name": "glyph07425",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381,
+2305
+]
+},
+"585fcd3310d2e7f93473d722329050e837c3cc3f17b511b92340c0525868f771": {
+"gid": 7426,
+"name": "glyph07426",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381,
+2305
+]
+},
+"c1070e5927cd7f20b18fe2d0792f554171a5932be09fb767a272be7abed900ad": {
+"gid": 7427,
+"name": "glyph07427",
+"kind": "variant+mark",
+"codepoints": [
+2367,
+2352,
+2381,
+2305
+]
+}
+}
+}
