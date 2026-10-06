@@ -2,8 +2,11 @@
 // roll PDFs: indexes the objects once, parses a dictionary or inflates a
 // stream only when asked, and walks the page tree in page order so a caller
 // can process one page at a time without holding every page in memory.
-// Not a general PDF parser: object streams and filters other than
-// FlateDecode are rejected with an error.
+// Not a general PDF parser: object streams are rejected, and so (for the
+// decoder) are stream filters other than FlateDecode.
+//
+// scripts/pdf-fonts.mjs builds its Node tooling on the same index, literal
+// tokenizer and dictionary helpers, so there is one PDF object reader.
 
 import { inflate } from './inflate.js';
 
@@ -14,6 +17,56 @@ export function latin1(bytes, start = 0, end = bytes.length) {
     s += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(end, i + 0x8000)));
   }
   return s;
+}
+
+// --- literal strings ------------------------------------------------------------
+
+const ESC = { n: 10, r: 13, t: 9, b: 8, f: 12, '(': 40, ')': 41, '\\': 92 };
+
+/**
+ * Parse a PDF literal string starting at the '(' at data[i]: octal escapes,
+ * \n \r \t \b \f \( \) \\, a backslash-newline continuation and balanced
+ * unescaped parentheses. Port of read_literal in
+ * tools/reference-decoder/decode.py. Names with घ, च or आ are drawn with the
+ * backslash and parenthesis byte codes, which arrive escaped.
+ * @param {string} data content stream as a Latin-1 string
+ * @param {number} i index of the opening parenthesis
+ * @returns {{bytes: number[], next: number}} the string's bytes and the index after ')'
+ */
+export function readLiteral(data, i) {
+  const out = [];
+  let depth = 1;
+  i += 1;
+  while (i < data.length && depth) {
+    const b = data.charCodeAt(i);
+    if (b === 0x5c) {
+      const nb = data.charCodeAt(i + 1);
+      if (nb >= 0x30 && nb <= 0x37) {
+        let j = i + 1;
+        let v = 0;
+        while (j < data.length && j < i + 4 && data.charCodeAt(j) >= 0x30 && data.charCodeAt(j) <= 0x37) {
+          v = v * 8 + (data.charCodeAt(j) - 0x30);
+          j++;
+        }
+        out.push(v & 0xff);
+        i = j;
+        continue;
+      }
+      if (nb === 10 || nb === 13) { i += 2; continue; }
+      if (Number.isNaN(nb)) { i += 1; continue; }
+      out.push(ESC[data[i + 1]] ?? nb);
+      i += 2;
+      continue;
+    }
+    if (b === 0x28) depth++;
+    else if (b === 0x29) {
+      depth--;
+      if (depth === 0) return { bytes: out, next: i + 1 };
+    }
+    out.push(b);
+    i++;
+  }
+  return { bytes: out, next: i };
 }
 
 // --- dictionary parsing with balanced delimiters -----------------------------
@@ -75,6 +128,78 @@ function nameValue(valueText) {
   return m ? m[1] : null;
 }
 
+// --- objects and streams ---------------------------------------------------------
+
+/**
+ * Index every `N G obj ... endobj` of a classic PDF without decoding any
+ * stream. The Latin-1 copy of the file used for scanning is local to this
+ * call and released when it returns: the dictionary strings kept in the index
+ * are fresh copies from the bytes, not slices that would pin the copy.
+ * @param {Uint8Array} bytes
+ * @returns {{objects: Map<number, {dict: string, dataStart: number, dataEnd: number}>, rootNum: number|null}}
+ *   dataStart is -1 for an object without a stream
+ * @throws {Error} if the PDF uses object streams
+ */
+export function indexObjects(bytes) {
+  const text = latin1(bytes);
+  const objects = new Map();
+  const header = /(\d+)\s+(\d+)\s+obj\b/g;
+  let m;
+  while ((m = header.exec(text))) {
+    const bodyStart = header.lastIndex;
+    const streamAt = text.indexOf('stream', bodyStart);
+    const endAt = text.indexOf('endobj', bodyStart);
+    if (streamAt !== -1 && (endAt === -1 || streamAt < endAt)) {
+      const dict = latin1(bytes, bodyStart, streamAt);
+      if (/\/Type\s*\/ObjStm\b/.test(dict)) throw new Error('PDF uses object streams, which this reader does not support');
+      let dataStart = streamAt + 'stream'.length;
+      if (text[dataStart] === '\r') dataStart++;
+      if (text[dataStart] === '\n') dataStart++;
+      const direct = /\/Length\s+(\d+)(?!\s+\d+\s+R)/.exec(dict);
+      let dataEnd = direct ? dataStart + Number(direct[1]) : -1;
+      if (dataEnd < 0 || dataEnd > text.length || text.indexOf('endstream', dataEnd) === -1) {
+        // indirect or wrong /Length: the data runs to the end-of-line before endstream
+        dataEnd = text.indexOf('endstream', dataStart);
+        if (dataEnd === -1) dataEnd = text.length;
+        while (dataEnd > dataStart && (text[dataEnd - 1] === '\n' || text[dataEnd - 1] === '\r')) dataEnd--;
+      }
+      objects.set(Number(m[1]), { dict, dataStart, dataEnd });
+      const after = text.indexOf('endobj', dataEnd);
+      header.lastIndex = after === -1 ? text.length : after + 'endobj'.length;
+    } else {
+      objects.set(Number(m[1]), { dict: latin1(bytes, bodyStart, endAt === -1 ? text.length : endAt), dataStart: -1, dataEnd: -1 });
+    }
+  }
+  let rootNum = null;
+  const trailers = [...text.matchAll(/trailer\s*<<[\s\S]*?\/Root\s+(\d+)\s+\d+\s+R/g)];
+  if (trailers.length) rootNum = Number(trailers[trailers.length - 1][1]);
+  if (rootNum === null || !objects.has(rootNum)) {
+    rootNum = null;
+    for (const [num, obj] of objects) if (/\/Type\s*\/Catalog\b/.test(obj.dict)) rootNum = num;
+  }
+  return { objects, rootNum };
+}
+
+/**
+ * Decoded data of an indexed stream object.
+ * @param {Uint8Array} bytes the whole PDF
+ * @param {{dict: string, dataStart: number, dataEnd: number}} obj an indexObjects entry
+ * @param {{strict?: boolean}} [options] strict (default): throw on a filter
+ *   other than FlateDecode; otherwise return such data undecoded
+ * @returns {Uint8Array|null} null for an object without a stream
+ */
+export function streamData(bytes, obj, { strict = true } = {}) {
+  if (!obj || obj.dataStart < 0) return null;
+  const raw = bytes.subarray(obj.dataStart, obj.dataEnd);
+  const filter = (topLevelEntries(obj.dict).get('Filter') ?? '').trimStart();
+  const list = filter.startsWith('[') ? filter.slice(0, filter.indexOf(']')) : (/^\/\w+/.exec(filter)?.[0] ?? '');
+  const used = [...list.matchAll(/\/(\w+)/g)].map((f) => f[1]);
+  if (!used.length) return raw;
+  if (used.length === 1 && (used[0] === 'FlateDecode' || used[0] === 'Fl')) return inflate(raw);
+  if (!strict) return raw;
+  throw new Error(`unsupported stream filter ${used.join(',')}`);
+}
+
 // --- the document ------------------------------------------------------------
 
 /**
@@ -84,36 +209,9 @@ function nameValue(valueText) {
  */
 export function openPdf(pdfBytes) {
   const bytes = pdfBytes instanceof Uint8Array ? pdfBytes : new Uint8Array(pdfBytes);
-  const text = latin1(bytes);
-  if (!text.startsWith('%PDF-')) throw new Error('not a PDF file');
-
-  // objNum -> { dict: string, dataStart, dataEnd } (stream data stays in `bytes`)
-  const index = new Map();
-  const header = /(\d+)\s+(\d+)\s+obj\b/g;
-  let m;
-  while ((m = header.exec(text))) {
-    const bodyStart = header.lastIndex;
-    const streamAt = text.indexOf('stream', bodyStart);
-    const endAt = text.indexOf('endobj', bodyStart);
-    if (streamAt !== -1 && (endAt === -1 || streamAt < endAt)) {
-      const dict = text.slice(bodyStart, streamAt);
-      if (/\/Type\s*\/ObjStm\b/.test(dict)) throw new Error('PDF uses object streams, which this reader does not support');
-      let dataStart = streamAt + 'stream'.length;
-      if (text[dataStart] === '\r') dataStart++;
-      if (text[dataStart] === '\n') dataStart++;
-      const direct = /\/Length\s+(\d+)(?!\s+\d+\s+R)/.exec(dict);
-      let dataEnd = direct ? dataStart + Number(direct[1]) : -1;
-      if (dataEnd < 0 || dataEnd > text.length || text.indexOf('endstream', dataEnd) === -1) {
-        dataEnd = text.indexOf('endstream', dataStart);
-        while (dataEnd > dataStart && (text[dataEnd - 1] === '\n' || text[dataEnd - 1] === '\r')) dataEnd--;
-      }
-      index.set(Number(m[1]), { dict, dataStart, dataEnd });
-      const after = text.indexOf('endobj', dataEnd);
-      header.lastIndex = after === -1 ? text.length : after + 'endobj'.length;
-    } else {
-      index.set(Number(m[1]), { dict: text.slice(bodyStart, endAt === -1 ? text.length : endAt), dataStart: -1, dataEnd: -1 });
-    }
-  }
+  if (latin1(bytes, 0, Math.min(5, bytes.length)) !== '%PDF-') throw new Error('not a PDF file');
+  const { objects: index, rootNum } = indexObjects(bytes);
+  if (rootNum === null) throw new Error('PDF has no document catalog');
 
   /** Dictionary text of an object (or of an inline value), or null. */
   const dict = (valueText) => {
@@ -124,28 +222,9 @@ export function openPdf(pdfBytes) {
     return num !== null && index.has(num) ? balancedDict(index.get(num).dict) : null;
   };
   const objectDict = (num) => (index.has(num) ? balancedDict(index.get(num).dict) : null);
-
-  /** Decoded stream data of an object, or null if it has none. */
-  const stream = (num) => {
-    const obj = index.get(num);
-    if (!obj || obj.dataStart < 0) return null;
-    const raw = bytes.subarray(obj.dataStart, obj.dataEnd);
-    const filter = (topLevelEntries(obj.dict).get('Filter') ?? '').trimStart();
-    const list = filter.startsWith('[') ? filter.slice(0, filter.indexOf(']')) : (/^\/\w+/.exec(filter)?.[0] ?? '');
-    const used = [...list.matchAll(/\/(\w+)/g)].map((f) => f[1]);
-    if (!used.length) return raw;
-    if (used.length === 1 && (used[0] === 'FlateDecode' || used[0] === 'Fl')) return inflate(raw);
-    throw new Error(`unsupported stream filter ${used.join(',')}`);
-  };
+  const stream = (num) => streamData(bytes, index.get(num));
 
   // Page tree, in order.
-  let rootNum = null;
-  const trailers = [...text.matchAll(/trailer\s*<<[\s\S]*?\/Root\s+(\d+)\s+\d+\s+R/g)];
-  if (trailers.length) rootNum = Number(trailers[trailers.length - 1][1]);
-  if (rootNum === null || !index.has(rootNum)) {
-    for (const [num, obj] of index) if (/\/Type\s*\/Catalog\b/.test(obj.dict)) rootNum = num;
-  }
-  if (rootNum === null) throw new Error('PDF has no document catalog');
   const pageNums = [];
   const seen = new Set();
   const walk = (num, inherited) => {
@@ -165,7 +244,7 @@ export function openPdf(pdfBytes) {
   };
   walk(refNumber(topLevelEntries(objectDict(rootNum) ?? '').get('Pages')), undefined);
 
-  /** name -> { baseFont, program: Uint8Array|null } of a resources dictionary. */
+  /** name -> { baseFont, programNum } of a resources dictionary. */
   const fontsOf = (resourcesValue) => {
     const fonts = new Map();
     const resources = dict(resourcesValue);
@@ -197,8 +276,7 @@ export function openPdf(pdfBytes) {
         const num = refNumber(rest);
         const d = num === null ? null : objectDict(num);
         if (d && nameValue(topLevelEntries(d).get('Subtype')) === 'Form') {
-          const data = stream(num);
-          return { content: latin1(data), fonts: fontsOf(topLevelEntries(d).get('Resources')) };
+          return { content: latin1(stream(num)), fonts: fontsOf(topLevelEntries(d).get('Resources')) };
         }
       }
     }

@@ -12,10 +12,7 @@ strings are compared NFC-normalised on both sides. The decoder also found
 
 ## Mismatched entries
 
-None: every expected entry matched.
-
-| serial | page | field | decoded | expected |
-|---:|---:|---|---|---|
+None: all expected entries match, so there are no mismatched entries to list.
 
 ## Side-by-side sample of matched entries
 

@@ -2,45 +2,32 @@
 // PDF and finding which of their glyphs the text layer actually draws.
 //
 // The roll PDFs are classic PDF 1.4 files with simple (one-byte) TrueType
-// fonts. This is a small purpose-built reader on node:zlib, not a general PDF
-// parser: PDFs it cannot read (object streams, Type0/CID fonts) are rejected
-// with an error or yield no used glyphs, which glyph-map-report treats as a
-// failure rather than a pass. The subset's cmap is read here ONLY to turn the
-// character codes in the content streams into glyph IDs ("which glyphs are
-// used", via src/decoder/subsetCmap.js); Unicode never comes from it.
+// fonts. This is built on the decoder's own small reader
+// (src/decoder/pdfReader.js: object index, stream decoding, literal-string
+// tokenizer, dictionary helpers), not a general PDF parser: PDFs it cannot
+// read (object streams, Type0/CID fonts) are rejected with an error or yield
+// no used glyphs, which glyph-map-report treats as a failure rather than a
+// pass. The subset's cmap is read here ONLY to turn the character codes in
+// the content streams into glyph IDs ("which glyphs are used", via
+// src/decoder/subsetCmap.js); Unicode never comes from it.
 
-import { inflateSync } from 'node:zlib';
-
-import { balancedDict, refNumber, topLevelEntries } from '../src/decoder/pdfReader.js';
+import {
+  balancedDict, indexObjects, readLiteral, refNumber, streamData, topLevelEntries,
+} from '../src/decoder/pdfReader.js';
 import { codeToGlyph } from '../src/decoder/subsetCmap.js';
 
 export { balancedDict, topLevelEntries };
 
-/** Every `N G obj ... endobj`: Map<objNum, {dict: string, stream: Buffer|null}>. */
+/**
+ * Every `N G obj ... endobj`: Map<objNum, {dict: string, stream: Buffer|null}>.
+ * FlateDecode streams are inflated; streams with other filters are returned
+ * undecoded.
+ */
 export function readObjects(pdf) {
-  const text = pdf.toString('latin1');
   const objects = new Map();
-  const header = /(\d+) (\d+) obj\b/g;
-  let m;
-  while ((m = header.exec(text))) {
-    const bodyStart = header.lastIndex;
-    const streamAt = text.indexOf('stream', bodyStart);
-    const endAt = text.indexOf('endobj', bodyStart);
-    if (streamAt !== -1 && (endAt === -1 || streamAt < endAt)) {
-      const dict = text.slice(bodyStart, streamAt);
-      if (/\/Type\s*\/ObjStm\b/.test(dict)) throw new Error('PDF uses object streams, which this reader does not support');
-      let dataStart = streamAt + 'stream'.length;
-      if (text[dataStart] === '\r') dataStart++;
-      if (text[dataStart] === '\n') dataStart++;
-      const direct = /\/Length\s+(\d+)(?!\s+\d+\s+R)/.exec(dict);
-      const dataEnd = direct ? dataStart + Number(direct[1]) : text.indexOf('endstream', dataStart);
-      let data = pdf.subarray(dataStart, dataEnd);
-      if (/\/FlateDecode/.test(dict)) data = inflateSync(data);
-      objects.set(Number(m[1]), { dict, stream: data });
-      header.lastIndex = text.indexOf('endobj', dataEnd) + 'endobj'.length;
-    } else {
-      objects.set(Number(m[1]), { dict: text.slice(bodyStart, endAt), stream: null });
-    }
+  for (const [num, entry] of indexObjects(pdf).objects) {
+    const data = streamData(pdf, entry, { strict: false });
+    objects.set(num, { dict: entry.dict, stream: data && Buffer.from(data.buffer, data.byteOffset, data.byteLength) });
   }
   return objects;
 }
@@ -69,37 +56,6 @@ function fontResources(holderDict, objects) {
 
 // --- content streams ------------------------------------------------------------
 
-function decodeLiteral(text, start) {
-  const codes = [];
-  let depth = 1;
-  let i = start;
-  while (i < text.length && depth > 0) {
-    const ch = text[i++];
-    if (ch === '\\') {
-      const e = text[i++];
-      if (/[0-7]/.test(e)) {
-        let oct = e;
-        while (oct.length < 3 && /[0-7]/.test(text[i] ?? '')) oct += text[i++];
-        codes.push(parseInt(oct, 8) & 0xff);
-      } else if (e === '\r' || e === '\n') {
-        if (e === '\r' && text[i] === '\n') i++;
-      } else {
-        const esc = { n: 10, r: 13, t: 9, b: 8, f: 12 }[e];
-        codes.push(esc ?? e.charCodeAt(0));
-      }
-    } else if (ch === '(') {
-      depth++;
-      codes.push(40);
-    } else if (ch === ')') {
-      depth--;
-      if (depth > 0) codes.push(41);
-    } else {
-      codes.push(ch.charCodeAt(0));
-    }
-  }
-  return { codes, next: i };
-}
-
 /** Text-showing operators of a content stream: [{ fontName, codes }]. */
 export function textShows(content) {
   const shows = [];
@@ -112,8 +68,8 @@ export function textShows(content) {
     if (/\s/.test(ch)) {
       i++;
     } else if (ch === '(') {
-      const { codes, next } = decodeLiteral(content, i + 1);
-      pending.push(...codes);
+      const { bytes, next } = readLiteral(content, i);
+      pending.push(...bytes);
       i = next;
     } else if (ch === '<' && content[i + 1] === '<') {
       i += 2;

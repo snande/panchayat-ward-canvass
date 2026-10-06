@@ -17,8 +17,10 @@
 // Pages are decoded one at a time; only the small entry records are kept.
 
 import { analyseSubsetGlyphs } from './glyphMap.js';
-import { openPdf } from './pdfReader.js';
+import { openPdf, readLiteral } from './pdfReader.js';
 import { codeToGlyph } from './subsetCmap.js';
+
+export { readLiteral };
 
 const VIRAMA = 0x94d;
 const I_MATRA = 0x93f;
@@ -81,50 +83,6 @@ export function reorder(cps) {
   return out;
 }
 
-const ESC = { n: 10, r: 13, t: 9, b: 8, f: 12, '(': 40, ')': 41, '\\': 92 };
-
-/**
- * Parse a PDF literal string starting at the '(' at data[i].
- * @param {string} data content stream as a Latin-1 string
- * @param {number} i index of the opening parenthesis
- * @returns {{bytes: number[], next: number}} the string's bytes and the index after ')'
- */
-export function readLiteral(data, i) {
-  const out = [];
-  let depth = 1;
-  i += 1;
-  while (i < data.length && depth) {
-    const b = data.charCodeAt(i);
-    if (b === 0x5c) {
-      const nb = data.charCodeAt(i + 1);
-      if (nb >= 0x30 && nb <= 0x37) {
-        let j = i + 1;
-        let v = 0;
-        while (j < data.length && j < i + 4 && data.charCodeAt(j) >= 0x30 && data.charCodeAt(j) <= 0x37) {
-          v = v * 8 + (data.charCodeAt(j) - 0x30);
-          j++;
-        }
-        out.push(v & 0xff);
-        i = j;
-        continue;
-      }
-      if (nb === 10 || nb === 13) { i += 2; continue; }
-      if (Number.isNaN(nb)) { i += 1; continue; }
-      out.push(ESC[data[i + 1]] ?? nb);
-      i += 2;
-      continue;
-    }
-    if (b === 0x28) depth++;
-    else if (b === 0x29) {
-      depth--;
-      if (depth === 0) return { bytes: out, next: i + 1 };
-    }
-    out.push(b);
-    i++;
-  }
-  return { bytes: out, next: i };
-}
-
 // The reference's TOK regex, alternative for alternative: Tf, Td, Tm, '(' and BT.
 // PDF whitespace is spelt out because JS \s also matches U+00A0.
 const WS = '[ \\t\\n\\r\\f\\v]';
@@ -166,6 +124,7 @@ function subsetCodeMap(program, table) {
  * previous piece was marks only.
  * @param {string} content the page's content stream (Latin-1 string)
  * @param {Map<string, {role: string, codes: Map<number, number[]|null>|null}>} fonts
+ *   by resource name; `codes` is null for fonts whose bytes are Latin-1 text
  * @returns {{x: number, y: number, text: string, fonts: Set<string>}[]}
  */
 export function pageLines(content, fonts) {
@@ -238,7 +197,9 @@ const DIGITS = /^\d+$/;
  * sits on the row (same y) of its label: name on the नाम row, relative on
  * the 'X का नाम' row, house on the मकान संख्या row, age and gender on the
  * आयु row; the EPIC is a row of its own. An "O" in the serial font on the
- * serial's row marks a struck-off entry.
+ * serial's row marks a struck-off entry. A page with no 'नाम:' label (the
+ * cover and summary pages) yields no entries.
+ * @param {{x: number, y: number, text: string, fonts: Set<string>}[]} lines
  * @returns {object[]} raw entries {serial, deleted, name, rel, relation, ...} plus _serialY
  */
 export function parseEntries(lines) {
@@ -302,9 +263,40 @@ export function parseEntries(lines) {
 const nfc = (v) => (typeof v === 'string' ? v.normalize('NFC') : v);
 
 /**
+ * Add one page's parsed entries to the roll, keyed by serial. The
+ * supplement's deletion list repeats entries already in the original list:
+ * the first record (and its page) is kept, and a repeat that is struck off
+ * marks the kept record deleted.
+ * @param {Map<number, object>} bySerial the roll so far; updated in place
+ * @param {object[]} rawEntries parseEntries output for the page
+ * @param {number} page 1-based PDF page number
+ */
+export function addPageEntries(bySerial, rawEntries, page) {
+  for (const raw of rawEntries) {
+    const prev = bySerial.get(raw.serial);
+    if (prev) { prev.deleted = prev.deleted || raw.deleted; continue; }
+    const entry = {
+      serial: raw.serial,
+      page,
+      name: nfc(raw.name),
+      relation: nfc(raw.relation),
+      relative: nfc(raw.rel),
+      age: raw.age,
+      gender: nfc(raw.gender),
+      house: nfc(raw.house),
+      epic: raw.epic === undefined ? null : nfc(raw.epic),
+      deleted: raw.deleted,
+    };
+    if (raw.extra) entry.extra = raw.extra.map(nfc);
+    bySerial.set(raw.serial, entry);
+  }
+}
+
+/**
  * Decode a roll PDF into its voter entries, one per serial, in roll order.
  * Each entry: {serial, page, name, relation, relative, age, gender, house,
- * epic, deleted} with every string NFC-normalised Unicode; `epic` is null
+ * epic, deleted} (the fields of fixtures/badli-ward1-expected.json plus page
+ * and deleted) with every string NFC-normalised Unicode; `epic` is null
  * where the roll prints none (supplement entries); `deleted` marks
  * struck-off serials; `extra` lists any text the parser could not place.
  * @param {Uint8Array|ArrayBuffer} pdfBytes the roll PDF
@@ -317,8 +309,6 @@ export function decodeRoll(pdfBytes, { table } = {}) {
   const codeMaps = new Map(); // font program object -> byte code map (shared across pages)
   const bySerial = new Map();
   for (const page of pdf.pages()) {
-    // The first two pages are the roll's cover and summary, with no entries.
-    if (page.index < 2) continue;
     const fonts = new Map();
     for (const [name, { baseFont, programNum }] of page.fonts) {
       let codes = null;
@@ -331,26 +321,7 @@ export function decodeRoll(pdfBytes, { table } = {}) {
       }
       fonts.set(name, { role: fontRole(baseFont), codes });
     }
-    for (const raw of parseEntries(pageLines(page.content, fonts))) {
-      // The supplement's deletion list repeats entries already in the
-      // original list: keep the first record per serial.
-      const prev = bySerial.get(raw.serial);
-      if (prev) { prev.deleted = prev.deleted || raw.deleted; continue; }
-      const entry = {
-        serial: raw.serial,
-        page: page.index + 1,
-        name: nfc(raw.name),
-        relation: nfc(raw.relation),
-        relative: nfc(raw.rel),
-        age: raw.age,
-        gender: nfc(raw.gender),
-        house: nfc(raw.house),
-        epic: raw.epic === undefined ? null : nfc(raw.epic),
-        deleted: raw.deleted,
-      };
-      if (raw.extra) entry.extra = raw.extra.map(nfc);
-      bySerial.set(raw.serial, entry);
-    }
+    addPageEntries(bySerial, parseEntries(pageLines(page.content, fonts)), page.index + 1);
   }
   return [...bySerial.values()].sort((a, b) => a.serial - b.serial);
 }
