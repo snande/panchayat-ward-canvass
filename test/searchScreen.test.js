@@ -1,3 +1,9 @@
+// Acceptance tests for the search screen (issue #19), run by `npm test`.
+//
+// The DOM here is the in-process fake from ./helpers/fakeDom.js, not jsdom or
+// a browser: the timing bound and the lang/inputmode attributes are asserted
+// against that test DOM environment, not against Android Chrome.
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -10,6 +16,7 @@ import {
   PLACEHOLDER,
   NO_RESULTS_MESSAGE,
 } from '../src/ui/searchScreen.js';
+import { buildIndex, search } from '../src/search/hindiSearch.js';
 import { createDocument, type } from './helpers/fakeDom.js';
 
 const MODULE_PATH = fileURLToPath(new URL('../src/ui/searchScreen.js', import.meta.url));
@@ -99,10 +106,22 @@ test('debounce is at most 150 ms and search runs only after it', async () => {
   screen.destroy();
 });
 
+test('rendered results are exactly what search from src/search/hindiSearch.js returns', async () => {
+  const { screen, nextRender } = mount();
+  const index = buildIndex(voters2000);
+  for (const q of ['राम', 'सीता देवी', 'कुमार']) {
+    const rendered = nextRender();
+    type(screen.input, q);
+    const results = await rendered;
+    assert.deepEqual(results, search(index, q, { limit: 50 }), `query ${q}`);
+  }
+  screen.destroy();
+});
+
 test('renders at most 50 rows, each with name, relative, serial and house number', async () => {
   const { screen, nextRender, rows } = mount();
   const rendered = nextRender();
-  // 'कुमार' matches 40 voters; a vowel sign matches far more than 50.
+  // The vowel sign ा occurs in far more than 50 names.
   type(screen.input, 'ा');
   const results = await rendered;
   assert.ok(results.length === 50, `expected 50 results, got ${results.length}`);
@@ -310,9 +329,8 @@ test('2000-voter roll: last keystroke to rendered results within debounce + 100 
     const before = renders.length;
     rendered = nextRender();
     // Rapid typing: each keystroke resets the debounce; only the last renders.
-    const keys = [...q];
     let partial = '';
-    for (const k of keys) {
+    for (const k of [...q]) {
       partial += k;
       type(screen.input, partial);
     }
