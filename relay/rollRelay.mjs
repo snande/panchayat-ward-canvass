@@ -45,6 +45,31 @@ export function allowedRollUrls(config) {
   return allowed;
 }
 
+/** Body bytes of a response, or null once more than maxBytes have arrived. */
+async function readCapped(response, maxBytes) {
+  if (!response.body) return new Uint8Array(0);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, at);
+    at += chunk.byteLength;
+  }
+  return out;
+}
+
 function plain(status, message, headers = {}) {
   return new Response(`${message}\n`, {
     status,
@@ -80,13 +105,15 @@ export function createRollRelay({ allowedUrls, fetch = globalThis.fetch, maxByte
     const declared = Number(upstream.headers.get('content-length'));
     if (Number.isFinite(declared) && declared > maxBytes) return plain(502, 'roll PDF too large');
 
+    // Read with a running byte count so a chunked response with no
+    // Content-Length cannot make the relay buffer more than maxBytes.
     let body;
     try {
-      body = new Uint8Array(await upstream.arrayBuffer());
+      body = await readCapped(upstream, maxBytes);
     } catch {
       return plain(502, 'roll source interrupted');
     }
-    if (body.byteLength > maxBytes) return plain(502, 'roll PDF too large');
+    if (body === null) return plain(502, 'roll PDF too large');
     if (String.fromCharCode(...body.subarray(0, PDF_MAGIC.length)) !== PDF_MAGIC) {
       return plain(502, 'roll source did not send a PDF');
     }

@@ -120,7 +120,11 @@ test('the decoded Badli ward 1 roll is stored as exactly the six fields', async 
   const decoded = decodeRoll(fixture('badli-ward1.pdf'));
   const { idb, store } = newStore();
   const stored = await store.encryptAndStore(WARD, decoded);
-  assert.equal(stored.length, decoded.filter((e) => !e.deleted).length);
+  // The benchmark's expected roll lists the 297 live voters; struck-off
+  // serials are not in it, so the stored copy must match it, not the decoder.
+  const expected = JSON.parse(fixture('badli-ward1-expected.json').toString('utf8'));
+  assert.equal(stored.length, expected.length);
+  assert.deepEqual(stored.map((e) => e.serial), expected.map((e) => e.serial));
   for (const entry of stored) assert.deepEqual(Object.keys(entry), [...STORED_FIELDS]);
   const record = raw(idb, ROLLS_STORE).get(WARD);
   // Far smaller than the 257 KB PDF: the PDF itself is never stored.

@@ -23,6 +23,7 @@ const PRECACHE = [
   "src/roll/rollStore.js",
   "src/roll/rollFlow.js",
   "src/ui/rollList.js",
+  "src/ui/dom.js",
   "src/strings.hi.json",
   "fonts/noto-sans-devanagari-subset.woff2",
   "icons/icon-192.png",

@@ -11,6 +11,7 @@
 
 import { fetchRoll as defaultFetchRoll, RollFetchError } from './fetchRoll.js';
 import { createRollStore, minimiseEntries, wardKeyFor } from './rollStore.js';
+import { el } from '../ui/dom.js';
 import { mountRollList } from '../ui/rollList.js';
 
 /** decodeRoll with the master glyph table, loaded only when a PDF needs it. */
@@ -21,13 +22,6 @@ export async function decodeWithTable(pdfBytes) {
   ]);
   const table = await loadMasterTable();
   return decodeRoll(new Uint8Array(pdfBytes), { table });
-}
-
-function el(doc, tag, className, text) {
-  const node = doc.createElement(tag);
-  if (className) node.setAttribute('class', className);
-  if (text != null) node.textContent = String(text);
-  return node;
 }
 
 /**
@@ -112,6 +106,8 @@ export function createRollFlow(container, strings, deps = {}) {
       if (!current()) return null;
       const decoded = await decode(bytes);
       if (!current()) return null;
+      // A PDF that decodes to nothing is not a roll: fail so the user can retry.
+      if (minimiseEntries(decoded).length === 0) throw new Error('decoder returned no entries');
       let entries;
       try {
         entries = await getStore().encryptAndStore(wardKey, decoded);

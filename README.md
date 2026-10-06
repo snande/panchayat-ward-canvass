@@ -20,6 +20,8 @@ one.
    (256-bit, fresh 12-byte IV per write, ward key as additional data) and
    written to IndexedDB (`ward-canvass`). The key is generated on the device
    as a non-extractable `CryptoKey` and kept in the same database.
+   Struck-off serials are left out because the benchmark roll
+   (`fixtures/badli-ward1-expected.json`, 297 voters) does not list them.
 4. `src/ui/rollList.js` renders the entries as a virtualised list: fixed
    100 px rows, with only the rows in view (plus 6 above and below) in the
    DOM. Text uses the page's Noto Sans Devanagari font.
@@ -36,6 +38,8 @@ A failed download shows a Hindi message with a retry button.
 - It fetches only URLs listed as a ward `pdfUrl` in
   `config/constituency.json`. Any other URL, or a missing or repeated `url`,
   answers 403 without contacting any server. Other methods answer 405.
+- The upstream body is read with a running byte count and cut off at 20 MB,
+  so a response with no Content-Length cannot exhaust memory.
 - An upstream error, redirect (the portal answers 302 for a missing ward),
   non-PDF or oversized body answers 502.
 - It sends no CORS header, so only pages on its own origin can read it.

@@ -106,6 +106,22 @@ for (const [name, respond] of [
   });
 }
 
+test('a chunked upstream with no Content-Length is cut off at the cap', async () => {
+  let pulled = 0;
+  const stream = new ReadableStream({
+    pull(controller) {
+      pulled += 1;
+      controller.enqueue(new Uint8Array(1024).fill(0x41));
+      if (pulled > 10_000) controller.close();
+    },
+  });
+  const up = upstream(() => new Response(stream, { headers: { 'Content-Type': 'application/pdf' } }));
+  const relay = createRollRelay({ allowedUrls: allowedRollUrls(config), fetch: up.fetch, maxBytes: 4096 });
+  const res = await relay(new Request(rollUrl(WARD1)));
+  assert.equal(res.status, 502);
+  assert.ok(pulled < 20, `pulled ${pulled} chunks`);
+});
+
 test('static files: only the shell is public, no traversal, no fixtures', () => {
   assert.equal(publicFile('/'), 'index.html');
   assert.equal(publicFile('/js/picker.js'), 'js/picker.js');

@@ -161,6 +161,47 @@ test('a later pick wins over a slower earlier one', async () => {
   assert.equal(s.shown.length, 1);
 });
 
+test('restore() with a record that fails to decrypt neither crashes nor shows a list', async () => {
+  const idb = createFakeIndexedDB();
+  const online = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await online.flow.open(SELECTION);
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  const record = rolls.get('17/125/6313/1');
+  record.iv[0] ^= 0xff; // tampered
+  const s = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  assert.equal(await s.flow.restore(), null);
+  assert.equal(s.shown.length, 0);
+  assert.equal(s.calls.length, 0);
+  assert.equal(s.container.hidden, true);
+  assert.equal(s.errors.length, 1);
+  // Picking the ward again refetches and heals the copy.
+  await s.flow.open(SELECTION);
+  assert.equal(s.calls.length, 1);
+  assert.equal(s.shown.length, 1);
+});
+
+test('a PDF that decodes to no entries is an error with retry, and is not stored', async () => {
+  const s = setup({ fetchRoll: async () => pdfBuffer(), decode: async () => [] });
+  await s.flow.open(SELECTION);
+  assert.equal(s.container.querySelector('p.roll-message').textContent, strings.roll_failed);
+  assert.ok(s.container.querySelector('button.roll-retry'));
+  assert.equal(await s.store.loadStored('17/125/6313/1'), null);
+});
+
+test('rollFlow reaches the decoder only through dynamic imports (offline startup)', () => {
+  const statics = (rel) => [...read(rel).toString('utf8').matchAll(/^import\s[^;]*from\s+'([^']+)'/gm)].map((m) => m[1]);
+  const seen = new Set();
+  const walk = (rel) => {
+    for (const spec of statics(rel)) {
+      const next = new URL(spec, new URL('../' + rel, import.meta.url)).pathname.replace(/^.*?\/work\//, '');
+      assert.doesNotMatch(next, /decoder/, `${rel} statically imports ${spec}`);
+      if (!seen.has(next)) { seen.add(next); walk(next); }
+    }
+  };
+  walk('js/picker.js');
+  assert.ok(seen.has('src/roll/rollFlow.js'));
+});
+
 test('the flow source never offers an upload path', () => {
   for (const rel of ['src/roll/rollFlow.js', 'src/roll/fetchRoll.js', 'js/picker.js', 'src/ui/rollList.js']) {
     const src = read(rel).toString('utf8');

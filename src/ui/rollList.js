@@ -8,16 +8,11 @@
 // smooth. Text is set with textContent only and inherits the page's
 // Noto Sans Devanagari font (--font-family-base in styles.css).
 
+import { el } from './dom.js';
+
 export const ROW_HEIGHT = 100; // px; styles.css .roll-row content fits in this
 export const OVERSCAN = 6;
 const DEFAULT_VIEWPORT_HEIGHT = 600;
-
-function el(doc, tag, className, text) {
-  const node = doc.createElement(tag);
-  if (className) node.setAttribute('class', className);
-  if (text != null) node.textContent = String(text);
-  return node;
-}
 
 /** Index range [start, end) of the rows to render for a scroll position. */
 export function visibleRange(scrollTop, viewportHeight, count, rowHeight = ROW_HEIGHT, overscan = OVERSCAN) {
@@ -52,6 +47,12 @@ export function mountRollList(container, entries, strings, opts = {}) {
   const root = el(doc, 'div', 'roll');
   root.setAttribute('lang', 'hi');
   root.appendChild(el(doc, 'p', 'roll-count', `${text('roll_count')}: ${count}`));
+
+  if (count === 0) {
+    const empty = el(doc, 'p', 'roll-message', text('roll_empty'));
+    empty.setAttribute('role', 'status');
+    root.appendChild(empty);
+  }
 
   const viewport = el(doc, 'div', 'roll-viewport');
   viewport.setAttribute('role', 'list');
