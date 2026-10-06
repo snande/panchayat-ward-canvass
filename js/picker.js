@@ -1,12 +1,18 @@
 import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
+import { createRollFlow } from '../src/roll/rollFlow.js';
 
-// Copy of picker_load_failed in src/strings.hi.json, used if the table itself
-// failed to load. repo-ci fails if it drifts.
+// Copies of src/strings.hi.json entries, used if the table itself failed to
+// load. repo-ci fails if they drift.
 var FALLBACK_STRINGS = {
   picker_load_failed: "वार्ड सूची लोड नहीं हो सकी। कृपया पेज फिर से खोलें।",
+  roll_loading: "मतदाता सूची डाउनलोड हो रही है…",
+  roll_fetch_failed: "मतदाता सूची डाउनलोड नहीं हो सकी। इंटरनेट जाँचें और फिर से कोशिश करें।",
+  roll_failed: "मतदाता सूची खोली नहीं जा सकी। फिर से कोशिश करें।",
+  roll_retry: "फिर से कोशिश करें",
 };
 
 var container = document.getElementById('ward-picker');
+var rollContainer = document.getElementById('roll');
 
 function loadJson(url) {
   return fetch(url).then(function (r) {
@@ -25,15 +31,48 @@ function showFailure(strings) {
   container.replaceChildren(p);
 }
 
+// Once a roll is on screen the "not loaded yet" card is no longer true.
+function hideEmptyState() {
+  var empty = document.querySelector('.empty-state');
+  if (empty) {
+    empty.hidden = true;
+  }
+}
+
+// Picking a ward downloads, decodes and stores its roll (src/roll/rollFlow.js);
+// at startup the last stored roll is shown again with no network request.
+function startRoll(strings) {
+  if (!rollContainer) {
+    return null;
+  }
+  var roll = createRollFlow(rollContainer, Object.assign({}, FALLBACK_STRINGS, strings || {}), {
+    onShow: hideEmptyState,
+  });
+  roll.restore();
+  return roll;
+}
+
 if (container) {
   var table = null;
+  var roll = null;
   loadJson('src/strings.hi.json')
+    .catch(function (err) {
+      roll = startRoll(null);
+      throw err;
+    })
     .then(function (strings) {
       table = strings;
+      roll = startRoll(strings);
       return loadJson('config/constituency.json');
     })
     .then(function (config) {
-      var picker = mountWardPicker(container, config, table);
+      var picker = mountWardPicker(container, config, table, {
+        onSelect: function (selection) {
+          if (roll) {
+            roll.open(selection);
+          }
+        },
+      });
       window.wardSelection = picker.wardSelection;
     })
     .catch(function (err) {

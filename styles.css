@@ -203,3 +203,83 @@ main {
   color: var(--color-text);
   font-size: var(--font-size-sm);
 }
+
+/* Ward roll: loading line, error card and the virtualised voter list. Row
+   height is fixed by src/ui/rollList.js (ROW_HEIGHT); keep the content of a
+   row (three single lines) within it. */
+.roll-section {
+  margin-top: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+}
+
+.roll-section[hidden],
+.empty-state[hidden] {
+  display: none;
+}
+
+.roll-message {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.roll-count {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.roll-viewport {
+  height: 70vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--color-border);
+}
+
+.roll-viewport:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.roll-spacer {
+  position: relative;
+  contain: strict;
+  width: 100%;
+}
+
+.roll-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  padding: var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  line-height: var(--line-height-heading);
+  will-change: transform;
+}
+
+.roll-name,
+.roll-relative,
+.roll-meta {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roll-name {
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+}
+
+.roll-relative,
+.roll-meta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
