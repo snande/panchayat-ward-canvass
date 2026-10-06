@@ -18,6 +18,23 @@ const PRECACHE = [
   "icons/icon-maskable-512.png",
 ];
 
+const OFFLINE_HTML =
+  '<!DOCTYPE html><html lang="hi"><meta charset="utf-8">' +
+  '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+  "<title>ऑफ़लाइन</title><p>इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।</p></html>";
+
+function cachedShell() {
+  return caches.match("index.html", { cacheName: CACHE_NAME }).then(function (shell) {
+    return (
+      shell ||
+      new Response(OFFLINE_HTML, {
+        status: 503,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      })
+    );
+  });
+}
+
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches
@@ -63,19 +80,28 @@ self.addEventListener("fetch", function (event) {
   }
 
   if (request.mode === "navigate") {
-    // Network first; when offline fall back to the cached shell.
+    // Network first; on failure or a non-OK response (e.g. a captive portal)
+    // fall back to the cached shell.
     event.respondWith(
-      fetch(request).catch(function () {
-        return caches.match("index.html");
-      })
+      fetch(request)
+        .then(function (response) {
+          return response.ok ? response : cachedShell();
+        })
+        .catch(cachedShell)
     );
     return;
   }
 
-  // Cache first for shell assets.
+  // Cache first for shell assets; an uncached asset while offline yields a
+  // plain 503 instead of a rejected promise.
   event.respondWith(
-    caches.match(request).then(function (cached) {
-      return cached || fetch(request);
+    caches.match(request, { cacheName: CACHE_NAME }).then(function (cached) {
+      return (
+        cached ||
+        fetch(request).catch(function () {
+          return new Response("", { status: 503, statusText: "Offline" });
+        })
+      );
     })
   );
 });

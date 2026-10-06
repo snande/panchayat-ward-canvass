@@ -5,6 +5,7 @@ Run from anywhere: ``python3 scripts/check_pwa_shell.py``. Exits non-zero and
 prints one line per problem when the shell breaks an acceptance criterion.
 """
 import json
+import posixpath
 import re
 import struct
 import sys
@@ -12,8 +13,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_PRECACHE_BYTES = 400 * 1024
-DEVANAGARI = re.compile(r"[ऀ-ॿ]")
-URL_RE = re.compile(r"""(?:https?:)?//[A-Za-z0-9.-]+\.[A-Za-z]{2,}[^\s"'<>)]*""")
+DEVANAGARI = re.compile("[ऀ-ॿ]")
+# Absolute URLs (any host, including localhost and IPs), plus protocol-relative
+# URLs that open a string literal, an attribute value or url(...).
+URL_RE = re.compile(
+    r"""https?://[^\s"'<>)]+|(?<=["'(])//[A-Za-z0-9\[][^\s"'<>)]*""", re.I
+)
 # Namespace/spec URLs that are identifiers, not network requests.
 URL_ALLOWLIST = ("http://www.w3.org/",)
 
@@ -26,23 +31,34 @@ def png_size(path):
 
 
 def parse_precache(sw_text):
-    match = re.search(r"PRECACHE\s*=\s*\[(.*?)\]", sw_text, re.S)
-    if not match:
+    """Return the string entries of ``const PRECACHE = [ ... ];`` or None."""
+    start = re.search(r"PRECACHE\s*=\s*\[", sw_text)
+    if not start:
         return None
-    return re.findall(r"""["']([^"']+)["']""", match.group(1))
+    entries = []
+    for line in sw_text[start.end():].splitlines():
+        code = line.split("//", 1)[0]
+        entries += re.findall(r"""["']([^"']*)["']""", code)
+        if "]" in code:
+            break
+    return entries
 
 
-def precache_files(entries):
+def precache_files(root, entries):
     files = []
     for entry in entries:
-        name = "index.html" if entry in ("./", "/") else entry.lstrip("./")
-        path = ROOT / name
+        if entry in ("./", "/", ""):
+            name = "index.html"
+        else:
+            name = posixpath.normpath(entry.removeprefix("./").lstrip("/"))
+        path = root / name
         if path not in files:
             files.append(path)
     return files
 
 
 def check(root=ROOT):
+    root = Path(root)
     errors = []
 
     manifest_path = root / "manifest.webmanifest"
@@ -79,6 +95,7 @@ def check(root=ROOT):
                 continue
             if declared != "%dx%d" % actual:
                 errors.append("icon %s declares %s but is %dx%d" % ((src, declared) + actual))
+                continue
             sizes_seen.add(declared)
             if "maskable" in icon.get("purpose", "").split():
                 maskable = True
@@ -89,6 +106,7 @@ def check(root=ROOT):
             errors.append("no icon has purpose including maskable")
 
     index_path = root / "index.html"
+    html = ""
     if not index_path.is_file():
         errors.append("index.html missing")
     else:
@@ -101,7 +119,8 @@ def check(root=ROOT):
             errors.append("index.html needs a viewport meta tag")
         scripts = html
         for src in re.findall(r"<script[^>]*\bsrc=[\"']([^\"']+)", html):
-            scripts += (root / src).read_text(encoding="utf-8") if (root / src).is_file() else ""
+            if (root / src).is_file():
+                scripts += (root / src).read_text(encoding="utf-8")
         if not re.search(r"serviceWorker\s*\.\s*register\(\s*[\"']/?sw\.js", scripts):
             errors.append("shell must register sw.js")
 
@@ -124,13 +143,12 @@ def check(root=ROOT):
         if entries is None:
             errors.append("sw.js needs a PRECACHE list")
         else:
-            precache = precache_files(entries)
+            precache = precache_files(root, entries)
             names = {p.relative_to(root).as_posix() for p in precache}
             required = {"index.html", "manifest.webmanifest"}
             required |= {i.get("src") for i in manifest.get("icons", [])}
-            for src in re.findall(r"""(?:href|src)=["']([^"']+\.(?:css|js|woff2?|ttf))["']""",
-                                  index_path.read_text(encoding="utf-8") if index_path.is_file() else ""):
-                required.add(src)
+            required |= set(re.findall(
+                r"""(?:href|src)=["']([^"']+\.(?:css|js|woff2?|ttf))["']""", html))
             for need in sorted(required - names):
                 errors.append("sw.js PRECACHE lacks %s" % need)
             total = 0
@@ -143,7 +161,7 @@ def check(root=ROOT):
                 errors.append("precached assets total %d bytes (> %d)" % (total, MAX_PRECACHE_BYTES))
 
     shell = [root / n for n in ("index.html", "manifest.webmanifest", "sw.js")]
-    shell += [p for p in precache if p.suffix in (".css", ".js", ".html")]
+    shell += [p for p in precache if p.suffix in (".css", ".js", ".html", ".webmanifest")]
     for p in dict.fromkeys(shell):
         if not p.is_file():
             continue
