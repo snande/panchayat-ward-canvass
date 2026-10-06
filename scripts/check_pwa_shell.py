@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MAX_PRECACHE_BYTES = 400 * 1024
 DEVANAGARI = re.compile("[ऀ-ॿ]")
-LATIN_WORD = re.compile(r"[A-Za-z]")
+LATIN_LETTER = re.compile(r"[A-Za-z]")
 STRINGS_REL = "src/strings.hi.json"
 # Components that must take every colour from the :root design tokens.
 TOKEN_COMPONENTS = ("header", ".btn-primary", ".empty-state")
@@ -30,8 +30,16 @@ COLOUR_LITERAL = re.compile(
 MIN_TOUCH_PX = 48
 MIN_FONT_PX = 16
 MAX_FIXED_WIDTH_PX = 360
+# Width values that can never be wider than the viewport.
+SAFE_WIDTH = re.compile(
+    r"auto|none|inherit|initial|unset|revert|fit-content|min-content|0|"
+    r"(?:100|[1-9]?\d)(?:\.\d+)?(?:%|vw)",
+    re.I,
+)
 # Attributes whose values a user can see or hear.
 VISIBLE_ATTRS = ("alt", "title", "placeholder", "aria-label", "value")
+# A JS string literal (double, single or template quoted).
+JS_STRING = re.compile(r""""((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`""")
 # Absolute URLs (any host, including localhost and IPs), plus protocol-relative
 # URLs that open a string literal, an attribute value or url(...).
 URL_RE = re.compile(
@@ -111,15 +119,24 @@ def declarations(body):
             yield prop.strip().lower(), value.strip()
 
 
-def to_px(value, tokens, depth=0):
-    """Resolve a length (px, rem, em or var(--x)) to px, or None."""
+def resolve(value, tokens, depth=0):
+    """Substitute a whole-value ``var(--x[, fallback])`` from the :root tokens."""
     value = value.strip()
     m = re.fullmatch(r"var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)", value)
-    if m and depth < 5:
-        if m.group(1) in tokens:
-            return to_px(tokens[m.group(1)], tokens, depth + 1)
-        return to_px(m.group(2), tokens, depth + 1) if m.group(2) else None
-    m = re.fullmatch(r"(\d+(?:\.\d+)?)(px|rem|em)", value)
+    if not m or depth > 5:
+        return value
+    if m.group(1) in tokens:
+        return resolve(tokens[m.group(1)], tokens, depth + 1)
+    return resolve(m.group(2), tokens, depth + 1) if m.group(2) else value
+
+
+def to_px(value, tokens):
+    """Resolve a length to px, or None when it is not a plain px/rem length.
+
+    ``em``, ``calc()`` and the like depend on context the check cannot see, so
+    callers must treat None as "cannot verify", never as a pass.
+    """
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)(px|rem)", resolve(value, tokens))
     if not m:
         return None
     return float(m.group(1)) * (1 if m.group(2) == "px" else 16)
@@ -130,13 +147,13 @@ def selector_targets(selector, component):
 
 
 def check_css(root, css_path, errors):
-    """Check design tokens, component colours, widths and @font-face rules.
+    """Check design tokens, component colours, sizes and @font-face rules.
 
-    Returns the repo-relative font files the stylesheet loads.
+    Returns (tokens, fonts): the :root custom properties and the repo-relative
+    font files the stylesheet loads.
     """
     rel = css_path.relative_to(root).as_posix()
-    css = css_path.read_text(encoding="utf-8")
-    rules = list(css_rules(css))
+    rules = list(css_rules(css_path.read_text(encoding="utf-8")))
 
     tokens = {}
     for selector, body in rules:
@@ -149,7 +166,7 @@ def check_css(root, css_path, errors):
         if name.startswith("--font-size-"):
             px = to_px(value, tokens)
             if px is None or px < MIN_FONT_PX:
-                errors.append("%s %s must be at least %dpx" % (rel, name, MIN_FONT_PX))
+                errors.append("%s %s must be a px/rem size of at least %dpx" % (rel, name, MIN_FONT_PX))
 
     for component in TOKEN_COMPONENTS:
         matched = [(sel, body) for sel, body in rules if selector_targets(sel, component)]
@@ -161,13 +178,18 @@ def check_css(root, css_path, errors):
                     errors.append("%s %s hard-codes a colour in %s: %s (use a :root token)"
                                   % (rel, sel, prop, value))
 
-    button_height = 0
+    heights = []
     for sel, body in rules:
         if selector_targets(sel, ".btn-primary"):
             for prop, value in declarations(body):
                 if prop in ("min-height", "height"):
-                    button_height = max(button_height, to_px(value, tokens) or 0)
-    if button_height < MIN_TOUCH_PX:
+                    px = to_px(value, tokens)
+                    if px is None:
+                        errors.append("%s %s %s: %s must resolve to px or rem"
+                                      % (rel, sel, prop, value))
+                    else:
+                        heights.append(px)
+    if not heights or max(heights) < MIN_TOUCH_PX:
         errors.append("%s .btn-primary needs a min-height of at least %dpx" % (rel, MIN_TOUCH_PX))
 
     body_size = None
@@ -177,15 +199,21 @@ def check_css(root, css_path, errors):
                 if prop == "font-size":
                     body_size = to_px(value, tokens)
     if body_size is None or body_size < MIN_FONT_PX:
-        errors.append("%s body font-size must be at least %dpx" % (rel, MIN_FONT_PX))
+        errors.append("%s body font-size must be a px/rem size of at least %dpx" % (rel, MIN_FONT_PX))
 
     for sel, body in rules:
         for prop, value in declarations(body):
-            if prop in ("width", "min-width"):
-                px = to_px(value, tokens)
-                if px is not None and px > MAX_FIXED_WIDTH_PX:
+            if prop not in ("width", "min-width"):
+                continue
+            px = to_px(value, tokens)
+            if px is not None:
+                if px > MAX_FIXED_WIDTH_PX:
                     errors.append("%s %s sets %s: %s, wider than a %dpx screen"
                                   % (rel, sel, prop, value, MAX_FIXED_WIDTH_PX))
+            elif not SAFE_WIDTH.fullmatch(resolve(value, tokens)):
+                errors.append("%s %s %s: %s cannot be checked against a %dpx screen "
+                              "(use px/rem, a percentage or auto)"
+                              % (rel, sel, prop, value, MAX_FIXED_WIDTH_PX))
 
     fonts = []
     faces = [body for sel, body in rules if sel == "@font-face"]
@@ -212,52 +240,85 @@ def check_css(root, css_path, errors):
             elif path.read_bytes()[:4] != b"wOF2":
                 errors.append("font %s is not a WOFF2 file" % font)
             fonts.append(font)
-    return fonts
+    return tokens, fonts
 
 
-def check_strings(root, html, scripts, errors):
-    """Check the Hindi string table and that the shell takes its text from it."""
+def load_strings(root, errors):
     path = root / STRINGS_REL
     if not path.is_file():
         errors.append("%s missing" % STRINGS_REL)
-        return
+        return {}
     try:
         table = json.loads(path.read_text(encoding="utf-8"))
     except ValueError as exc:
         errors.append("%s is not valid JSON: %s" % (STRINGS_REL, exc))
-        return
+        return {}
     if not isinstance(table, dict) or not all(isinstance(v, str) for v in table.values()):
         errors.append("%s must be a flat object of strings" % STRINGS_REL)
-        return
+        return {}
     for key, value in table.items():
-        if not DEVANAGARI.search(value) or LATIN_WORD.search(value):
+        if not DEVANAGARI.search(value) or LATIN_LETTER.search(value):
             errors.append("%s %s must be Hindi (Devanagari, no Latin letters)" % (STRINGS_REL, key))
+    return table
 
-    used = set(re.findall(r"""data-i18n=["']([^"']+)["']""", html))
-    used |= set(re.findall(r"""(?:\bsetStatus|\bt)\(\s*["']([A-Za-z0-9_.-]+)["']""", scripts))
-    for key in sorted(used - set(table)):
-        errors.append("string key %s is not in %s" % (key, STRINGS_REL))
+
+def check_html_strings(html, table, errors):
+    """index.html text must come from the table: data-i18n elements may hold
+    only their own table string (as a no-JS fallback) and nothing else may."""
+    used = set()
+    stripped = html
+    for m in re.finditer(
+            r"""<(\w+)\b([^>]*\bdata-i18n=["']([^"']+)["'][^>]*)>(.*?)</\1>""", html, re.S):
+        key, inner = m.group(3), " ".join(m.group(4).split())
+        used.add(key)
+        if key not in table:
+            errors.append("string key %s is not in %s" % (key, STRINGS_REL))
+        elif inner and inner != table[key]:
+            errors.append("index.html data-i18n=%s text %r differs from %s"
+                          % (key, inner[:40], STRINGS_REL))
+        stripped = stripped.replace(m.group(0), "<%s%s></%s>" % (m.group(1), m.group(2), m.group(1)))
     if not used:
         errors.append("index.html takes no text from %s (use data-i18n)" % STRINGS_REL)
 
-    title = re.search(r"<title>(.*?)</title>", html, re.S)
-    if not title or title.group(1).strip() != table.get("app_title"):
-        errors.append("index.html <title> must equal %s app_title" % STRINGS_REL)
+    title = re.search(r"<title\b([^>]*)>(.*?)</title>", html, re.S)
+    if not title or "app_title" not in title.group(1) or title.group(2).strip() != table.get("app_title"):
+        errors.append('index.html <title> must be data-i18n="app_title" with that table string')
 
-    body = re.search(r"<body[^>]*>(.*)</body>", html, re.S)
+    body = re.search(r"<body[^>]*>(.*)</body>", stripped, re.S)
     body = body.group(1) if body else ""
     body = re.sub(r"<!--.*?-->|<(script|style)\b.*?</\1>", "", body, flags=re.S | re.I)
     text = " ".join(re.sub(r"<[^>]*>", " ", body).split())
     if text:
         errors.append("index.html has inline text %r; put it in %s" % (text[:60], STRINGS_REL))
     for attr, value in re.findall(r"""\b(%s)=["']([^"']*)["']""" % "|".join(VISIBLE_ATTRS), body):
-        if LATIN_WORD.search(value):
+        if LATIN_LETTER.search(value):
             errors.append("index.html %s=%r is English, user-visible text" % (attr, value))
+
+
+def check_js_strings(rel, source, table, errors):
+    """Every string key a script uses must exist, and every Hindi literal in
+    it must be a copy of a table string (keyed copies must match their key)."""
+    for key in re.findall(r"""(?:\bsetStatus|\bt)\(\s*["']([A-Za-z0-9_.-]+)["']""", source):
+        if key not in table:
+            errors.append("%s uses string key %s, which is not in %s" % (rel, key, STRINGS_REL))
+    values = set(table.values())
+    for m in JS_STRING.finditer(source):
+        literal = next(g for g in m.groups() if g is not None)
+        if not DEVANAGARI.search(literal):
+            continue
+        keyed = re.search(r"(\w+)\s*:\s*$", source[:m.start()])
+        if keyed and keyed.group(1) in table:
+            if literal != table[keyed.group(1)]:
+                errors.append("%s %s differs from %s" % (rel, keyed.group(1), STRINGS_REL))
+        elif literal not in values:
+            errors.append("%s has Hindi text %r that is not in %s" % (rel, literal[:40], STRINGS_REL))
 
 
 def check(root=ROOT):
     root = Path(root)
     errors = []
+
+    table = load_strings(root, errors)
 
     manifest_path = root / "manifest.webmanifest"
     manifest = {}
@@ -275,6 +336,9 @@ def check(root=ROOT):
         for key in ("theme_color", "background_color"):
             if not manifest.get(key):
                 errors.append("manifest %s missing" % key)
+        for key, string in (("name", "app_title"), ("short_name", "app_short_name")):
+            if table and manifest.get(key) != table.get(string):
+                errors.append("manifest %s must equal %s %s" % (key, STRINGS_REL, string))
         sizes_seen = set()
         maskable = False
         for icon in manifest.get("icons", []):
@@ -306,6 +370,7 @@ def check(root=ROOT):
     index_path = root / "index.html"
     html = ""
     fonts = []
+    tokens = {}
     if not index_path.is_file():
         errors.append("index.html missing")
     else:
@@ -319,19 +384,35 @@ def check(root=ROOT):
         scripts = ""
         for src in re.findall(r"<script[^>]*\bsrc=[\"']([^\"']+)", html):
             if (root / src).is_file():
-                scripts += (root / src).read_text(encoding="utf-8")
+                source = (root / src).read_text(encoding="utf-8")
+                scripts += source
+                check_js_strings(src, source, table, errors)
         if not re.search(r"serviceWorker\s*\.\s*register\(\s*[\"']/?sw\.js", html + scripts):
             errors.append("shell must register sw.js")
         if STRINGS_REL not in scripts:
             errors.append("shell scripts must load %s" % STRINGS_REL)
-        check_strings(root, html, scripts, errors)
+        check_html_strings(html, table, errors)
         stylesheets = re.findall(
             r"""<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']""", html)
         if not stylesheets:
             errors.append("index.html links no stylesheet")
         for href in stylesheets:
             if (root / href).is_file():
-                fonts += check_css(root, root / href, errors)
+                css_tokens, css_fonts = check_css(root, root / href, errors)
+                tokens.update(css_tokens)
+                fonts += css_fonts
+        for href in re.findall(
+                r"""<link[^>]*rel=["']preload["'][^>]*href=["']([^"']+)["'][^>]*as=["']font["']""", html):
+            if posixpath.normpath(href) not in fonts:
+                errors.append("index.html preloads %s, which no @font-face loads" % href)
+        # Browser chrome colours must come from the same tokens as the page.
+        meta = re.search(r"""<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)""", html)
+        for where, value, token in (
+                ("index.html theme-color", meta.group(1) if meta else None, "--color-primary"),
+                ("manifest theme_color", manifest.get("theme_color"), "--color-primary"),
+                ("manifest background_color", manifest.get("background_color"), "--color-bg")):
+            if token in tokens and (value or "").lower() != tokens[token].lower():
+                errors.append("%s must equal the %s token (%s)" % (where, token, tokens[token]))
 
     sw_path = root / "sw.js"
     precache = []
@@ -339,6 +420,7 @@ def check(root=ROOT):
         errors.append("sw.js missing")
     else:
         sw = sw_path.read_text(encoding="utf-8")
+        check_js_strings("sw.js", sw, table, errors)
         for event in ("install", "activate", "fetch"):
             if not re.search(r"addEventListener\(\s*[\"']%s[\"']" % event, sw):
                 errors.append("sw.js lacks a %s handler" % event)

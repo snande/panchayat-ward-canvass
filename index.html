@@ -3,27 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- theme-color must equal the --color-primary token in styles.css (repo-ci checks it). -->
   <meta name="theme-color" content="#0f766e">
-  <title>पंचायत वार्ड कैनवास</title>
+  <title data-i18n="app_title">पंचायत वार्ड कैनवास</title>
   <!-- Installable shell: sw.js precaches this page, the manifest, icons, CSS, JS,
        the Hindi string table and the self-hosted font on install.
-       Visible text is filled from src/strings.hi.json by js/app.js. -->
+       Every data-i18n element holds its string from src/strings.hi.json as a
+       no-JS fallback; js/app.js re-applies the table at startup and repo-ci
+       fails if the two ever differ. -->
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="preload" href="fonts/noto-sans-devanagari-subset.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
-    <h1 data-i18n="app_title"></h1>
-    <p data-i18n="app_subtitle"></p>
+    <h1 data-i18n="app_title">पंचायत वार्ड कैनवास</h1>
+    <p data-i18n="app_subtitle">मतदाता सूची और घर-घर संपर्क</p>
   </header>
   <main id="app">
     <section class="empty-state" aria-labelledby="empty-title">
-      <h2 id="empty-title" data-i18n="empty_title"></h2>
-      <p data-i18n="empty_body"></p>
-      <button type="button" class="btn-primary" id="primary-action" data-i18n="primary_action"></button>
+      <h2 id="empty-title" data-i18n="empty_title">मतदाता सूची अभी लोड नहीं हुई है</h2>
+      <p data-i18n="empty_body">शुरू करने के लिए अपने वार्ड की मतदाता सूची लोड करें। एक बार लोड होने के बाद यह ऐप बिना इंटरनेट के भी चलेगा।</p>
+      <button type="button" class="btn-primary" id="primary-action" data-i18n="primary_action">वार्ड सूची लोड करें</button>
     </section>
     <p id="status" class="status" aria-live="polite"></p>
   </main>

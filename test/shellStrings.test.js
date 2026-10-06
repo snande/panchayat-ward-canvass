@@ -6,6 +6,9 @@ import vm from 'node:vm';
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
 const table = JSON.parse(read('src/strings.hi.json'));
 const html = read('index.html');
+// [key, fallback text] for every data-i18n element in index.html.
+const i18n = [...html.matchAll(/<(\w+)\b[^>]*\bdata-i18n="([^"]+)"[^>]*>(.*?)<\/\1>/gs)]
+  .map((m) => [m[2], m[3].trim()]);
 
 test('string table is flat Hindi text with no Latin letters', () => {
   assert.ok(Object.keys(table).length > 0);
@@ -16,51 +19,78 @@ test('string table is flat Hindi text with no Latin letters', () => {
   }
 });
 
-test('every data-i18n key in index.html is in the table', () => {
-  const keys = [...html.matchAll(/data-i18n="([^"]+)"/g)].map((m) => m[1]);
+test('home screen has the title, empty state and primary action from the table', () => {
+  const keys = i18n.map(([key]) => key);
   for (const key of ['app_title', 'empty_title', 'empty_body', 'primary_action']) {
     assert.ok(keys.includes(key), key);
   }
-  for (const key of keys) {
-    assert.ok(Object.hasOwn(table, key), key);
+  for (const [key, fallback] of i18n) {
+    assert.equal(fallback, table[key], key);
   }
 });
 
-function element(attrs = {}) {
+function element(attrs = {}, text = '') {
   const listeners = {};
   return {
-    textContent: '',
+    textContent: text,
     getAttribute: (name) => attrs[name] ?? null,
     addEventListener: (type, fn) => { listeners[type] = fn; },
     fire: (type) => listeners[type](),
   };
 }
 
-test('app.js fills the shell from the table at startup', async () => {
-  const keys = [...html.matchAll(/data-i18n="([^"]+)"/g)].map((m) => m[1]);
-  const nodes = keys.map((key) => element({ 'data-i18n': key }));
+function runApp(fetch) {
+  const nodes = i18n.map(([key, fallback]) => element({ 'data-i18n': key }, fallback));
   const status = element();
   const button = element();
-  const requested = [];
   const document = {
     title: '',
     querySelectorAll: (sel) => (sel === '[data-i18n]' ? nodes : []),
     getElementById: (id) => ({ status, 'primary-action': button })[id] ?? null,
   };
-  const fetch = async (url) => {
-    requested.push(url);
-    return { ok: true, status: 200, json: async () => table };
-  };
-  const ctx = vm.createContext({ document, fetch, navigator: {}, window: {}, console });
+  const errors = [];
+  const ctx = vm.createContext({
+    document, fetch, navigator: {}, window: {}, console: { error: (...a) => errors.push(a) },
+  });
   vm.runInContext(read('js/app.js'), ctx);
-  await ctx.stringsReady;
+  return { ctx, nodes, status, button, document, errors };
+}
+
+const settle = () => new Promise((resolve) => setImmediate(resolve));
+
+test('app.js fills the shell from the table at startup', async () => {
+  const requested = [];
+  const changed = { ...table, empty_title: 'नया शीर्षक' };
+  const app = runApp(async (url) => {
+    requested.push(url);
+    return { ok: true, status: 200, json: async () => changed };
+  });
+  await app.ctx.stringsReady;
 
   assert.deepEqual(requested, ['src/strings.hi.json']);
-  keys.forEach((key, i) => assert.equal(nodes[i].textContent, table[key], key));
-  assert.equal(document.title, table.app_title);
+  i18n.forEach(([key], i) => assert.equal(app.nodes[i].textContent, changed[key], key));
+  assert.equal(app.document.title, table.app_title);
 
-  button.fire('click');
-  await ctx.stringsReady;
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(status.textContent, table.action_pending);
+  app.button.fire('click');
+  await settle();
+  assert.equal(app.status.textContent, table.action_pending);
 });
+
+for (const [name, fetch] of [
+  ['a non-OK response', async () => ({ ok: false, status: 404, json: async () => ({}) })],
+  ['a network or cache miss', async () => { throw new TypeError('Failed to fetch'); }],
+]) {
+  test(`app.js keeps the Hindi fallback text after ${name}`, async () => {
+    const app = runApp(fetch);
+    await app.ctx.stringsReady;
+    i18n.forEach(([key, fallback], i) => {
+      assert.equal(app.nodes[i].textContent, fallback, key);
+      assert.ok(fallback.length > 0, key);
+    });
+    assert.equal(app.errors.length, 1);
+
+    app.button.fire('click');
+    await settle();
+    assert.equal(app.status.textContent, '', 'no untranslated key is shown');
+  });
+}

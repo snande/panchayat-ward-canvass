@@ -2,6 +2,8 @@
 
 // All visible shell text lives in src/strings.hi.json; elements name their
 // string with data-i18n="<key>". sw.js precaches the table so this works offline.
+// index.html carries the same strings as a fallback, so if the table fails to
+// load the page keeps its Hindi text instead of going blank.
 var STRINGS_URL = "src/strings.hi.json";
 var strings = {};
 
@@ -37,6 +39,8 @@ var stringsReady = fetch(STRINGS_URL)
     console.error("string table failed to load", err);
   });
 
+// Status lines exist only in the table; without it the status stays empty
+// rather than showing an untranslated key.
 function setStatus(key) {
   return stringsReady.then(function () {
     var status = document.getElementById("status");

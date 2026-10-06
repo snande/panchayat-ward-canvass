@@ -88,7 +88,7 @@ const tests = {
     for (const entry of precache) {
       assert.ok(cached.has(new URL(entry, ORIGIN + "/").href), "precached " + entry);
     }
-    for (const need of ["index.html", "manifest.webmanifest", "css/app.css", "js/app.js", "icons/icon-192.png", "icons/icon-512.png"]) {
+    for (const need of ["index.html", "manifest.webmanifest", "styles.css", "js/app.js", "icons/icon-192.png", "icons/icon-512.png"]) {
       assert.ok(cached.has(ORIGIN + "/" + need), "shell asset " + need);
     }
     assert.strictEqual(sb.calls.skipWaiting, 1);
@@ -143,8 +143,8 @@ const tests = {
   async "assets are cache-first and offline misses yield 503"() {
     const sb = makeSandbox();
     await dispatch(sb, "install");
-    const hit = await dispatch(sb, "fetch", { request: req("/css/app.css") });
-    assert.strictEqual(hit.body, "body:" + ORIGIN + "/css/app.css");
+    const hit = await dispatch(sb, "fetch", { request: req("/styles.css") });
+    assert.strictEqual(hit.body, "body:" + ORIGIN + "/styles.css");
     assert.strictEqual(sb.calls.fetch, 0, "cache hit does not touch the network");
     sb.net.mode = "offline";
     const miss = await dispatch(sb, "fetch", { request: req("/missing.js") });
