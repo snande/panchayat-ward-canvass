@@ -9,7 +9,8 @@ import check_pwa_shell
 
 REPO = check_pwa_shell.ROOT
 HARNESS = Path(__file__).resolve().parent / "sw_behavior_test.cjs"
-SHELL_ITEMS = ("index.html", "manifest.webmanifest", "sw.js", "css", "js", "icons")
+SHELL_ITEMS = ("index.html", "manifest.webmanifest", "sw.js", "styles.css", "js", "icons", "src", "fonts")
+FONT = "fonts/noto-sans-devanagari-subset.woff2"
 NODE = shutil.which("node")
 
 
@@ -20,6 +21,8 @@ class PwaShellTest(unittest.TestCase):
         self.root = Path(tmp.name)
         for item in SHELL_ITEMS:
             src = REPO / item
+            if not src.exists():
+                continue
             if src.is_dir():
                 shutil.copytree(src, self.root / item)
             else:
@@ -76,11 +79,11 @@ class PwaShellTest(unittest.TestCase):
         self.assertError("foreign origin https://fonts.example.com")
 
     def test_protocol_relative_origin_is_caught(self):
-        self.edit("css/app.css", lambda s: s + '@import url("//cdn.example.com/x.css");\n')
+        self.edit("styles.css", lambda s: s + '@import url("//cdn.example.com/x.css");\n')
         self.assertError("foreign origin //cdn.example.com")
 
     def test_oversize_precache_is_caught(self):
-        with open(self.root / "css" / "app.css", "a", encoding="utf-8") as fh:
+        with open(self.root / "styles.css", "a", encoding="utf-8") as fh:
             fh.write("/*" + "x" * (400 * 1024) + "*/\n")
         self.assertError("precached assets total")
 
@@ -95,6 +98,157 @@ class PwaShellTest(unittest.TestCase):
     def test_wrong_html_lang_is_caught(self):
         self.edit("index.html", lambda s: s.replace('lang="hi"', 'lang="en"'))
         self.assertError('<html lang="hi">')
+
+    def write_font(self, data):
+        path = self.root / FONT
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    def append_css(self, text):
+        with open(self.root / "styles.css", "a", encoding="utf-8") as fh:
+            fh.write(text)
+
+    def edit_strings(self, fn):
+        path = self.root / "src" / "strings.hi.json"
+        table = json.loads(path.read_text(encoding="utf-8"))
+        fn(table)
+        path.write_text(json.dumps(table, ensure_ascii=False), encoding="utf-8")
+
+    def test_fixture_with_valid_font_header_passes(self):
+        # Every check except the real font's presence: a WOFF2 header stands in.
+        self.write_font(b"wOF2" + b"\0" * 1024)
+        self.assertEqual(check_pwa_shell.check(self.root), [])
+
+    def test_font_missing_from_precache_is_caught(self):
+        self.edit("sw.js", lambda s: s.replace('  "%s",\n' % FONT, ""))
+        self.assertError("PRECACHE lacks " + FONT)
+
+    def test_strings_missing_from_precache_is_caught(self):
+        self.edit("sw.js", lambda s: s.replace('  "src/strings.hi.json",\n', ""))
+        self.assertError("PRECACHE lacks src/strings.hi.json")
+
+    def test_font_display_other_than_swap_is_caught(self):
+        self.edit("styles.css", lambda s: s.replace("font-display: swap", "font-display: block"))
+        self.assertError("font-display: swap")
+
+    def test_remote_font_face_is_caught(self):
+        self.edit("styles.css", lambda s: s.replace(FONT, "https://fonts.example.com/devanagari.woff2"))
+        self.assertError("must be a relative fonts/ path")
+        self.assertError("foreign origin https://fonts.example.com")
+
+    def test_preload_must_match_font_face_url(self):
+        self.edit("index.html", lambda s: s.replace(
+            'href="%s" as="font"' % FONT, 'href="fonts/other.woff2" as="font"'))
+        self.assertError("preloads fonts/other.woff2, which no @font-face loads")
+
+    def test_missing_font_file_is_caught(self):
+        (self.root / FONT).unlink(missing_ok=True)
+        self.assertError("font %s missing" % FONT)
+
+    def test_non_woff2_font_is_caught(self):
+        self.write_font(b"\0\1\0\0 a TrueType file")
+        self.assertError("is not a WOFF2 file")
+
+    def test_oversize_font_is_caught(self):
+        self.write_font(b"wOF2" + b"\0" * (400 * 1024))
+        self.assertError("precached assets total")
+
+    def test_hard_coded_colour_in_components_is_caught(self):
+        self.append_css(".btn-primary:hover { background: #ff0000; }\nheader { color: white; }\n")
+        self.assertError(".btn-primary:hover hard-codes a colour")
+        self.assertError("header hard-codes a colour")
+
+    def test_hard_coded_colour_in_empty_state_is_caught(self):
+        self.append_css(".empty-state p { color: rgb(1, 2, 3); }\n")
+        self.assertError(".empty-state p hard-codes a colour")
+
+    def test_theme_colour_must_match_token(self):
+        self.edit("index.html", lambda s: s.replace('content="#0f766e"', 'content="#e65100"'))
+        self.edit_manifest(lambda m: m.update(background_color="#ffffff"))
+        self.assertError("index.html theme-color must equal the --color-primary token")
+        self.assertError("manifest background_color must equal the --color-bg token")
+
+    def test_missing_token_family_is_caught(self):
+        self.edit("styles.css", lambda s: s.replace("--radius-", "--corner-"))
+        self.assertError(":root lacks --radius-")
+
+    def test_small_type_token_is_caught(self):
+        self.edit("styles.css", lambda s: s.replace("--font-size-sm: 1rem", "--font-size-sm: 0.8rem"))
+        self.assertError("--font-size-sm must be a px/rem size of at least 16px")
+
+    def test_small_touch_target_is_caught(self):
+        self.edit("styles.css", lambda s: s.replace("--touch-target: 48px", "--touch-target: 40px"))
+        self.assertError(".btn-primary needs a min-height")
+
+    def test_unresolvable_button_height_is_flagged(self):
+        self.edit("styles.css", lambda s: s.replace("--touch-target: 48px", "--touch-target: calc(2em + 16px)"))
+        self.assertError("min-height: var(--touch-target) must resolve to px or rem")
+
+    def test_fixed_width_wider_than_phone_is_caught(self):
+        self.append_css("main { min-width: 420px; }\n")
+        self.assertError("wider than a 360px screen")
+
+    def test_unresolvable_width_is_flagged(self):
+        self.append_css(".empty-state { width: calc(400px); }\n.status { width: 30em; }\n")
+        self.assertError("width: calc(400px) cannot be checked")
+        self.assertError("width: 30em cannot be checked")
+
+    def test_percentage_and_auto_widths_pass(self):
+        self.write_font(b"wOF2")
+        self.append_css(".status { width: 100%; min-width: auto; }\n")
+        self.assertEqual(check_pwa_shell.check(self.root), [])
+
+    def test_english_string_is_caught(self):
+        self.edit_strings(lambda t: t.update(primary_action="Load ward list"))
+        self.assertError("primary_action must be Hindi")
+
+    def test_unknown_html_key_is_caught(self):
+        self.edit("index.html", lambda s: s.replace('data-i18n="empty_body"', 'data-i18n="no_such_key"'))
+        self.assertError("string key no_such_key is not in")
+
+    def test_unknown_js_key_is_caught(self):
+        self.edit("js/app.js", lambda s: s.replace('setStatus("action_pending")', 'setStatus("action_waiting")'))
+        self.assertError("js/app.js uses string key action_waiting")
+
+    def test_status_key_without_fallback_copy_is_caught(self):
+        self.edit("js/app.js", lambda s: s.replace(
+            '  status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",\n', ""))
+        self.assertError("setStatus key status_offline_failed has no Hindi fallback copy")
+
+    def test_status_fallback_drift_is_caught(self):
+        self.edit_strings(lambda t: t.update(action_pending="जल्द आ रहा है।"))
+        self.assertError("js/app.js action_pending differs")
+
+    def test_html_fallback_drift_is_caught(self):
+        self.edit_strings(lambda t: t.update(primary_action="सूची लोड करें"))
+        self.assertError("data-i18n=primary_action text")
+
+    def test_inline_english_text_is_caught(self):
+        self.edit("index.html", lambda s: s.replace(
+            '<p id="status" class="status" aria-live="polite"></p>', "<p>Welcome</p>"))
+        self.assertError("inline text 'Welcome'")
+
+    def test_english_aria_label_is_caught(self):
+        self.edit("index.html", lambda s: s.replace(
+            'class="btn-primary"', 'class="btn-primary" aria-label="Load"'))
+        self.assertError("aria-label='Load' is English")
+
+    def test_title_must_come_from_table(self):
+        self.edit("index.html", lambda s: s.replace(
+            '<title data-i18n="app_title">पंचायत वार्ड कैनवास</title>', "<title>पंचायत</title>"))
+        self.assertError("<title> must be")
+
+    def test_manifest_name_must_match_table(self):
+        self.edit_manifest(lambda m: m.update(short_name="कैनवास"))
+        self.assertError("manifest short_name must equal")
+
+    def test_offline_page_text_must_match_table(self):
+        self.edit_strings(lambda t: t.update(offline_body="नेटवर्क नहीं है।"))
+        self.assertError("sw.js offline_body differs")
+
+    def test_unlisted_hindi_literal_in_js_is_caught(self):
+        self.edit("js/app.js", lambda s: s + '\nconsole.log("तैयार");\n')
+        self.assertError("js/app.js has Hindi text 'तैयार'")
 
     @unittest.skipUnless(NODE, "node not installed")
     def test_js_syntax_error_is_caught(self):
@@ -134,7 +288,7 @@ class ServiceWorkerBehaviourTest(unittest.TestCase):
         self.assertIn("not ok - offline navigation renders the cached shell", proc.stdout)
 
     def test_harness_catches_incomplete_precache(self):
-        proc = self.mutated('  "css/app.css",\n', "")
+        proc = self.mutated('  "styles.css",\n', "")
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("not ok - install precaches", proc.stdout)
 

@@ -1,29 +1,37 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
-// Every shell asset (HTML, manifest, icons, CSS, JS, fonts). No fonts are
-// bundled yet; add them here when they are.
+// Every shell asset (HTML, manifest, icons, CSS, JS, string table, fonts).
+// The font must be here so Hindi renders with correct conjuncts offline.
 const PRECACHE = [
   "./",
   "index.html",
   "manifest.webmanifest",
-  "css/app.css",
+  "styles.css",
   "js/app.js",
+  "src/strings.hi.json",
+  "fonts/noto-sans-devanagari-subset.woff2",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/icon-maskable-512.png",
 ];
 
-// Last-resort page when the shell itself is missing from the cache.
+// Last-resort page when the shell itself is missing from the cache, so the
+// string table may be missing too. These are copies of offline_title and
+// offline_body in src/strings.hi.json; repo-ci fails if they drift.
+const OFFLINE_TEXT = {
+  offline_title: "ऑफ़लाइन",
+  offline_body: "इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।",
+};
 const OFFLINE_HTML = [
   '<!DOCTYPE html><html lang="hi"><meta charset="utf-8">',
   '<meta name="viewport" content="width=device-width, initial-scale=1">',
-  "<title>ऑफ़लाइन</title>",
-  "<p>इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।</p></html>",
+  "<title>" + OFFLINE_TEXT.offline_title + "</title>",
+  "<p>" + OFFLINE_TEXT.offline_body + "</p></html>",
 ].join("");
 
 function cachedShell() {
