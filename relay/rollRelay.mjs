@@ -9,7 +9,8 @@
 // parameter, or anything that is not a URL answers 403 without contacting
 // any server, so the relay cannot be used as an open proxy. Non-GET methods
 // answer 405. An upstream failure, redirect (the portal answers 302 for a
-// ward that does not exist) or non-PDF body answers 502.
+// ward that does not exist), non-PDF body or an upstream that stalls past
+// the timeout answers 502.
 //
 // The handler uses the standard Request/Response API, so it runs under Node
 // 20+ (relay/server.mjs) or any fetch-handler host. It sends no CORS header:
@@ -17,6 +18,7 @@
 
 export const RELAY_PATH = '/roll';
 export const MAX_PDF_BYTES = 20 * 1024 * 1024;
+export const UPSTREAM_TIMEOUT_MS = 30_000;
 const PDF_MAGIC = '%PDF-';
 
 function normalise(raw) {
@@ -78,10 +80,15 @@ function plain(status, message, headers = {}) {
 }
 
 /**
- * @param {{allowedUrls: Set<string>, fetch?: typeof fetch, maxBytes?: number}} options
+ * @param {{allowedUrls: Set<string>, fetch?: typeof fetch, maxBytes?: number,
+ *   timeoutMs?: number}} options
+ * timeoutMs bounds the whole upstream exchange (headers and body); a stalled
+ * source answers 502 instead of holding the request open.
  * @returns {(request: Request) => Promise<Response>}
  */
-export function createRollRelay({ allowedUrls, fetch = globalThis.fetch, maxBytes = MAX_PDF_BYTES }) {
+export function createRollRelay({
+  allowedUrls, fetch = globalThis.fetch, maxBytes = MAX_PDF_BYTES, timeoutMs = UPSTREAM_TIMEOUT_MS,
+}) {
   if (!(allowedUrls instanceof Set)) throw new TypeError('allowedUrls must be a Set');
 
   return async function relay(request) {
@@ -93,9 +100,26 @@ export function createRollRelay({ allowedUrls, fetch = globalThis.fetch, maxByte
     const target = targets.length === 1 ? normalise(targets[0]) : null;
     if (!target || !allowedUrls.has(target)) return plain(403, 'url not in the constituency config');
 
+    // One timer covers headers and body: aborting the signal also errors a
+    // body read that is in progress. (AbortSignal.timeout's timer is unref'd,
+    // so it would not keep a hung request's process alive to fire.)
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(new Error('roll source timed out')), timeoutMs);
+    try {
+      return await fromUpstream(target, abort.signal);
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  async function fromUpstream(target, signal) {
     let upstream;
     try {
-      upstream = await fetch(target, { redirect: 'manual', headers: { Accept: 'application/pdf' } });
+      upstream = await fetch(target, {
+        redirect: 'manual',
+        headers: { Accept: 'application/pdf' },
+        signal,
+      });
     } catch {
       return plain(502, 'roll source unreachable');
     }
@@ -126,5 +150,5 @@ export function createRollRelay({ allowedUrls, fetch = globalThis.fetch, maxByte
         'X-Content-Type-Options': 'nosniff',
       },
     });
-  };
+  }
 }

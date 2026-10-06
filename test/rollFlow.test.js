@@ -202,6 +202,27 @@ test('rollFlow reaches the decoder only through dynamic imports (offline startup
   assert.ok(seen.has('src/roll/rollFlow.js'));
 });
 
+test('open() during a pending restore() wins; restore shows nothing', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION); // ward 1 is now the stored "last" ward
+
+  const s = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const realLast = s.store.lastWardKey;
+  s.store.lastWardKey = async () => { await gate; return realLast(); };
+
+  const restoring = s.flow.restore();
+  const ward2 = { ...SELECTION, ward: '2', pdfUrl: WARD1.replace('001', '002') };
+  await s.flow.open(ward2);
+  assert.equal(s.shown.length, 1);
+  release();
+  assert.equal(await restoring, null);
+  assert.equal(s.shown.length, 1, 'the restored ward did not replace the picked one');
+  assert.equal(s.calls[0].ward, '2');
+});
+
 test('the flow source never offers an upload path', () => {
   for (const rel of ['src/roll/rollFlow.js', 'src/roll/fetchRoll.js', 'js/picker.js', 'src/ui/rollList.js']) {
     const src = read(rel).toString('utf8');

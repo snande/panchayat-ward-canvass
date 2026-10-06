@@ -122,6 +122,28 @@ test('a chunked upstream with no Content-Length is cut off at the cap', async ()
   assert.ok(pulled < 20, `pulled ${pulled} chunks`);
 });
 
+test('a stalled upstream times out with 502 instead of hanging', async () => {
+  const hang = (url, init) => new Promise((resolve, reject) => {
+    init.signal.addEventListener('abort', () => reject(init.signal.reason));
+  });
+  const relay = createRollRelay({ allowedUrls: allowedRollUrls(config), fetch: hang, timeoutMs: 20 });
+  const res = await relay(new Request(rollUrl(WARD1)));
+  assert.equal(res.status, 502);
+
+  // A source that sends headers, then stalls mid-body, is cut off too.
+  const stall = async (url, init) => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('%PDF-1.4'));
+        init.signal.addEventListener('abort', () => controller.error(init.signal.reason));
+      },
+    });
+    return new Response(body, { headers: { 'Content-Type': 'application/pdf' } });
+  };
+  const slow = createRollRelay({ allowedUrls: allowedRollUrls(config), fetch: stall, timeoutMs: 20 });
+  assert.equal((await slow(new Request(rollUrl(WARD1)))).status, 502);
+});
+
 test('static files: only the shell is public, no traversal, no fixtures', () => {
   assert.equal(publicFile('/'), 'index.html');
   assert.equal(publicFile('/js/picker.js'), 'js/picker.js');

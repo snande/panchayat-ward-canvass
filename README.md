@@ -40,6 +40,8 @@ A failed download shows a Hindi message with a retry button.
   answers 403 without contacting any server. Other methods answer 405.
 - The upstream body is read with a running byte count and cut off at 20 MB,
   so a response with no Content-Length cannot exhaust memory.
+- The whole upstream exchange (headers and body) is bounded by a 30 s timer;
+  a stalled source answers 502 instead of holding the request open.
 - An upstream error, redirect (the portal answers 302 for a missing ward),
   non-PDF or oversized body answers 502.
 - It sends no CORS header, so only pages on its own origin can read it.

@@ -84,6 +84,33 @@ test('a row shows serial, name, relative, age, gender and house in Hindi', () =>
   assert.equal(view.viewport.getAttribute('aria-label'), strings.roll_list_label);
 });
 
+test('resize re-renders for the new height and destroy() removes the listener', () => {
+  const doc = createDocument();
+  const listeners = new Map();
+  doc.defaultView = {
+    addEventListener: (type, fn) => listeners.set(type, fn),
+    removeEventListener: (type, fn) => { if (listeners.get(type) === fn) listeners.delete(type); },
+  };
+  const frames = [];
+  const view = mountRollList(doc.body, entries(500), strings, {
+    viewportHeight: VIEWPORT,
+    requestFrame: (fn) => frames.push(fn),
+  });
+  const flush = () => { while (frames.length) frames.shift()(); };
+  flush();
+  const tall = view.rendered().length;
+  assert.ok(listeners.has('resize'));
+
+  view.viewport.clientHeight = 200;
+  listeners.get('resize')();
+  assert.equal(frames.length, 1);
+  flush();
+  assert.ok(view.rendered().length < tall, `${view.rendered().length} < ${tall}`);
+
+  view.destroy();
+  assert.equal(listeners.has('resize'), false);
+});
+
 test('an empty roll renders no rows and does not throw', () => {
   const { view, flush } = mount([]);
   flush();

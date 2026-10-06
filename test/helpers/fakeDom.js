@@ -111,6 +111,11 @@ class FakeElement extends FakeNode {
     return this.hasAttribute('hidden');
   }
 
+  set hidden(value) {
+    if (value) this.setAttribute('hidden', '');
+    else this.removeAttribute('hidden');
+  }
+
   get placeholder() {
     return this.getAttribute('placeholder') || '';
   }
