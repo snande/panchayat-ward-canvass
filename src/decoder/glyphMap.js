@@ -10,6 +10,10 @@
 // do not change the normalisation or the committed hashes stop matching.
 // No OCR, no Kruti Dev mapping and no network call beyond loading the
 // table's own static file; runs in the browser and in Node.
+//
+// The table is loaded lazily, never at import time: a browser caller awaits
+// loadMasterTable() (and can catch and report its failure) before calling
+// mapSubsetGlyphs, or passes the table in explicitly.
 
 import { parseTrueType } from './trueTypeGlyphs.js';
 import { sha256Hex } from './sha256.js';
@@ -24,25 +28,62 @@ export const SPACE_ENTRY = Object.freeze({
   codepoints: Object.freeze([0x20]),
 });
 
-async function loadMasterTable() {
-  if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-    const nodeFs = 'node:fs/promises';
-    const nodeUrl = 'node:url';
-    const { readFile } = await import(/* @vite-ignore */ nodeFs);
-    const { fileURLToPath } = await import(/* @vite-ignore */ nodeUrl);
-    return JSON.parse(await readFile(fileURLToPath(TABLE_URL), 'utf8'));
+let loadedTable = null;
+
+const inNode = () => typeof globalThis.document === 'undefined'
+  && typeof globalThis.process !== 'undefined'
+  && Boolean(globalThis.process.versions && globalThis.process.versions.node);
+
+/**
+ * Load (once) the committed master glyph table. Rejects with an Error
+ * "decoder table could not be loaded" if the file cannot be read or parsed;
+ * a failure is not cached, so a later call retries.
+ * @param {URL} [url] defaults to the committed table next to this module
+ * @returns {Promise<{glyphs: Record<string, object>}>}
+ */
+export async function loadMasterTable(url = TABLE_URL) {
+  if (loadedTable && url === TABLE_URL) return loadedTable;
+  try {
+    let table;
+    if (inNode()) {
+      const nodeFs = 'node:fs/promises';
+      const nodeUrl = 'node:url';
+      const { readFile } = await import(/* @vite-ignore */ nodeFs);
+      const { fileURLToPath } = await import(/* @vite-ignore */ nodeUrl);
+      table = JSON.parse(await readFile(fileURLToPath(url), 'utf8'));
+    } else {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      table = await response.json();
+    }
+    if (!table || typeof table.glyphs !== 'object') throw new Error('no glyphs object');
+    if (url === TABLE_URL) loadedTable = table;
+    return table;
+  } catch (cause) {
+    throw new Error(`decoder table could not be loaded: ${cause.message}`, { cause });
   }
-  const response = await fetch(TABLE_URL);
-  if (!response.ok) throw new Error(`master glyph table: HTTP ${response.status}`);
-  return response.json();
 }
 
-const defaultTable = await loadMasterTable();
+// Table for a call that passed none: the one loadMasterTable() cached, or in
+// Node (scripts, tests) a synchronous read of the committed file.
+function defaultTable() {
+  if (loadedTable) return loadedTable;
+  const nodeProcess = globalThis.process;
+  if (inNode() && typeof nodeProcess.getBuiltinModule === 'function') {
+    const fs = nodeProcess.getBuiltinModule('node:fs');
+    const url = nodeProcess.getBuiltinModule('node:url');
+    loadedTable = JSON.parse(fs.readFileSync(url.fileURLToPath(TABLE_URL), 'utf8'));
+    return loadedTable;
+  }
+  throw new Error('master glyph table not loaded: await loadMasterTable() first, or pass the table');
+}
 
-// Python's round(): halves go to the even neighbour.
-function roundHalfEven(v) {
-  const r = Math.round(v);
-  return Math.abs(v % 1) === 0.5 && r % 2 !== 0 ? r - 1 : r;
+// Python's round(): halves go to the even neighbour. Never returns -0.
+export function roundHalfEven(v) {
+  const floor = Math.floor(v);
+  const diff = v - floor;
+  const r = diff < 0.5 ? floor : diff > 0.5 ? floor + 1 : floor % 2 === 0 ? floor : floor + 1;
+  return r + 0;
 }
 
 // Python's floor division by two, and int() truncation of a float midpoint.
@@ -126,17 +167,31 @@ export function outlineHash(contours) {
 
 /**
  * Match every glyph of a subset font program against the master glyph table.
+ * A glyph whose outline cannot be read (truncated or malformed glyf data) is
+ * reported as unmatched rather than aborting the whole font.
  * @param {Uint8Array|ArrayBuffer} fontProgramBytes raw embedded font program
  * @param {{glyphs: Record<string, object>}} [table] defaults to the committed table
  * @returns {{mapping: Map<number, object>, unmatched: number[]}}
+ * @throws {Error} "embedded font is not a readable TrueType subset" for a CFF or truncated program
  */
-export function analyseSubsetGlyphs(fontProgramBytes, table = defaultTable) {
-  const font = parseTrueType(fontProgramBytes);
+export function analyseSubsetGlyphs(fontProgramBytes, table) {
+  let font;
+  try {
+    font = parseTrueType(fontProgramBytes);
+  } catch (cause) {
+    throw new Error(`embedded font is not a readable TrueType subset: ${cause.message}`, { cause });
+  }
+  const glyphs = (table ?? defaultTable()).glyphs;
   const mapping = new Map();
   const unmatched = [];
   for (let gid = 0; gid < font.numGlyphs; gid++) {
-    const hash = outlineHash(font.contours(gid));
-    const entry = hash === '' ? SPACE_ENTRY : table.glyphs[hash];
+    let entry;
+    try {
+      const hash = outlineHash(font.contours(gid));
+      entry = hash === '' ? SPACE_ENTRY : Object.hasOwn(glyphs, hash) ? glyphs[hash] : undefined;
+    } catch {
+      entry = undefined;
+    }
     if (entry) mapping.set(gid, entry);
     else unmatched.push(gid);
   }
@@ -147,8 +202,9 @@ export function analyseSubsetGlyphs(fontProgramBytes, table = defaultTable) {
  * Map each subset glyph ID to its entry (gid, name, kind, codepoints) in
  * master-glyph-table.json. Glyphs with no match are absent from the Map.
  * @param {Uint8Array|ArrayBuffer} fontProgramBytes raw embedded font program
+ * @param {{glyphs: Record<string, object>}} [table] defaults to the committed table
  * @returns {Map<number, {gid: number|null, name: string, kind: string, codepoints: number[]}>}
  */
-export function mapSubsetGlyphs(fontProgramBytes) {
-  return analyseSubsetGlyphs(fontProgramBytes).mapping;
+export function mapSubsetGlyphs(fontProgramBytes, table) {
+  return analyseSubsetGlyphs(fontProgramBytes, table).mapping;
 }

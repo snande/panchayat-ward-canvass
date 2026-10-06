@@ -68,10 +68,10 @@ export function parseTrueType(fontProgramBytes) {
 
     const flags = [];
     while (flags.length < numPoints) {
-      const flag = bytes[pos++];
+      const flag = view.getUint8(pos++);
       flags.push(flag);
       if (flag & FLAG_REPEAT) {
-        for (let n = bytes[pos++]; n > 0; n--) flags.push(flag);
+        for (let n = view.getUint8(pos++); n > 0; n--) flags.push(flag);
       }
     }
     const readCoords = (shortBit, sameBit) => {
@@ -80,7 +80,7 @@ export function parseTrueType(fontProgramBytes) {
       for (let i = 0; i < numPoints; i++) {
         const flag = flags[i];
         if (flag & shortBit) {
-          const d = bytes[pos++];
+          const d = view.getUint8(pos++);
           v += flag & sameBit ? d : -d;
         } else if (!(flag & sameBit)) {
           v += view.getInt16(pos);
@@ -138,8 +138,8 @@ export function parseTrueType(fontProgramBytes) {
           arg1 = view.getInt8(pos);
           arg2 = view.getInt8(pos + 1);
         } else {
-          arg1 = bytes[pos];
-          arg2 = bytes[pos + 1];
+          arg1 = view.getUint8(pos);
+          arg2 = view.getUint8(pos + 1);
         }
         pos += 2;
       }
