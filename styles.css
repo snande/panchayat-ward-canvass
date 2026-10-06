@@ -187,6 +187,11 @@ main {
   font-size: var(--font-size-body);
 }
 
+.picker-select:disabled {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+}
+
 .picker-select:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;

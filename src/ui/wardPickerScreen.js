@@ -1,6 +1,11 @@
 // Four dependent native <select> dropdowns over the bundled ward catalogue.
 // All text comes from the strings table handed in; the catalogue is local, so
-// the picker itself needs no network.
+// the picker itself needs no network and sends no request.
+//
+// Contract: choosing a configured ward sets wardSelection() and calls
+// opts.onSelect(selection) synchronously, online or not (the selection is
+// valid either way; fetching the PDF is the caller's job). When the device is
+// offline the picker additionally shows the Hindi "no network" message.
 
 import { districts, samitis, panchayats, wards, selectionFor } from '../picker/wardPicker.js';
 
@@ -18,21 +23,16 @@ function el(doc, tag, className, text) {
   return node;
 }
 
-function defaultConnectivityCheck(pdfUrl) {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve(false);
-  if (typeof fetch !== 'function') return Promise.resolve(true);
-  return fetch(pdfUrl, { method: 'HEAD', mode: 'no-cors' }).then(
-    () => true,
-    () => false,
-  );
+/** Default offline signal: the browser's own flag. No request is sent. */
+export function defaultIsOnline() {
+  return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
 
 export function mountWardPicker(container, config, strings, opts = {}) {
   const doc = container.ownerDocument;
-  const connectivityCheck = opts.connectivityCheck || defaultConnectivityCheck;
+  const isOnline = opts.isOnline || defaultIsOnline;
   const text = (key) => (Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : '');
   let current = null;
-  let checkId = 0;
 
   const root = el(doc, 'div', 'ward-picker');
   const selects = {};
@@ -51,10 +51,25 @@ export function mountWardPicker(container, config, strings, opts = {}) {
   const message = el(doc, 'p', 'picker-message');
   message.setAttribute('aria-live', 'polite');
   root.appendChild(message);
-  container.appendChild(root);
+  container.replaceChildren(root);
 
-  function fill(level, items) {
+  const valueOf = (key) => selects[key].value;
+
+  // Options for level i, derived from the already-refilled parent values.
+  function itemsFor(i) {
+    const d = valueOf('district');
+    const s = valueOf('samiti');
+    const p = valueOf('panchayat');
+    if (i === 0) return districts(config);
+    if (i === 1) return d ? samitis(config, d) : [];
+    if (i === 2) return d && s ? panchayats(config, d, s) : [];
+    return d && s && p ? wards(config, d, s, p) : [];
+  }
+
+  function fill(i) {
+    const level = LEVELS[i];
     const select = selects[level.key];
+    const items = itemsFor(i);
     const nodes = [];
     const placeholder = el(doc, 'option', null, text(level.prompt));
     placeholder.setAttribute('value', '');
@@ -66,48 +81,38 @@ export function mountWardPicker(container, config, strings, opts = {}) {
     }
     select.replaceChildren(...nodes);
     select.value = '';
+    if (items.length === 0) select.setAttribute('disabled', '');
+    else select.removeAttribute('disabled');
   }
 
-  function values() {
-    return {
-      district: selects.district.value,
-      samiti: selects.samiti.value,
-      panchayat: selects.panchayat.value,
-      ward: selects.ward.value,
-    };
-  }
-
-  function refresh(from) {
-    const v = values();
-    if (from <= 1) fill(LEVELS[1], v.district ? samitis(config, v.district) : []);
-    if (from <= 2) fill(LEVELS[2], panchayats(config, v.district, selects.samiti.value));
-    if (from <= 3) fill(LEVELS[3], wards(config, v.district, selects.samiti.value, selects.panchayat.value));
+  function rebuildFrom(i) {
+    for (let k = i; k < LEVELS.length; k += 1) fill(k);
   }
 
   function onChange(index) {
-    checkId += 1;
     current = null;
     message.textContent = '';
     if (index < 3) {
-      refresh(index + 1);
+      rebuildFrom(index + 1);
       return;
     }
-    const picked = selectionFor(config, values());
+    const picked = selectionFor(config, {
+      district: valueOf('district'),
+      samiti: valueOf('samiti'),
+      panchayat: valueOf('panchayat'),
+      ward: valueOf('ward'),
+    });
     if (!picked) return;
     current = picked;
-    const mine = checkId;
-    Promise.resolve(connectivityCheck(picked.pdfUrl)).then((online) => {
-      if (mine === checkId && !online) message.textContent = text('network_unavailable');
-      if (typeof opts.onSelect === 'function' && mine === checkId) opts.onSelect(picked);
-    });
+    if (!isOnline()) message.textContent = text('network_unavailable');
+    if (typeof opts.onSelect === 'function') opts.onSelect(picked);
   }
 
   LEVELS.forEach((level, index) => {
     selects[level.key].addEventListener('change', () => onChange(index));
   });
 
-  fill(LEVELS[0], districts(config));
-  refresh(1);
+  rebuildFrom(0);
 
   return {
     wardSelection: () => current,
