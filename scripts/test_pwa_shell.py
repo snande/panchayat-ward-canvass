@@ -9,7 +9,8 @@ import check_pwa_shell
 
 REPO = check_pwa_shell.ROOT
 HARNESS = Path(__file__).resolve().parent / "sw_behavior_test.cjs"
-SHELL_ITEMS = ("index.html", "manifest.webmanifest", "sw.js", "css", "js", "icons")
+SHELL_ITEMS = ("index.html", "manifest.webmanifest", "sw.js", "css", "js", "icons", "src", "fonts")
+FONT = "fonts/noto-sans-devanagari-subset.woff2"
 NODE = shutil.which("node")
 
 
@@ -20,6 +21,8 @@ class PwaShellTest(unittest.TestCase):
         self.root = Path(tmp.name)
         for item in SHELL_ITEMS:
             src = REPO / item
+            if not src.exists():
+                continue
             if src.is_dir():
                 shutil.copytree(src, self.root / item)
             else:
@@ -95,6 +98,99 @@ class PwaShellTest(unittest.TestCase):
     def test_wrong_html_lang_is_caught(self):
         self.edit("index.html", lambda s: s.replace('lang="hi"', 'lang="en"'))
         self.assertError('<html lang="hi">')
+
+    def write_font(self, data):
+        path = self.root / FONT
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    def append_css(self, text):
+        with open(self.root / "css" / "app.css", "a", encoding="utf-8") as fh:
+            fh.write(text)
+
+    def test_fixture_with_valid_font_header_passes(self):
+        self.write_font(b"wOF2" + b"\0" * 1024)
+        self.assertEqual(check_pwa_shell.check(self.root), [])
+
+    def test_font_missing_from_precache_is_caught(self):
+        self.edit("sw.js", lambda s: s.replace('  "%s",\n' % FONT, ""))
+        self.assertError("PRECACHE lacks " + FONT)
+
+    def test_strings_missing_from_precache_is_caught(self):
+        self.edit("sw.js", lambda s: s.replace('  "src/strings.hi.json",\n', ""))
+        self.assertError("PRECACHE lacks src/strings.hi.json")
+
+    def test_font_display_other_than_swap_is_caught(self):
+        self.edit("css/app.css", lambda s: s.replace("font-display: swap", "font-display: block"))
+        self.assertError("font-display: swap")
+
+    def test_remote_font_face_is_caught(self):
+        self.edit("css/app.css", lambda s: s.replace(
+            "../" + FONT, "https://fonts.example.com/devanagari.woff2"))
+        self.assertError("must be a relative fonts/ path")
+        self.assertError("foreign origin https://fonts.example.com")
+
+    def test_missing_font_file_is_caught(self):
+        (self.root / FONT).unlink(missing_ok=True)
+        self.assertError("font %s missing" % FONT)
+
+    def test_non_woff2_font_is_caught(self):
+        self.write_font(b"\0\1\0\0 a TrueType file")
+        self.assertError("is not a WOFF2 file")
+
+    def test_oversize_font_is_caught(self):
+        self.write_font(b"wOF2" + b"\0" * (400 * 1024))
+        self.assertError("precached assets total")
+
+    def test_hard_coded_colour_in_components_is_caught(self):
+        self.append_css(".btn-primary:hover { background: #ff0000; }\nheader { color: white; }\n")
+        self.assertError(".btn-primary:hover hard-codes a colour")
+        self.assertError("header hard-codes a colour")
+
+    def test_hard_coded_colour_in_empty_state_is_caught(self):
+        self.append_css(".empty-state p { color: rgb(1, 2, 3); }\n")
+        self.assertError(".empty-state p hard-codes a colour")
+
+    def test_missing_token_family_is_caught(self):
+        self.edit("css/app.css", lambda s: s.replace("--radius-", "--corner-"))
+        self.assertError(":root lacks --radius-")
+
+    def test_small_type_token_is_caught(self):
+        self.edit("css/app.css", lambda s: s.replace("--font-size-sm: 1rem", "--font-size-sm: 0.8rem"))
+        self.assertError("--font-size-sm must be at least 16px")
+
+    def test_small_touch_target_is_caught(self):
+        self.edit("css/app.css", lambda s: s.replace("--touch-target: 48px", "--touch-target: 40px"))
+        self.assertError(".btn-primary needs a min-height")
+
+    def test_fixed_width_wider_than_phone_is_caught(self):
+        self.append_css("main { min-width: 420px; }\n")
+        self.assertError("wider than a 360px screen")
+
+    def test_english_string_is_caught(self):
+        path = self.root / "src" / "strings.hi.json"
+        table = json.loads(path.read_text(encoding="utf-8"))
+        table["primary_action"] = "Load ward list"
+        path.write_text(json.dumps(table, ensure_ascii=False), encoding="utf-8")
+        self.assertError("primary_action must be Hindi")
+
+    def test_unknown_string_key_is_caught(self):
+        self.edit("index.html", lambda s: s.replace('data-i18n="empty_body"', 'data-i18n="no_such_key"'))
+        self.assertError("string key no_such_key is not in")
+
+    def test_inline_english_text_is_caught(self):
+        self.edit("index.html", lambda s: s.replace(
+            '<p data-i18n="app_subtitle"></p>', "<p>Welcome</p>"))
+        self.assertError("inline text 'Welcome'")
+
+    def test_english_aria_label_is_caught(self):
+        self.edit("index.html", lambda s: s.replace(
+            'class="btn-primary"', 'class="btn-primary" aria-label="Load"'))
+        self.assertError("aria-label='Load' is English")
+
+    def test_title_must_match_string_table(self):
+        self.edit("index.html", lambda s: s.replace("<title>पंचायत वार्ड कैनवास</title>", "<title>Ward Canvass</title>"))
+        self.assertError("<title> must equal")
 
     @unittest.skipUnless(NODE, "node not installed")
     def test_js_syntax_error_is_caught(self):

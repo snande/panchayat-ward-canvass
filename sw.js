@@ -1,18 +1,20 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
-// Every shell asset (HTML, manifest, icons, CSS, JS, fonts). No fonts are
-// bundled yet; add them here when they are.
+// Every shell asset (HTML, manifest, icons, CSS, JS, string table, fonts).
+// The font must be here so Hindi renders with correct conjuncts offline.
 const PRECACHE = [
   "./",
   "index.html",
   "manifest.webmanifest",
   "css/app.css",
   "js/app.js",
+  "src/strings.hi.json",
+  "fonts/noto-sans-devanagari-subset.woff2",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/icon-maskable-512.png",

@@ -17,6 +17,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MAX_PRECACHE_BYTES = 400 * 1024
 DEVANAGARI = re.compile("[ऀ-ॿ]")
+LATIN_WORD = re.compile(r"[A-Za-z]")
+STRINGS_REL = "src/strings.hi.json"
+# Components that must take every colour from the :root design tokens.
+TOKEN_COMPONENTS = ("header", ".btn-primary", ".empty-state")
+TOKEN_PREFIXES = ("--color-", "--space-", "--radius-", "--font-size-")
+COLOUR_LITERAL = re.compile(
+    r"#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(|"
+    r"\b(?:white|black|red|green|blue|orange|yellow|gray|grey|purple|pink|brown|teal|navy)\b",
+    re.I,
+)
+MIN_TOUCH_PX = 48
+MIN_FONT_PX = 16
+MAX_FIXED_WIDTH_PX = 360
+# Attributes whose values a user can see or hear.
+VISIBLE_ATTRS = ("alt", "title", "placeholder", "aria-label", "value")
 # Absolute URLs (any host, including localhost and IPs), plus protocol-relative
 # URLs that open a string literal, an attribute value or url(...).
 URL_RE = re.compile(
@@ -82,6 +97,164 @@ def js_syntax_errors(root):
     return errors
 
 
+def css_rules(css):
+    """Yield (selector, body) for innermost ``selector { body }`` blocks."""
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", css):
+        yield m.group(1).strip(), m.group(2)
+
+
+def declarations(body):
+    for decl in body.split(";"):
+        if ":" in decl:
+            prop, value = decl.split(":", 1)
+            yield prop.strip().lower(), value.strip()
+
+
+def to_px(value, tokens, depth=0):
+    """Resolve a length (px, rem, em or var(--x)) to px, or None."""
+    value = value.strip()
+    m = re.fullmatch(r"var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)", value)
+    if m and depth < 5:
+        if m.group(1) in tokens:
+            return to_px(tokens[m.group(1)], tokens, depth + 1)
+        return to_px(m.group(2), tokens, depth + 1) if m.group(2) else None
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)(px|rem|em)", value)
+    if not m:
+        return None
+    return float(m.group(1)) * (1 if m.group(2) == "px" else 16)
+
+
+def selector_targets(selector, component):
+    return re.search(r"(?:^|[\s>+~,])%s(?![\w-])" % re.escape(component), " " + selector)
+
+
+def check_css(root, css_path, errors):
+    """Check design tokens, component colours, widths and @font-face rules.
+
+    Returns the repo-relative font files the stylesheet loads.
+    """
+    rel = css_path.relative_to(root).as_posix()
+    css = css_path.read_text(encoding="utf-8")
+    rules = list(css_rules(css))
+
+    tokens = {}
+    for selector, body in rules:
+        if selector == ":root":
+            tokens.update((p, v) for p, v in declarations(body) if p.startswith("--"))
+    for prefix in TOKEN_PREFIXES:
+        if not any(name.startswith(prefix) for name in tokens):
+            errors.append("%s :root lacks %s* design tokens" % (rel, prefix))
+    for name, value in tokens.items():
+        if name.startswith("--font-size-"):
+            px = to_px(value, tokens)
+            if px is None or px < MIN_FONT_PX:
+                errors.append("%s %s must be at least %dpx" % (rel, name, MIN_FONT_PX))
+
+    for component in TOKEN_COMPONENTS:
+        matched = [(sel, body) for sel, body in rules if selector_targets(sel, component)]
+        if not matched:
+            errors.append("%s has no rule for %s" % (rel, component))
+        for sel, body in matched:
+            for prop, value in declarations(body):
+                if not prop.startswith("--") and COLOUR_LITERAL.search(value):
+                    errors.append("%s %s hard-codes a colour in %s: %s (use a :root token)"
+                                  % (rel, sel, prop, value))
+
+    button_height = 0
+    for sel, body in rules:
+        if selector_targets(sel, ".btn-primary"):
+            for prop, value in declarations(body):
+                if prop in ("min-height", "height"):
+                    button_height = max(button_height, to_px(value, tokens) or 0)
+    if button_height < MIN_TOUCH_PX:
+        errors.append("%s .btn-primary needs a min-height of at least %dpx" % (rel, MIN_TOUCH_PX))
+
+    body_size = None
+    for sel, body in rules:
+        if sel == "body":
+            for prop, value in declarations(body):
+                if prop == "font-size":
+                    body_size = to_px(value, tokens)
+    if body_size is None or body_size < MIN_FONT_PX:
+        errors.append("%s body font-size must be at least %dpx" % (rel, MIN_FONT_PX))
+
+    for sel, body in rules:
+        for prop, value in declarations(body):
+            if prop in ("width", "min-width"):
+                px = to_px(value, tokens)
+                if px is not None and px > MAX_FIXED_WIDTH_PX:
+                    errors.append("%s %s sets %s: %s, wider than a %dpx screen"
+                                  % (rel, sel, prop, value, MAX_FIXED_WIDTH_PX))
+
+    fonts = []
+    faces = [body for sel, body in rules if sel == "@font-face"]
+    if not faces:
+        errors.append("%s has no @font-face for the self-hosted Devanagari font" % rel)
+    for body in faces:
+        props = dict(declarations(body))
+        if props.get("font-display", "").lower() != "swap":
+            errors.append("%s @font-face must use font-display: swap" % rel)
+        urls = re.findall(r"url\(\s*[\"']?([^\"')]+)", props.get("src", ""))
+        if not urls:
+            errors.append("%s @font-face has no url() source" % rel)
+        for url in urls:
+            if re.match(r"(?:[a-z][a-z0-9+.-]*:|//)", url, re.I):
+                errors.append("%s @font-face src %s must be a relative fonts/ path" % (rel, url))
+                continue
+            font = posixpath.normpath(posixpath.join(posixpath.dirname(rel), url))
+            if not (font.startswith("fonts/") and font.endswith(".woff2")):
+                errors.append("%s @font-face src %s must be a .woff2 under fonts/" % (rel, url))
+                continue
+            path = root / font
+            if not path.is_file():
+                errors.append("font %s missing (run scripts/build_font.sh)" % font)
+            elif path.read_bytes()[:4] != b"wOF2":
+                errors.append("font %s is not a WOFF2 file" % font)
+            fonts.append(font)
+    return fonts
+
+
+def check_strings(root, html, scripts, errors):
+    """Check the Hindi string table and that the shell takes its text from it."""
+    path = root / STRINGS_REL
+    if not path.is_file():
+        errors.append("%s missing" % STRINGS_REL)
+        return
+    try:
+        table = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        errors.append("%s is not valid JSON: %s" % (STRINGS_REL, exc))
+        return
+    if not isinstance(table, dict) or not all(isinstance(v, str) for v in table.values()):
+        errors.append("%s must be a flat object of strings" % STRINGS_REL)
+        return
+    for key, value in table.items():
+        if not DEVANAGARI.search(value) or LATIN_WORD.search(value):
+            errors.append("%s %s must be Hindi (Devanagari, no Latin letters)" % (STRINGS_REL, key))
+
+    used = set(re.findall(r"""data-i18n=["']([^"']+)["']""", html))
+    used |= set(re.findall(r"""(?:\bsetStatus|\bt)\(\s*["']([A-Za-z0-9_.-]+)["']""", scripts))
+    for key in sorted(used - set(table)):
+        errors.append("string key %s is not in %s" % (key, STRINGS_REL))
+    if not used:
+        errors.append("index.html takes no text from %s (use data-i18n)" % STRINGS_REL)
+
+    title = re.search(r"<title>(.*?)</title>", html, re.S)
+    if not title or title.group(1).strip() != table.get("app_title"):
+        errors.append("index.html <title> must equal %s app_title" % STRINGS_REL)
+
+    body = re.search(r"<body[^>]*>(.*)</body>", html, re.S)
+    body = body.group(1) if body else ""
+    body = re.sub(r"<!--.*?-->|<(script|style)\b.*?</\1>", "", body, flags=re.S | re.I)
+    text = " ".join(re.sub(r"<[^>]*>", " ", body).split())
+    if text:
+        errors.append("index.html has inline text %r; put it in %s" % (text[:60], STRINGS_REL))
+    for attr, value in re.findall(r"""\b(%s)=["']([^"']*)["']""" % "|".join(VISIBLE_ATTRS), body):
+        if LATIN_WORD.search(value):
+            errors.append("index.html %s=%r is English, user-visible text" % (attr, value))
+
+
 def check(root=ROOT):
     root = Path(root)
     errors = []
@@ -132,6 +305,7 @@ def check(root=ROOT):
 
     index_path = root / "index.html"
     html = ""
+    fonts = []
     if not index_path.is_file():
         errors.append("index.html missing")
     else:
@@ -140,14 +314,24 @@ def check(root=ROOT):
             errors.append('index.html must declare <html lang="hi">')
         if not re.search(r"<link[^>]*rel=[\"']manifest[\"'][^>]*manifest\.webmanifest", html):
             errors.append("index.html must link manifest.webmanifest")
-        if not re.search(r"<meta[^>]*name=[\"']viewport[\"']", html):
-            errors.append("index.html needs a viewport meta tag")
-        scripts = html
+        if not re.search(r"<meta[^>]*name=[\"']viewport[\"'][^>]*width=device-width", html):
+            errors.append("index.html needs a width=device-width viewport meta tag")
+        scripts = ""
         for src in re.findall(r"<script[^>]*\bsrc=[\"']([^\"']+)", html):
             if (root / src).is_file():
                 scripts += (root / src).read_text(encoding="utf-8")
-        if not re.search(r"serviceWorker\s*\.\s*register\(\s*[\"']/?sw\.js", scripts):
+        if not re.search(r"serviceWorker\s*\.\s*register\(\s*[\"']/?sw\.js", html + scripts):
             errors.append("shell must register sw.js")
+        if STRINGS_REL not in scripts:
+            errors.append("shell scripts must load %s" % STRINGS_REL)
+        check_strings(root, html, scripts, errors)
+        stylesheets = re.findall(
+            r"""<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']""", html)
+        if not stylesheets:
+            errors.append("index.html links no stylesheet")
+        for href in stylesheets:
+            if (root / href).is_file():
+                fonts += check_css(root, root / href, errors)
 
     sw_path = root / "sw.js"
     precache = []
@@ -174,6 +358,7 @@ def check(root=ROOT):
             required |= {i.get("src") for i in manifest.get("icons", [])}
             required |= set(re.findall(
                 r"""(?:href|src)=["']([^"']+\.(?:css|js|woff2?|ttf))["']""", html))
+            required |= set(fonts) | {STRINGS_REL}
             for need in sorted(required - names):
                 errors.append("sw.js PRECACHE lacks %s" % need)
             total = 0
@@ -188,7 +373,7 @@ def check(root=ROOT):
     errors += js_syntax_errors(root)
 
     shell = [root / n for n in ("index.html", "manifest.webmanifest", "sw.js")]
-    shell += [p for p in precache if p.suffix in (".css", ".js", ".html", ".webmanifest")]
+    shell += [p for p in precache if p.suffix in (".css", ".js", ".json", ".html", ".webmanifest")]
     for p in dict.fromkeys(shell):
         if not p.is_file():
             continue
