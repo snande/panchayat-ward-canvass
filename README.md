@@ -23,4 +23,7 @@ These DevTools steps (Chrome's installability check and the Offline reload)
 are not covered by the repo checks and still have to be run in a browser.
 
 Repo checks: `python3 scripts/check_pwa_shell.py` (or
-`cd scripts && python3 -m unittest test_pwa_shell`).
+`cd scripts && python3 -m unittest test_pwa_shell`). When `node` is installed
+they also syntax-check `sw.js` and run it in a stubbed worker sandbox
+(`scripts/sw_behavior_test.js`) to assert the install, activate and
+offline-navigation behaviour.

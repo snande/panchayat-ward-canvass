@@ -18,10 +18,13 @@ const PRECACHE = [
   "icons/icon-maskable-512.png",
 ];
 
-const OFFLINE_HTML =
-  '<!DOCTYPE html><html lang="hi"><meta charset="utf-8">' +
-  '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-  "<title>ऑफ़लाइन</title><p>इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।</p></html>";
+// Last-resort page when the shell itself is missing from the cache.
+const OFFLINE_HTML = [
+  '<!DOCTYPE html><html lang="hi"><meta charset="utf-8">',
+  '<meta name="viewport" content="width=device-width, initial-scale=1">',
+  "<title>ऑफ़लाइन</title>",
+  "<p>इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।</p></html>",
+].join("");
 
 function cachedShell() {
   return caches.match("index.html", { cacheName: CACHE_NAME }).then(function (shell) {

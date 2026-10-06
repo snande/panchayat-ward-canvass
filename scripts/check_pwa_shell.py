@@ -3,11 +3,14 @@
 
 Run from anywhere: ``python3 scripts/check_pwa_shell.py``. Exits non-zero and
 prints one line per problem when the shell breaks an acceptance criterion.
+When ``node`` is on PATH the shell's JavaScript is also syntax-checked.
 """
 import json
 import posixpath
 import re
+import shutil
 import struct
+import subprocess
 import sys
 from pathlib import Path
 
@@ -21,6 +24,13 @@ URL_RE = re.compile(
 )
 # Namespace/spec URLs that are identifiers, not network requests.
 URL_ALLOWLIST = ("http://www.w3.org/",)
+# One JS token inside the PRECACHE array: a string literal, a comment, or the
+# closing bracket. Matching strings first means `//` or `]` inside an entry
+# cannot be mistaken for a comment or the end of the list.
+PRECACHE_TOKEN = re.compile(
+    r"""(?P<str>"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|//[^\n]*|/\*.*?\*/|(?P<end>\])""",
+    re.S,
+)
 
 
 def png_size(path):
@@ -36,11 +46,11 @@ def parse_precache(sw_text):
     if not start:
         return None
     entries = []
-    for line in sw_text[start.end():].splitlines():
-        code = line.split("//", 1)[0]
-        entries += re.findall(r"""["']([^"']*)["']""", code)
-        if "]" in code:
+    for tok in PRECACHE_TOKEN.finditer(sw_text, start.end()):
+        if tok.group("end"):
             break
+        if tok.group("str"):
+            entries.append(tok.group("str")[1:-1])
     return entries
 
 
@@ -55,6 +65,21 @@ def precache_files(root, entries):
         if path not in files:
             files.append(path)
     return files
+
+
+def js_syntax_errors(root):
+    node = shutil.which("node")
+    if not node:
+        return []
+    errors = []
+    for rel in ("sw.js", "js/app.js"):
+        path = root / rel
+        if path.is_file():
+            proc = subprocess.run([node, "--check", str(path)], capture_output=True, text=True)
+            if proc.returncode != 0:
+                first = (proc.stderr.strip().splitlines() or ["syntax error"])[0:5]
+                errors.append("%s does not parse: %s" % (rel, " | ".join(first)))
+    return errors
 
 
 def check(root=ROOT):
@@ -159,6 +184,8 @@ def check(root=ROOT):
                     total += p.stat().st_size
             if total > MAX_PRECACHE_BYTES:
                 errors.append("precached assets total %d bytes (> %d)" % (total, MAX_PRECACHE_BYTES))
+
+    errors += js_syntax_errors(root)
 
     shell = [root / n for n in ("index.html", "manifest.webmanifest", "sw.js")]
     shell += [p for p in precache if p.suffix in (".css", ".js", ".html", ".webmanifest")]
