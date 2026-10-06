@@ -2,10 +2,12 @@
 // PDF and finding which of their glyphs the text layer actually draws.
 //
 // The roll PDFs are classic PDF 1.4 files with simple (one-byte) TrueType
-// fonts and no object streams, so node:zlib and a little tokenising is all
-// that is needed. The subset's cmap is read here ONLY to turn the character
-// codes in the content streams into glyph IDs ("which glyphs are used");
-// the decoder in src/decoder never looks at it.
+// fonts. This is a small purpose-built reader on node:zlib, not a general PDF
+// parser: PDFs it cannot read (object streams, Type0/CID fonts) are rejected
+// with an error or yield no used glyphs, which glyph-map-report treats as a
+// failure rather than a pass. The subset's cmap is read here ONLY to turn the
+// character codes in the content streams into glyph IDs ("which glyphs are
+// used"); the decoder in src/decoder never looks at it.
 
 import { inflateSync } from 'node:zlib';
 
@@ -21,6 +23,7 @@ export function readObjects(pdf) {
     const endAt = text.indexOf('endobj', bodyStart);
     if (streamAt !== -1 && (endAt === -1 || streamAt < endAt)) {
       const dict = text.slice(bodyStart, streamAt);
+      if (/\/Type\s*\/ObjStm\b/.test(dict)) throw new Error('PDF uses object streams, which this reader does not support');
       let dataStart = streamAt + 'stream'.length;
       if (text[dataStart] === '\r') dataStart++;
       if (text[dataStart] === '\n') dataStart++;
@@ -36,6 +39,82 @@ export function readObjects(pdf) {
   }
   return objects;
 }
+
+// --- dictionary parsing with balanced delimiters -----------------------------
+
+// Skip a literal string starting at text[i] === '('; returns the index after it.
+function skipLiteral(text, i) {
+  let depth = 0;
+  for (; i < text.length; i++) {
+    if (text[i] === '\\') i++;
+    else if (text[i] === '(') depth++;
+    else if (text[i] === ')' && --depth === 0) return i + 1;
+  }
+  return text.length;
+}
+
+/** The first `<< ... >>` in text, nested dictionaries included; null if none. */
+export function balancedDict(text) {
+  const open = text.indexOf('<<');
+  if (open < 0) return null;
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '(') i = skipLiteral(text, i) - 1;
+    else if (text.startsWith('<<', i)) { depth++; i++; }
+    else if (text.startsWith('>>', i)) { depth--; i++; if (depth === 0) return text.slice(open, i + 1); }
+  }
+  return null;
+}
+
+/** Top-level entries of a dictionary: Map<name, text following the name>. */
+export function topLevelEntries(dict) {
+  const entries = new Map();
+  const body = balancedDict(dict) ?? '';
+  let depth = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === '(') i = skipLiteral(body, i) - 1;
+    else if (body.startsWith('<<', i)) { depth++; i++; }
+    else if (body.startsWith('>>', i)) { depth--; i++; }
+    else if (ch === '/' && depth === 1) {
+      let j = i + 1;
+      while (j < body.length && !/[\s/()<>[\]{}%]/.test(body[j])) j++;
+      const name = body.slice(i + 1, j);
+      if (!entries.has(name)) entries.set(name, body.slice(j));
+      i = j - 1;
+    }
+  }
+  return entries;
+}
+
+/** A dictionary value given inline or as an indirect reference, as dictionary text (or null). */
+function dictValue(valueText, objects) {
+  if (valueText === undefined) return null;
+  const trimmed = valueText.trimStart();
+  if (trimmed.startsWith('<<')) return balancedDict(trimmed);
+  const ref = /^(\d+)\s+\d+\s+R\b/.exec(trimmed);
+  return ref && objects.has(Number(ref[1])) ? balancedDict(objects.get(Number(ref[1])).dict) : null;
+}
+
+const refNumber = (valueText) => {
+  const m = /^\s*(\d+)\s+\d+\s+R\b/.exec(valueText ?? '');
+  return m ? Number(m[1]) : null;
+};
+
+/** name -> font object number from a dictionary's /Resources /Font. */
+function fontResources(holderDict, objects) {
+  const resources = dictValue(topLevelEntries(holderDict).get('Resources'), objects);
+  const fonts = resources && dictValue(topLevelEntries(resources).get('Font'), objects);
+  const map = new Map();
+  if (!fonts) return map;
+  for (const [name, rest] of topLevelEntries(fonts)) {
+    const num = refNumber(rest);
+    if (num !== null) map.set(name, num);
+  }
+  return map;
+}
+
+// --- cmap (used only to learn which glyphs a character code draws) --------------
 
 /** code -> glyph ID from a subset's cmap (symbolic 3,0 with or without the 0xF000 offset, or 1,0). */
 function codeToGlyph(font) {
@@ -90,6 +169,8 @@ function codeToGlyph(font) {
   };
 }
 
+// --- content streams ------------------------------------------------------------
+
 function decodeLiteral(text, start) {
   const codes = [];
   let depth = 1;
@@ -122,7 +203,7 @@ function decodeLiteral(text, start) {
 }
 
 /** Text-showing operators of a content stream: [{ fontName, codes }]. */
-function textShows(content) {
+export function textShows(content) {
   const shows = [];
   let font = null;
   let lastName = null;
@@ -173,46 +254,50 @@ function textShows(content) {
  */
 export function embeddedFonts(pdf) {
   const objects = readObjects(pdf);
-  const ref = (dict, key) => {
-    const m = new RegExp(`/${key}\\s+(\\d+)\\s+\\d+\\s+R`).exec(dict);
-    return m ? Number(m[1]) : null;
-  };
 
   const programs = new Map(); // font program obj -> { fontName, program, usedGlyphs }
   const programOfFont = new Map(); // font obj -> font program obj
   for (const [num, { dict }] of objects) {
-    const descriptor = ref(dict, 'FontDescriptor');
+    const descriptor = refNumber(topLevelEntries(dict).get('FontDescriptor'));
     if (descriptor === null || !objects.has(descriptor)) continue;
-    const file = ref(objects.get(descriptor).dict, 'FontFile2');
-    const name = /\/FontName\s*\/([^\s/<>[\]]+)/.exec(objects.get(descriptor).dict);
+    const descriptorDict = objects.get(descriptor).dict;
+    const file = refNumber(topLevelEntries(descriptorDict).get('FontFile2'));
+    const name = /\/FontName\s*\/([^\s/<>[\]]+)/.exec(descriptorDict);
     const stream = file === null ? null : objects.get(file)?.stream;
     if (!name || !stream) continue;
     programOfFont.set(num, file);
     if (!programs.has(file)) programs.set(file, { fontName: name[1], program: stream, usedGlyphs: new Set() });
   }
 
-  // Content streams: Form XObjects carry their own /Font resources; pages
-  // point at a content stream and carry the resources themselves.
+  // Content streams: Form XObjects carry their own /Resources; pages point
+  // at one content stream (or an array of them) and carry the resources.
   const units = [];
   for (const { dict, stream } of objects.values()) {
-    if (stream && /\/Font\s*<</.test(dict)) units.push({ resources: dict, content: stream });
-    else if (!stream && /\/Type\s*\/Page\b/.test(dict) && /\/Font\s*<</.test(dict)) {
-      const contents = ref(dict, 'Contents');
-      if (contents !== null && objects.get(contents)?.stream) units.push({ resources: dict, content: objects.get(contents).stream });
+    const entries = topLevelEntries(dict);
+    if (stream && entries.has('Resources')) {
+      units.push({ holder: dict, contents: [stream] });
+    } else if (!stream && /^\s*\/Page\b/.test(entries.get('Type') ?? '')) {
+      const raw = (entries.get('Contents') ?? '').trimStart();
+      const refs = raw.startsWith('[') ? raw.slice(0, raw.indexOf(']')) : (/^\d+\s+\d+\s+R/.exec(raw)?.[0] ?? '');
+      const streams = [...refs.matchAll(/(\d+)\s+\d+\s+R/g)]
+        .map((m) => objects.get(Number(m[1]))?.stream)
+        .filter(Boolean);
+      units.push({ holder: dict, contents: streams });
     }
   }
-  for (const { resources, content } of units) {
-    const fonts = /\/Font\s*<<([^>]*)>>/.exec(resources)?.[1] ?? '';
-    const resourceFont = new Map();
-    for (const m of fonts.matchAll(/\/([^\s/<>[\]]+)\s+(\d+)\s+\d+\s+R/g)) resourceFont.set(m[1], Number(m[2]));
+  for (const { holder, contents } of units) {
+    const resourceFont = fontResources(holder, objects);
+    if (!resourceFont.size) continue;
     const glyphOf = new Map();
-    for (const { fontName, codes } of textShows(content.toString('latin1'))) {
-      const program = programs.get(programOfFont.get(resourceFont.get(fontName)));
-      if (!program) continue;
-      if (!glyphOf.has(program)) glyphOf.set(program, codeToGlyph(program.program));
-      for (const code of codes) {
-        const gid = glyphOf.get(program)(code);
-        if (gid !== undefined) program.usedGlyphs.add(gid);
+    for (const content of contents) {
+      for (const { fontName, codes } of textShows(content.toString('latin1'))) {
+        const program = programs.get(programOfFont.get(resourceFont.get(fontName)));
+        if (!program) continue;
+        if (!glyphOf.has(program)) glyphOf.set(program, codeToGlyph(program.program));
+        for (const code of codes) {
+          const gid = glyphOf.get(program)(code);
+          if (gid !== undefined) program.usedGlyphs.add(gid);
+        }
       }
     }
   }

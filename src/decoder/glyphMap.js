@@ -13,7 +13,9 @@
 //
 // The table is loaded lazily, never at import time: a browser caller awaits
 // loadMasterTable() (and can catch and report its failure) before calling
-// mapSubsetGlyphs, or passes the table in explicitly.
+// mapSubsetGlyphs, or passes the table in explicitly. In Node (Node 20.16+
+// or 22.3+, see package.json engines) a call with no table reads the
+// committed file synchronously.
 
 import { parseTrueType } from './trueTypeGlyphs.js';
 import { sha256Hex } from './sha256.js';
@@ -171,7 +173,7 @@ export function outlineHash(contours) {
  * reported as unmatched rather than aborting the whole font.
  * @param {Uint8Array|ArrayBuffer} fontProgramBytes raw embedded font program
  * @param {{glyphs: Record<string, object>}} [table] defaults to the committed table
- * @returns {{mapping: Map<number, object>, unmatched: number[]}}
+ * @returns {{mapping: Map<number, object>, unmatched: number[], contours: (gid: number) => object[]}}
  * @throws {Error} "embedded font is not a readable TrueType subset" for a CFF or truncated program
  */
 export function analyseSubsetGlyphs(fontProgramBytes, table) {
@@ -195,7 +197,7 @@ export function analyseSubsetGlyphs(fontProgramBytes, table) {
     if (entry) mapping.set(gid, entry);
     else unmatched.push(gid);
   }
-  return { mapping, unmatched };
+  return { mapping, unmatched, contours: font.contours };
 }
 
 /**
