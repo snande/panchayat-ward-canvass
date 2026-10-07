@@ -2,6 +2,7 @@ import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
 import { getAuth, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
+import { startSync } from '../src/sync/syncEngine.js';
 
 // Copies of src/strings.hi.json entries, used if the table itself failed to
 // load. repo-ci fails if they drift.
@@ -57,6 +58,9 @@ function startRoll(strings) {
 
 // Until this device has joined its candidate's team, show the join screen
 // (candidate code + team passphrase). The ward roll works either way.
+// Once the device is in a team, records saved on it go to the team (and
+// teammates' records come in) now, on reconnect, when the page is shown
+// again and every 30 s while online (src/sync/syncEngine.js).
 function startTeamJoin(strings) {
   if (!teamContainer) {
     return;
@@ -64,6 +68,7 @@ function startTeamJoin(strings) {
   getAuth()
     .then(function (auth) {
       if (auth) {
+        startSync();
         return;
       }
       teamContainer.hidden = false;
@@ -72,6 +77,7 @@ function startTeamJoin(strings) {
         onJoined: function () {
           teamContainer.hidden = true;
           teamContainer.replaceChildren();
+          startSync();
         },
       });
     })

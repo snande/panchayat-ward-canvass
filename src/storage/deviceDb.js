@@ -1,17 +1,24 @@
 // The app's one IndexedDB database on the device, shared by the roll store,
 // the contact store and the call-assignment store. Every object store is created here so that both
 // stores agree on the schema and the version. The team credentials
-// (src/sync/teamAuth.js) live in the keys and meta stores.
+// (src/sync/teamAuth.js) live in the keys and meta stores; the sync engine
+// (src/sync/syncEngine.js) keeps its outbox, its merge index and its pull
+// cursor (in meta) here too.
 
 export const DB_NAME = 'ward-canvass';
 // v1: keys, rolls, meta. v2: adds contacts. v3: adds assignments.
-export const DB_VERSION = 3;
+// v4: adds outbox and synced.
+export const DB_VERSION = 4;
 export const KEYS_STORE = 'keys';
 export const ROLLS_STORE = 'rolls';
 export const META_STORE = 'meta';
 export const CONTACTS_STORE = 'contacts';
 export const ASSIGNMENTS_STORE = 'assignments';
-const ALL_STORES = Object.freeze([KEYS_STORE, ROLLS_STORE, META_STORE, CONTACTS_STORE, ASSIGNMENTS_STORE]);
+export const OUTBOX_STORE = 'outbox';
+export const SYNCED_STORE = 'synced';
+const ALL_STORES = Object.freeze([
+  KEYS_STORE, ROLLS_STORE, META_STORE, CONTACTS_STORE, ASSIGNMENTS_STORE, OUTBOX_STORE, SYNCED_STORE,
+]);
 
 export function request(req) {
   return new Promise((resolve, reject) => {
