@@ -2,12 +2,14 @@
 //
 // The search screen (src/ui/searchScreen.js) sits above the virtualised list
 // (src/ui/rollList.js). While the box holds a query the results replace the
-// full list; clearing it brings the list back. Everything stays in memory, so
-// it works offline.
+// full list; clearing it brings the list back. Selecting a result opens that
+// voter's card (src/ui/voterCard.js) above the results. Everything stays on
+// the device, so it works offline.
 
 import { el } from './dom.js';
 import { mountRollList } from './rollList.js';
 import { mountSearchScreen } from './searchScreen.js';
+import { mountVoterCard } from './voterCard.js';
 
 /** Map a stored roll entry to the voter shape the search screen shows. */
 export function toVoter(entry) {
@@ -17,11 +19,14 @@ export function toVoter(entry) {
     name: entry.name,
     relativeName: entry.relative,
     houseNo: entry.house,
+    age: entry.age,
   };
 }
 
 /**
- * Same signature as mountRollList, which it wraps.
+ * Same signature as mountRollList, which it wraps. opts.wardId (the ward's
+ * storage key) and opts.contacts (a contact store; defaults to the device's)
+ * are passed to the voter card.
  * @returns {{root, search, list, destroy: () => void}}
  */
 export function mountRollWithSearch(container, entries, strings, opts = {}) {
@@ -34,7 +39,15 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
   container.replaceChildren(root);
 
   let list = null;
+  const bySerial = new Map(entries.map((entry) => [String(entry.serial), entry]));
   const search = mountSearchScreen(searchHost, entries.map(toVoter), {
+    openCard(host, voter) {
+      return mountVoterCard(host, bySerial.get(String(voter.serial)) || voter, strings, {
+        wardId: opts.wardId,
+        contacts: opts.contacts,
+        onClose: () => search.closeCard(),
+      });
+    },
     onRender() {
       // Re-read the box: onRender fires after every debounced render.
       const querying = (search.input.value || '').trim() !== '';

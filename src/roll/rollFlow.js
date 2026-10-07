@@ -29,7 +29,7 @@ export async function decodeWithTable(pdfBytes) {
  * @param {Record<string,string>} strings the Hindi string table
  * @param {object} [deps] fetchRoll, decode, store ({encryptAndStore,
  *   loadStored, lastWardKey}), mountList, onShow (called when a list shows),
- *   listOptions (passed to mountList), log
+ *   listOptions (passed to mountList, plus the ward key as wardId), log
  */
 export function createRollFlow(container, strings, deps = {}) {
   const doc = container.ownerDocument;
@@ -64,9 +64,10 @@ export function createRollFlow(container, strings, deps = {}) {
     return p;
   }
 
-  function showList(entries) {
+  // The ward key also keys the voters' contact records (see voterCard.js).
+  function showList(entries, wardKey) {
     unmountList();
-    list = mountList(container, entries, strings, deps.listOptions);
+    list = mountList(container, entries, strings, { ...deps.listOptions, wardId: wardKey });
     container.removeAttribute('hidden');
     if (typeof deps.onShow === 'function') deps.onShow(entries);
     return list;
@@ -100,7 +101,7 @@ export function createRollFlow(container, strings, deps = {}) {
       show(showMessage('roll_loading', 'status'));
       const stored = await storedEntries(wardKey);
       if (!current()) return null;
-      if (stored) return showList(stored);
+      if (stored) return showList(stored, wardKey);
 
       const bytes = await fetchRoll(selection);
       if (!current()) return null;
@@ -117,7 +118,7 @@ export function createRollFlow(container, strings, deps = {}) {
         entries = minimiseEntries(decoded);
       }
       if (!current()) return null;
-      return showList(entries);
+      return showList(entries, wardKey);
     } catch (err) {
       log('roll could not be loaded', err);
       if (current()) showError(err, selection);
@@ -133,7 +134,7 @@ export function createRollFlow(container, strings, deps = {}) {
       const stored = await storedEntries(wardKey);
       // A ward picked meanwhile wins over the restored one.
       if (!stored || mine !== generation) return null;
-      return showList(stored);
+      return showList(stored, wardKey);
     } catch (err) {
       log('stored roll could not be restored', err);
       return null;

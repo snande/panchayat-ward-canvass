@@ -23,6 +23,7 @@
   --color-text-muted: #52606d;
   --color-border: #e1ddd3;
   --color-focus: #f59e0b;
+  --color-error: #b42318;
 
   /* Spacing (4 px grid). */
   --space-1: 0.25rem;
@@ -282,4 +283,128 @@ main {
 .roll-meta {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+/* Voter card (src/ui/voterCard.js): roll details and the consent-gated
+   mobile number. Every control is at least --touch-target (48 px) tall. */
+.voter-card {
+  margin: var(--space-3) 0;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-family-base);
+  line-height: var(--line-height-heading);
+}
+
+.voter-card__name {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 400;
+  color: var(--color-text);
+}
+
+.voter-card__relative,
+.voter-card__meta {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.voter-card__consent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  margin-top: var(--space-4);
+  padding: var(--space-2) 0;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.voter-card__checkbox {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.voter-card__checkbox:focus-visible,
+.voter-card__phone:focus-visible,
+.voter-card__close:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.voter-card__field {
+  display: block;
+  margin-top: var(--space-3);
+}
+
+.voter-card__label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.voter-card__phone {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.05em;
+}
+
+.voter-card__phone:disabled {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  cursor: not-allowed;
+}
+
+.voter-card__phone[aria-invalid="true"] {
+  border-color: var(--color-error);
+}
+
+.voter-card__save {
+  margin-top: var(--space-4);
+}
+
+.voter-card__save:disabled {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.voter-card__message {
+  margin: var(--space-3) 0 0;
+  min-height: 1.5rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-primary-strong);
+}
+
+.voter-card__message--error {
+  color: var(--color-error);
+}
+
+.voter-card__close {
+  display: block;
+  width: 100%;
+  min-height: var(--touch-target);
+  margin-top: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-body);
+  cursor: pointer;
 }
