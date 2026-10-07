@@ -6,7 +6,10 @@
 
 import { KEYS_STORE, complete, readValue, request } from '../storage/deviceDb.js';
 
-const KEY_ID = 'roll-key';
+// The key was first created by the roll store under 'roll-key'; the stored id
+// stays the same so devices that already hold a key (and rolls encrypted with
+// it) keep using it.
+export const DEVICE_KEY_ID = 'roll-key';
 
 /**
  * @param {{db: () => Promise<IDBDatabase>, crypto?: Crypto | null}} deps
@@ -16,7 +19,7 @@ export function createDeviceKeyLoader({ db, crypto }) {
   let keyPromise = null;
 
   async function createOrLoadKey() {
-    const existing = await readValue(db, KEYS_STORE, KEY_ID);
+    const existing = await readValue(db, KEYS_STORE, DEVICE_KEY_ID);
     if (existing) return existing;
     const fresh = await crypto.subtle.generateKey(
       { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'],
@@ -25,9 +28,9 @@ export function createDeviceKeyLoader({ db, crypto }) {
     const tx = (await db()).transaction(KEYS_STORE, 'readwrite');
     const done = complete(tx);
     const store = tx.objectStore(KEYS_STORE);
-    let key = await request(store.get(KEY_ID));
+    let key = await request(store.get(DEVICE_KEY_ID));
     if (!key) {
-      store.add(fresh, KEY_ID);
+      store.add(fresh, DEVICE_KEY_ID);
       key = fresh;
     }
     await done;

@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -22,6 +22,10 @@ const PRECACHE = [
   "src/roll/fetchRoll.js",
   "src/roll/rollStore.js",
   "src/roll/rollFlow.js",
+  // The device database and key shared by the roll and contact stores.
+  "src/storage/deviceDb.js",
+  "src/crypto/deviceKey.js",
+  "src/contacts/contactStore.js",
   "src/ui/rollList.js",
   "src/ui/rollSearch.js",
   "src/ui/searchScreen.js",

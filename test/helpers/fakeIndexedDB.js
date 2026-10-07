@@ -1,8 +1,9 @@
-// Minimal in-memory IndexedDB used by the roll store tests. It implements only
-// what src/roll/rollStore.js relies on: open with upgradeneeded, object
-// stores with out-of-line keys, get/put/add, and transactions that complete
-// once their requests are done. Values are structured-cloned on write and on
-// read like the real thing (CryptoKey objects are kept by reference).
+// Minimal in-memory IndexedDB used by the roll and contact store tests. It
+// implements only what src/roll/rollStore.js and src/contacts/contactStore.js
+// rely on: open with upgradeneeded, object stores with out-of-line keys,
+// get/put/add/delete, and transactions that complete once their requests are
+// done. Values are structured-cloned on write and on read like the real thing
+// (CryptoKey objects are kept by reference).
 //
 // `databases` exposes the raw stored records so tests can inspect exactly
 // what would sit on the device.
@@ -59,6 +60,13 @@ class FakeTransaction {
           if (data.has(key)) throw new Error('ConstraintError');
           data.set(key, clone(value));
           return key;
+        });
+      },
+      delete: (key) => {
+        writable();
+        return run(() => {
+          data.delete(key);
+          return undefined;
         });
       },
     };

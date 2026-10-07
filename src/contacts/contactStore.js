@@ -11,33 +11,40 @@
 // - The first saved number asks the browser to keep the data
 //   (navigator.storage.persist()) so it is not evicted while offline.
 //
-// No network access: every operation works offline.
+// No network access: every operation works offline, with `fetch` undefined.
 
 import { CONTACTS_STORE, complete, createDbOpener, readValue, request } from '../storage/deviceDb.js';
 import { createDeviceKeyLoader } from '../crypto/deviceKey.js';
 
-/** Storage key of a voter's contact record. */
+/**
+ * Storage key of a voter's contact record. wardId never contains ':' and
+ * serial is a whole number, so distinct voters never share a key.
+ */
 export function contactKeyFor(wardId, serial) {
   return `${wardId}:${serial}`;
 }
 
 /**
  * Normalise a mobile number to its 10 digits: spaces and a leading +91 or 0
- * are stripped. Returns null for anything else.
+ * are stripped. Returns null for anything else, including a number type
+ * (which cannot keep a leading 0 or +91).
  */
 export function normalisePhone(phone) {
-  if (typeof phone !== 'string' && typeof phone !== 'number') return null;
-  let digits = String(phone).replace(/\s+/g, '');
+  if (typeof phone !== 'string') return null;
+  let digits = phone.replace(/ /g, '');
   if (digits.startsWith('+91')) digits = digits.slice(3);
   else if (digits.startsWith('0')) digits = digits.slice(1);
   return /^\d{10}$/.test(digits) ? digits : null;
 }
 
-function checkVoter(wardId, serial) {
-  if (typeof wardId !== 'string' || !wardId) throw new TypeError('wardId must be a non-empty string');
-  const validSerial = (typeof serial === 'number' && Number.isFinite(serial))
-    || (typeof serial === 'string' && serial !== '');
-  if (!validSerial) throw new TypeError('serial must be a number or a non-empty string');
+/** Validate a voter reference; returns the serial as a number (5 and '5' are one voter). */
+function voterSerial(wardId, serial) {
+  if (typeof wardId !== 'string' || !wardId || wardId.includes(':')) {
+    throw new TypeError('wardId must be a non-empty string without ":"');
+  }
+  const n = typeof serial === 'string' && /^\d+$/.test(serial) ? Number(serial) : serial;
+  if (!Number.isSafeInteger(n) || n < 0) throw new TypeError('serial must be a whole number');
+  return n;
 }
 
 /**
@@ -114,12 +121,12 @@ export function createContactStore({
    * @returns {Promise<{wardId, serial, phone: string | null, consentAt: string}>}
    */
   async function recordConsent(wardId, serial) {
-    checkVoter(wardId, serial);
-    const existing = await load(wardId, serial);
+    const n = voterSerial(wardId, serial);
+    const existing = await load(wardId, n);
     if (existing) return existing;
     const consentAt = new Date().toISOString();
-    await write(wardId, serial, { phone: null, consentAt }, { requireExisting: false });
-    return { wardId, serial, phone: null, consentAt };
+    await write(wardId, n, { phone: null, consentAt }, { requireExisting: false });
+    return { wardId, serial: n, phone: null, consentAt };
   }
 
   /**
@@ -127,28 +134,27 @@ export function createContactStore({
    * is not a 10-digit mobile number or no consent is on record.
    */
   async function saveNumber(wardId, serial, phone) {
-    checkVoter(wardId, serial);
+    const n = voterSerial(wardId, serial);
     const digits = normalisePhone(phone);
     if (!digits) throw new TypeError('phone must be a 10-digit mobile number');
-    const existing = await load(wardId, serial);
+    const existing = await load(wardId, n);
     if (!existing) throw new Error('no consent recorded for this voter; the number was not saved');
-    await write(wardId, serial, { phone: digits, consentAt: existing.consentAt }, { requireExisting: true });
+    await write(wardId, n, { phone: digits, consentAt: existing.consentAt }, { requireExisting: true });
     requestPersistence();
-    return { wardId, serial, phone: digits, consentAt: existing.consentAt };
+    return { wardId, serial: n, phone: digits, consentAt: existing.consentAt };
   }
 
   /** The voter's number and consent timestamp, or null when no consent is on record. */
   async function getContact(wardId, serial) {
-    checkVoter(wardId, serial);
-    return load(wardId, serial);
+    return load(wardId, voterSerial(wardId, serial));
   }
 
   /** Revoke the voter's consent: their record, with any number, is deleted. */
   async function revokeConsent(wardId, serial) {
-    checkVoter(wardId, serial);
+    const n = voterSerial(wardId, serial);
     const tx = (await db()).transaction(CONTACTS_STORE, 'readwrite');
     const done = complete(tx);
-    tx.objectStore(CONTACTS_STORE).delete(contactKeyFor(wardId, serial));
+    tx.objectStore(CONTACTS_STORE).delete(contactKeyFor(wardId, n));
     await done;
   }
 
