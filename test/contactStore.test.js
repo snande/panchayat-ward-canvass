@@ -275,7 +275,7 @@ test('upgrading a v1 database keeps its roll and its device key, which the conta
   assert.equal(await rolls.lastWardKey(), WARD);
   const record = idb.databases.get(DB_NAME);
   assert.equal(record.version, DB_VERSION);
-  assert.equal(DB_VERSION, 2);
+  assert.ok(DB_VERSION >= 2);
   assert.ok(record.stores.has(CONTACTS_STORE));
 
   const { store } = newStore({ idb });

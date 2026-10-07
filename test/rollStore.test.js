@@ -112,8 +112,9 @@ test('nothing but the key, the encrypted rolls and the last-ward pointer is stor
   const { idb, store } = newStore();
   await store.encryptAndStore(WARD, sample);
   const stores = idb.databases.get(DB_NAME).stores;
-  assert.deepEqual([...stores.keys()].sort(), ['contacts', 'keys', 'meta', 'rolls']);
+  assert.deepEqual([...stores.keys()].sort(), ['assignments', 'contacts', 'keys', 'meta', 'rolls']);
   assert.equal(stores.get('contacts').size, 0);
+  assert.equal(stores.get('assignments').size, 0);
   assert.deepEqual([...stores.get('meta').entries()], [['last-ward', WARD]]);
 });
 
