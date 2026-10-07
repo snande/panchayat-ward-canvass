@@ -430,3 +430,57 @@ main {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* Voter card (src/ui/voterCard.js): consent checkbox gating the phone field. */
+.voter-card {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-family: var(--font-family-base);
+}
+
+/* .btn-primary sets display, which would otherwise override [hidden]. */
+.voter-card [hidden] {
+  display: none;
+}
+
+.voter-card-name {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+}
+
+.voter-card-meta {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.voter-card-consent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+}
+
+.voter-card-consent-input {
+  width: var(--touch-target);
+  height: var(--touch-target);
+  flex: none;
+}
+
+.voter-card-phone,
+.voter-card-save {
+  min-height: var(--touch-target);
+}
+
+.voter-card-save:disabled {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
