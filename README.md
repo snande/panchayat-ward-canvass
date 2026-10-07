@@ -61,11 +61,43 @@ has no relay, so every download fails with the Hindi retry message.
 The live deployment is Cloudflare Pages: the repository root is the static
 site, and `functions/roll.js` mounts the same `createRollRelay` handler on
 `/roll` as a Pages Function, reading `config/constituency.json` through the
-static-asset binding on first use. `_routes.json` routes only `/roll` to the
-function, so every other URL stays a plain static file. The custom domain is
+static-asset binding on first use. `_routes.json` routes only `/roll` and
+`/sync/*` to functions, so every other URL stays a plain static file. The custom domain is
 a CNAME at the registrar to the Pages project. That deployment, and the
 Android Chrome check that Badli ward 1 loads, scrolls smoothly and reads as
 correct Hindi, are operator steps outside repo-ci.
+
+## Team sync endpoints
+
+`functions/sync.js` is a Pages Function for syncing a candidate's team
+devices. `functions/sync/[[path]].js` re-exports it so that every `/sync/*`
+path reaches it:
+
+- `POST /sync/push` with body `{records: [{id, updatedAt, ciphertext, iv}]}`
+  returns `{accepted, cursor}`.
+- `GET /sync/pull?since=<cursor>` returns the caller's team records with a
+  server sequence above `cursor`, as `{records, cursor, more}`.
+
+Every request needs `Authorization: Bearer <token>`. The token is
+`base64url("<candidateId>.<deviceId>")` + `.` + base64url of an HMAC-SHA-256
+over `<candidateId>:<deviceId>`, keyed with the `SYNC_SECRET` secret.
+`signSyncToken` in the same file mints one. A missing or invalid token gets a
+bare 401. The candidate comes only from the verified token, never from the
+request. Records are stored under `c/<candidateId>/r/<seq>`, with the counter
+at `c/<candidateId>/seq`, in the KV namespace bound as `SYNC_KV`. The server
+stores `ciphertext` as given and never decrypts it.
+
+The pull cursor only advances through an unbroken run of sequence numbers. If
+a later record is visible before an earlier one, for example because two
+pushes overlapped, the pull stops at the gap. The client then picks up the
+earlier record on its next pull instead of skipping it. A gap is skipped only
+once the record after it was claimed more than five minutes ago, which means
+the push that owned the gap has died.
+
+The operator must bind `SYNC_SECRET` and `SYNC_KV` on the Pages project;
+without them the endpoints return 503. That binding, and the endpoints
+running against real Pages KV, are checked outside repo-ci. `test/sync.test.js`
+exercises the function against an in-memory `SYNC_KV`.
 
 ## Search screen
 
