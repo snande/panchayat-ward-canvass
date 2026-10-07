@@ -408,6 +408,12 @@ main {
   outline-offset: 2px;
 }
 
+/* A voter with no stored number: shown, but not tappable. */
+.call-btn-disabled {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
 .call-assign {
   width: 100%;
   min-height: var(--touch-target);
