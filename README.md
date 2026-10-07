@@ -85,9 +85,19 @@ over `<candidateId>:<deviceId>`, keyed with the `SYNC_SECRET` secret.
 bare 401. The candidate comes only from the verified token, never from the
 request. Records are stored under `c/<candidateId>/r/<seq>`, with the counter
 at `c/<candidateId>/seq`, in the KV namespace bound as `SYNC_KV`. The server
-stores `ciphertext` as given and never decrypts it. The operator must bind
-`SYNC_SECRET` and `SYNC_KV` on the Pages project; without them the endpoints
-return 503.
+stores `ciphertext` as given and never decrypts it.
+
+The pull cursor only advances through an unbroken run of sequence numbers. If
+a later record is visible before an earlier one, for example because two
+pushes overlapped, the pull stops at the gap. The client then picks up the
+earlier record on its next pull instead of skipping it. A gap is skipped only
+once the record after it was claimed more than five minutes ago, which means
+the push that owned the gap has died.
+
+The operator must bind `SYNC_SECRET` and `SYNC_KV` on the Pages project;
+without them the endpoints return 503. That binding, and the endpoints
+running against real Pages KV, are checked outside repo-ci. `test/sync.test.js`
+exercises the function against an in-memory `SYNC_KV`.
 
 ## Search screen
 

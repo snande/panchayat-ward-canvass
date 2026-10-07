@@ -6,15 +6,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { onRequest, signSyncToken, verifySyncToken, MAX_PULL_RECORDS } from '../functions/sync.js';
+import { onRequest, signSyncToken, verifySyncToken, MAX_PULL_RECORDS, GAP_GRACE_MS } from '../functions/sync.js';
 import { onRequest as catchAllOnRequest } from '../functions/sync/[[path]].js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const SECRET = 'test-sync-secret';
 
 // In-memory stand-in for a Workers KV namespace: get/put/list with
-// prefix, a small page size and an opaque list cursor.
-function memoryKV({ pageSize = 3 } = {}) {
+// prefix, a small page size and an opaque list cursor. `beforePut` lets a
+// test hold a write to force an interleaving.
+function memoryKV({ pageSize = 3, beforePut } = {}) {
   const map = new Map();
   return {
     map,
@@ -22,6 +23,7 @@ function memoryKV({ pageSize = 3 } = {}) {
       return map.has(key) ? map.get(key) : null;
     },
     async put(key, value) {
+      if (beforePut) await beforePut(key);
       map.set(key, String(value));
     },
     async list({ prefix = '', cursor, limit = pageSize } = {}) {
@@ -64,7 +66,8 @@ const record = (id, plain = `{"phone":"${PHONE}"}`) => ({
   iv: 'AAECAwQFBgcICQoL',
 });
 
-const setup = () => ({ SYNC_SECRET: SECRET, SYNC_KV: memoryKV() });
+const setup = (kvOptions) => ({ SYNC_SECRET: SECRET, SYNC_KV: memoryKV(kvOptions) });
+const slot = (seq) => `c/candA/r/${String(seq).padStart(12, '0')}`;
 
 test('token round-trips and binds candidateId:deviceId', async () => {
   const token = await signSyncToken(SECRET, 'candA', 'dev1');
@@ -154,17 +157,85 @@ test('stored records keep the ciphertext opaque and hold no plaintext phone numb
   const r = { ...record('r1'), phone: PHONE, name: 'रमेश' };
   await pushRecords(env, token, [r]);
 
-  const stored = env.SYNC_KV.map.get('c/candA/r/000000000001');
+  const stored = env.SYNC_KV.map.get(slot(1));
   assert.ok(stored);
   const parsed = JSON.parse(stored);
   assert.equal(parsed.ciphertext, r.ciphertext);
   assert.equal(parsed.iv, r.iv);
-  assert.deepEqual(Object.keys(parsed).sort(), ['ciphertext', 'deviceId', 'id', 'iv', 'seq', 'updatedAt']);
+  assert.deepEqual(Object.keys(parsed).sort(), ['ciphertext', 'claimedAt', 'deviceId', 'id', 'iv', 'seq', 'updatedAt']);
   for (const value of env.SYNC_KV.map.values()) {
     assert.ok(!value.includes(PHONE), value);
     assert.ok(!value.includes('रमेश'), value);
   }
   assert.equal(env.SYNC_KV.map.get('c/candA/seq'), '1');
+});
+
+test('a later seq written before an earlier one does not move the cursor past the hole', async () => {
+  // Hold push A's write of seq 2 until push B (claiming seq 3) has written.
+  let release;
+  let reached;
+  const held = new Promise((resolve) => (release = resolve));
+  const atHold = new Promise((resolve) => (reached = resolve));
+  const env = setup({
+    beforePut: async (key) => {
+      if (key === slot(2)) {
+        reached();
+        await held;
+      }
+    },
+  });
+  const dev1 = await signSyncToken(SECRET, 'candA', 'dev1');
+  const dev2 = await signSyncToken(SECRET, 'candA', 'dev2');
+  const dev3 = await signSyncToken(SECRET, 'candA', 'dev3');
+
+  const pushA = pushRecords(env, dev1, [record('a1'), record('a2')]);
+  await atHold;
+  assert.equal((await pushRecords(env, dev2, [record('b1')])).status, 200);
+  assert.ok(env.SYNC_KV.map.has(slot(3)));
+  assert.ok(!env.SYNC_KV.map.has(slot(2)));
+
+  const between = await (await pullSince(env, dev3, 0)).json();
+  assert.deepEqual(between.records.map((r) => r.id), ['a1']);
+  assert.equal(between.cursor, 1);
+
+  release();
+  assert.equal((await pushA).status, 200);
+  const after = await (await pullSince(env, dev3, between.cursor)).json();
+  assert.deepEqual(after.records.map((r) => r.id), ['a2', 'b1']);
+  assert.equal(after.cursor, 3);
+});
+
+test('a hole left by a push that died is stepped over once it is stale', async () => {
+  const env = setup();
+  const token = await signSyncToken(SECRET, 'candA', 'dev1');
+  const kv = env.SYNC_KV;
+  const write = (seq, claimedAt, id) =>
+    kv.put(slot(seq), JSON.stringify({ ...record(id), seq, deviceId: 'dev1', claimedAt }));
+
+  // seq 1 was claimed but never written; seq 2 is fresh, so pull waits
+  await kv.put('c/candA/seq', '2');
+  await write(2, Date.now(), 'fresh');
+  assert.deepEqual(await (await pullSince(env, token, 0)).json(), { records: [], cursor: 0, more: false });
+
+  // once seq 2's claim is older than the grace period, the hole is skipped
+  await write(2, Date.now() - GAP_GRACE_MS - 1000, 'old');
+  const res = await (await pullSince(env, token, 0)).json();
+  assert.deepEqual(res.records.map((r) => r.id), ['old']);
+  assert.equal(res.cursor, 2);
+});
+
+test('an unreadable stored record is skipped instead of failing the pull', async () => {
+  const env = setup();
+  const token = await signSyncToken(SECRET, 'candA', 'dev1');
+  await env.SYNC_KV.put(slot(1), 'not json');
+  await env.SYNC_KV.put('c/candA/seq', '1');
+  await pushRecords(env, token, [record('r2')]);
+
+  const res = await pullSince(env, token, 0);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.deepEqual(body.records.map((r) => r.id), ['r2']);
+  assert.equal(body.cursor, 2);
 });
 
 test('pull pages through KV in sequence order and caps one response', async () => {
@@ -199,9 +270,10 @@ test('bad input, wrong methods, unknown paths and missing config', async () => {
   assert.equal((await pushRecords(env, token, Array.from({ length: 501 }, (_, i) => record(`r${i}`)))).status, 400);
   assert.equal(env.SYNC_KV.map.size, 0);
 
-  assert.equal((await pullSince(env, token, -1)).status, 400);
-  assert.equal((await pullSince(env, token, 'abc')).status, 400);
-  assert.equal((await pullSince(env, token, '1.5')).status, 400);
+  for (const since of ['-1', 'abc', '1.5', '%20', '0x10', '1e3', '0b1', '99999999999999999999']) {
+    assert.equal((await pullSince(env, token, since)).status, 400, since);
+  }
+  assert.equal((await call(env, '/sync/pull?since=', { token })).status, 200);
 
   assert.equal((await call(env, '/sync/push', { token })).status, 405);
   assert.equal((await call(env, '/sync/pull', { method: 'POST', token, body: {} })).status, 405);

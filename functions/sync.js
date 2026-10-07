@@ -26,6 +26,9 @@ const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const SEQ_DIGITS = 12;
 export const MAX_PUSH_RECORDS = 500;
 export const MAX_PULL_RECORDS = 1000;
+// How long a hole in the sequence may stay unfilled before pull steps over
+// it (see pull).
+export const GAP_GRACE_MS = 5 * 60 * 1000;
 
 const encoder = new TextEncoder();
 
@@ -118,24 +121,51 @@ async function push(request, kv, { candidateId, deviceId }) {
   }
   const last = Number((await kv.get(counterKey(candidateId))) || 0);
   if (records.length === 0) return json(200, { accepted: 0, cursor: last });
-  // KV has no atomic increment: the counter is claimed before the records
-  // are written, so overlapping pushes from one team can still race. A lost
-  // race overwrites a record slot rather than leaking across candidates.
+  // KV has no atomic increment. The seq range is claimed before the records
+  // are written, so an overlapping push from the same team lands on later
+  // slots and may write them before this push finishes; pull never reads
+  // past a slot that is still empty, so no record is skipped. Two pushes
+  // that read the counter at the same instant can still claim the same
+  // slots and overwrite each other, but never across candidates.
   const end = last + records.length;
+  const claimedAt = Date.now();
   await kv.put(counterKey(candidateId), String(end));
   let seq = last;
   for (const { id, updatedAt, ciphertext, iv } of records) {
     seq += 1;
     // Only the known fields are kept; the payload stays opaque ciphertext.
-    await kv.put(recordKey(candidateId, seq), JSON.stringify({ id, updatedAt, ciphertext, iv, seq, deviceId }));
+    const stored = { id, updatedAt, ciphertext, iv, seq, deviceId, claimedAt };
+    await kv.put(recordKey(candidateId, seq), JSON.stringify(stored));
   }
   return json(200, { accepted: records.length, cursor: end });
 }
 
-async function pull(url, kv, { candidateId }) {
+function parseStored(name, text) {
+  try {
+    const value = JSON.parse(text);
+    if (value && typeof value === 'object') return value;
+  } catch {
+    // fall through
+  }
+  console.warn(`sync: skipping unreadable record ${name}`);
+  return null;
+}
+
+// Returns records with seq > since, in seq order, and the cursor to ask from
+// next time. The cursor only moves through a contiguous run of seqs: a hole
+// usually means an earlier push has claimed the slot and not written it yet
+// (or KV has not propagated it here yet), so pull stops there rather than
+// let the client's cursor pass a record it has not seen. A hole is stepped
+// over only when the record after it was claimed more than GAP_GRACE_MS ago:
+// claims are ordered, so the push that owned the hole began even earlier and
+// has died rather than stalled, and waiting longer would wedge the team.
+async function pull(url, kv, { candidateId }, now = Date.now()) {
   const sinceParam = url.searchParams.get('since');
-  const since = sinceParam === null || sinceParam === '' ? 0 : Number(sinceParam);
-  if (!Number.isSafeInteger(since) || since < 0) return json(400, { error: 'since must be a non-negative integer' });
+  let since = 0;
+  if (sinceParam !== null && sinceParam !== '') {
+    since = /^\d+$/.test(sinceParam) ? Number(sinceParam) : NaN;
+    if (!Number.isSafeInteger(since)) return json(400, { error: 'since must be a non-negative integer' });
+  }
 
   const prefix = recordPrefix(candidateId);
   const records = [];
@@ -146,16 +176,26 @@ async function pull(url, kv, { candidateId }) {
     const page = await kv.list({ prefix, cursor: listCursor });
     for (const { name } of page.keys) {
       const seq = Number(name.slice(prefix.length));
-      if (!Number.isSafeInteger(seq) || seq <= since) continue;
+      if (!Number.isSafeInteger(seq) || seq <= cursor) continue;
       if (records.length === MAX_PULL_RECORDS) {
         more = true;
         break scan;
       }
-      const stored = await kv.get(name);
-      if (stored === null) continue;
-      const { id, updatedAt, ciphertext, iv } = JSON.parse(stored);
-      records.push({ id, updatedAt, ciphertext, iv });
-      cursor = Math.max(cursor, seq);
+      const text = await kv.get(name);
+      if (text === null) break scan;
+      const stored = parseStored(name, text);
+      if (seq !== cursor + 1) {
+        const claimedAt = stored && Number(stored.claimedAt);
+        const stale = !stored || !Number.isFinite(claimedAt) || now - claimedAt > GAP_GRACE_MS;
+        if (!stale) break scan;
+      }
+      // An unreadable record will never become readable: step over it so it
+      // cannot wedge the team's sync.
+      if (stored) {
+        const { id, updatedAt, ciphertext, iv } = stored;
+        records.push({ id, updatedAt, ciphertext, iv });
+      }
+      cursor = seq;
     }
     listCursor = page.list_complete ? undefined : page.cursor;
   } while (listCursor);
