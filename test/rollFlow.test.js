@@ -227,8 +227,89 @@ test('open() during a pending restore() wins; restore shows nothing', async () =
 });
 
 test('the flow source never offers an upload path', () => {
-  for (const rel of ['src/roll/rollFlow.js', 'src/roll/fetchRoll.js', 'js/picker.js', 'src/ui/rollList.js']) {
+  for (const rel of ['src/roll/rollFlow.js', 'src/roll/fetchRoll.js', 'js/picker.js', 'src/ui/rollList.js', 'src/ui/rollSearch.js']) {
     const src = read(rel).toString('utf8');
     assert.doesNotMatch(src, /FileReader|createElement\(\s*['"]input['"]/, rel);
   }
+});
+
+// Small roll for the search tests; two names contain राम (one starts with it).
+const SEARCH_ENTRIES = [
+  { serial: 1, name: 'सीताराम मीणा', relative: 'मोहन', age: 40, gender: 'पु', house: '1' },
+  { serial: 2, name: 'सीता देवी', relative: 'सीताराम मीणा', age: 38, gender: 'म', house: '1' },
+  { serial: 3, name: 'श्याम लाल', relative: 'गोपाल', age: 50, gender: 'पु', house: '2' },
+  { serial: 4, name: 'राम प्रसाद', relative: 'गोपाल', age: 45, gender: 'पु', house: '3' },
+];
+
+function searchSetup({ idb = createFakeIndexedDB(), fetchRoll = async () => pdfBuffer() } = {}) {
+  const doc = createDocument();
+  const container = doc.createElement('section');
+  container.setAttribute('hidden', '');
+  doc.body.appendChild(container);
+  const calls = [];
+  const store = createRollStore({ indexedDB: idb, crypto: webcrypto });
+  const flow = createRollFlow(container, strings, {
+    fetchRoll: async (sel) => {
+      calls.push(sel);
+      return fetchRoll(sel);
+    },
+    decode: async () => SEARCH_ENTRIES,
+    store,
+    listOptions: { viewportHeight: 600, requestFrame: () => {} },
+    log: () => {},
+  });
+  return { container, flow, calls };
+}
+
+async function typeQuery(container, query) {
+  const input = container.querySelector('input.pwc-search__input');
+  input.value = query;
+  input.dispatchEvent({ type: 'input' });
+}
+
+const resultSerials = (container) =>
+  container.querySelectorAll('span.pwc-search__serial').map((n) => n.textContent.replace(/\D/g, ''));
+
+test('the default flow shows the name search box above the list and finds a voter by name', async () => {
+  const { container, flow } = searchSetup();
+  await flow.open(SELECTION);
+  assert.ok(container.querySelector('input.pwc-search__input'), 'search input is present');
+  assert.equal(rowCount(container), SEARCH_ENTRIES.length);
+
+  await typeQuery(container, 'श्याम लाल');
+  await waitFor(() => container.querySelectorAll('li.pwc-search__row').length === 1);
+  assert.deepEqual(resultSerials(container), ['3']);
+  assert.equal(container.querySelector('div.roll-full').hidden, true);
+
+  await typeQuery(container, '');
+  await waitFor(() => container.querySelector('div.roll-full').hidden === false);
+  assert.equal(rowCount(container), SEARCH_ENTRIES.length);
+});
+
+test('a roll restored offline at startup shows the search box', async () => {
+  const idb = createFakeIndexedDB();
+  const online = searchSetup({ idb });
+  await online.flow.open(SELECTION);
+
+  const offline = searchSetup({ idb, fetchRoll: async () => { throw new RollFetchError('offline'); } });
+  assert.equal(offline.container.querySelector('input.pwc-search__input'), null);
+  await offline.flow.restore();
+  assert.equal(offline.calls.length, 0);
+  assert.equal(offline.container.hidden, false);
+  assert.ok(offline.container.querySelector('input.pwc-search__input'), 'search input is present offline');
+
+  await typeQuery(offline.container, 'राम प्रसाद');
+  await waitFor(() => resultSerials(offline.container).length > 0);
+  assert.equal(resultSerials(offline.container)[0], '4');
+});
+
+test('a partial name lists every voter containing it, prefix matches first', async () => {
+  const { container, flow } = searchSetup();
+  await flow.open(SELECTION);
+  await typeQuery(container, 'राम');
+  await waitFor(() => resultSerials(container).length > 0);
+  // राम प्रसाद starts with the query; सीताराम मीणा only contains it.
+  assert.deepEqual(resultSerials(container), ['4', '1']);
+  const names = container.querySelectorAll('span.pwc-search__name').map((n) => n.textContent);
+  assert.deepEqual(names, ['राम प्रसाद', 'सीताराम मीणा']);
 });
