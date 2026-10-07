@@ -1,7 +1,8 @@
-// Minimal in-memory IndexedDB used by the roll and contact store tests. It
-// implements only what src/roll/rollStore.js and src/contacts/contactStore.js
-// rely on: open with upgradeneeded, object stores with out-of-line keys,
-// get/put/add/delete, and transactions that complete once their requests are
+// Minimal in-memory IndexedDB used by the roll, contact and assignment store
+// tests. It implements only what src/roll/rollStore.js,
+// src/contacts/contactStore.js and src/calls/assignmentStore.js rely on: open
+// with upgradeneeded, object stores with out-of-line keys,
+// get/getAll/getAllKeys/put/add/delete, and transactions that complete once their requests are
 // done. Values are structured-cloned on write and on read like the real thing
 // (CryptoKey objects are kept by reference).
 //
@@ -47,6 +48,8 @@ class FakeTransaction {
     };
     return {
       get: (key) => run(() => (data.has(key) ? clone(data.get(key)) : undefined)),
+      getAll: () => run(() => [...data.values()].map(clone)),
+      getAllKeys: () => run(() => [...data.keys()]),
       put: (value, key) => {
         writable();
         return run(() => {

@@ -1,15 +1,16 @@
-// The app's one IndexedDB database on the device, shared by the roll store
-// and the contact store. Every object store is created here so that both
+// The app's one IndexedDB database on the device, shared by the roll store,
+// the contact store and the call-assignment store. Every object store is created here so that both
 // stores agree on the schema and the version.
 
 export const DB_NAME = 'ward-canvass';
-// v1: keys, rolls, meta. v2: adds contacts.
-export const DB_VERSION = 2;
+// v1: keys, rolls, meta. v2: adds contacts. v3: adds assignments.
+export const DB_VERSION = 3;
 export const KEYS_STORE = 'keys';
 export const ROLLS_STORE = 'rolls';
 export const META_STORE = 'meta';
 export const CONTACTS_STORE = 'contacts';
-const ALL_STORES = Object.freeze([KEYS_STORE, ROLLS_STORE, META_STORE, CONTACTS_STORE]);
+export const ASSIGNMENTS_STORE = 'assignments';
+const ALL_STORES = Object.freeze([KEYS_STORE, ROLLS_STORE, META_STORE, CONTACTS_STORE, ASSIGNMENTS_STORE]);
 
 export function request(req) {
   return new Promise((resolve, reject) => {
@@ -31,7 +32,7 @@ function openDb(idb) {
     const req = idb.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
-      // Creates only the stores a v1 (or new) database lacks; the existing
+      // Creates only the stores an older (or new) database lacks; the existing
       // key and stored rolls are kept as they are.
       for (const name of ALL_STORES) {
         if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
