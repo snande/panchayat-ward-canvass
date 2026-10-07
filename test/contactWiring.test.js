@@ -148,8 +148,8 @@ test('airplane mode on, record consent and a number, reopen the next day: it is 
     firstRow(airplane).dispatchEvent({ type: 'click' });
     await waitFor(() => panelOf(airplane) !== null);
     assert.equal(panelOf(airplane).querySelector('h2').textContent, voterName);
-    await waitFor(() => !button(airplane, 'contact-consent').hidden || message(airplane) !== '');
-    assert.equal(button(airplane, 'contact-consent').hidden, false);
+    await waitFor(() => !button(airplane, 'contact-consent').hidden);
+    assert.equal(message(airplane), '');
 
     button(airplane, 'contact-consent').dispatchEvent({ type: 'click' });
     await waitFor(() => message(airplane) === strings.contact_consent_done);

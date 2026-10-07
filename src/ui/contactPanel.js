@@ -1,11 +1,15 @@
 // Consent-first phone capture for one voter (issue #44), opened by tapping a
 // voter in the ward roll (src/ui/rollSearch.js).
 //
-// Until the voter's consent is on record the panel offers only the consent
-// button; the number field appears after it. Saving a number, recording or
-// revoking consent go through src/contacts/contactSync.js, which writes the
-// encrypted contact store on the device and queues the change for the team,
-// so every step works offline. All text comes from the strings table.
+// While the voter's saved state is being read the panel shows only a loading
+// line, so a voter who already consented never looks un-consented. Until the
+// voter's consent is on record the panel offers only the consent button; the
+// number field appears after it. Revoking consent deletes the number here and
+// on every teammate's phone, so it asks for a second, explicit yes first.
+// Saving a number, recording or revoking consent go through
+// src/contacts/contactSync.js, which writes the encrypted contact store on the
+// device and queues the change for the team, so every step works offline.
+// All text comes from the strings table.
 
 import { el } from './dom.js';
 
@@ -17,7 +21,8 @@ import { el } from './dom.js';
  *   wardId: string, entry: {serial: number, name: string},
  *   onClose?: () => void, log?: Function,
  * }} opts
- * @returns {{root, ready: Promise<void>, consentButton, phoneInput, saveButton, revokeButton, closeButton, message}}
+ * @returns {{root, ready: Promise<void>, consentButton, phoneInput, saveButton, revokeButton,
+ *   confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, message}}
  */
 export function mountContactPanel(container, strings, opts) {
   const doc = container.ownerDocument;
@@ -54,6 +59,20 @@ export function mountContactPanel(container, strings, opts) {
   revokeButton.setAttribute('type', 'button');
   form.appendChild(revokeButton);
 
+  // The second step of revoking: nothing is deleted until "yes" is tapped.
+  const confirmBox = el(doc, 'div', 'contact-confirm');
+  confirmBox.setAttribute('role', 'alertdialog');
+  const confirmText = el(doc, 'p', 'contact-body', text('contact_revoke_confirm'));
+  confirmText.setAttribute('id', 'contact-revoke-confirm');
+  confirmBox.setAttribute('aria-describedby', 'contact-revoke-confirm');
+  const confirmRevokeButton = el(doc, 'button', 'btn-primary contact-revoke-yes', text('contact_revoke_yes'));
+  confirmRevokeButton.setAttribute('type', 'button');
+  const cancelRevokeButton = el(doc, 'button', 'btn-secondary contact-revoke-no', text('contact_revoke_no'));
+  cancelRevokeButton.setAttribute('type', 'button');
+  confirmBox.appendChild(confirmText);
+  confirmBox.appendChild(confirmRevokeButton);
+  confirmBox.appendChild(cancelRevokeButton);
+
   const message = el(doc, 'p', 'picker-message contact-message');
   message.setAttribute('aria-live', 'polite');
   const closeButton = el(doc, 'button', 'btn-secondary contact-close', text('contact_close'));
@@ -62,24 +81,30 @@ export function mountContactPanel(container, strings, opts) {
   root.appendChild(ask);
   root.appendChild(consentButton);
   root.appendChild(form);
+  root.appendChild(confirmBox);
   root.appendChild(message);
   root.appendChild(closeButton);
   container.replaceChildren(root);
 
-  // Consent on record shows the number form; otherwise only the consent ask.
+  function focus(node) {
+    if (typeof node.focus === 'function') node.focus();
+  }
+
+  // undefined: still reading, so neither the consent ask nor the form shows.
+  // Consent on record shows the number form; null shows only the consent ask.
   function showState(contact) {
-    ask.hidden = Boolean(contact);
-    consentButton.hidden = Boolean(contact);
-    form.hidden = !contact;
+    const loading = contact === undefined;
+    ask.hidden = loading || Boolean(contact);
+    consentButton.hidden = loading || Boolean(contact);
+    form.hidden = loading || !contact;
+    confirmBox.hidden = true;
     if (contact) phoneInput.value = contact.phone || '';
   }
 
   let busy = false;
-  let acted = false;
   async function run(action, doneKey) {
     if (busy) return;
     busy = true;
-    acted = true;
     message.textContent = '';
     try {
       showState(await action());
@@ -108,6 +133,20 @@ export function mountContactPanel(container, strings, opts) {
   });
 
   revokeButton.addEventListener('click', () => {
+    if (busy) return;
+    message.textContent = '';
+    form.hidden = true;
+    confirmBox.hidden = false;
+    focus(cancelRevokeButton);
+  });
+
+  cancelRevokeButton.addEventListener('click', () => {
+    confirmBox.hidden = true;
+    form.hidden = false;
+    focus(revokeButton);
+  });
+
+  confirmRevokeButton.addEventListener('click', () => {
     run(async () => {
       await contacts.revokeConsent(wardId, entry.serial);
       return null;
@@ -119,16 +158,20 @@ export function mountContactPanel(container, strings, opts) {
     if (typeof opts.onClose === 'function') opts.onClose();
   });
 
-  showState(null);
+  showState(undefined);
+  message.textContent = text('contact_loading');
   const ready = Promise.resolve()
     .then(() => contacts.getContact(wardId, entry.serial))
     .then((contact) => {
-      // A tap made before the read finished already shows the newer state.
-      if (!acted) showState(contact);
+      showState(contact || null);
+      message.textContent = '';
     }, (err) => {
       log('contact could not be read', err);
       message.textContent = text('contact_failed');
     });
 
-  return { root, ready, consentButton, phoneInput, saveButton, revokeButton, closeButton, message };
+  return {
+    root, ready, consentButton, phoneInput, saveButton, revokeButton,
+    confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, message,
+  };
 }

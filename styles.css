@@ -322,6 +322,14 @@ main {
   font-size: var(--font-size-sm);
 }
 
+.contact-confirm {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
 .contact-message {
   margin-top: var(--space-3);
 }
