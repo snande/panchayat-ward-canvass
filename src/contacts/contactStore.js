@@ -173,7 +173,30 @@ export function createContactStore({
     return { wardId, serial: n, phone: digits, consentAt };
   }
 
-  return { recordConsent, saveNumber, getContact, revokeConsent, putSyncedContact };
+  /**
+   * Every voter of the ward whose consent is on record, in serial order (the
+   * call list, src/ui/callListFlow.js).
+   * @returns {Promise<{wardId, serial: number, phone: string | null, consentAt: string}[]>}
+   */
+  async function listConsented(wardId) {
+    if (typeof wardId !== 'string' || !wardId || wardId.includes(':')) {
+      throw new TypeError('wardId must be a non-empty string without ":"');
+    }
+    const tx = (await db()).transaction(CONTACTS_STORE, 'readonly');
+    const done = complete(tx);
+    const store = tx.objectStore(CONTACTS_STORE);
+    const [ids, records] = await Promise.all([request(store.getAllKeys()), request(store.getAll())]);
+    await done;
+    const out = [];
+    for (let i = 0; i < ids.length; i += 1) {
+      const record = records[i];
+      if (!record || record.wardId !== wardId || ids[i] !== contactKeyFor(wardId, record.serial)) continue;
+      out.push({ wardId, serial: record.serial, ...(await decrypt(ids[i], record)) });
+    }
+    return out.sort((a, b) => a.serial - b.serial);
+  }
+
+  return { recordConsent, saveNumber, getContact, revokeConsent, putSyncedContact, listConsented };
 }
 
 let defaultStore = null;
@@ -184,3 +207,4 @@ export const saveNumber = async (wardId, serial, phone) => store().saveNumber(wa
 export const getContact = async (wardId, serial) => store().getContact(wardId, serial);
 export const revokeConsent = async (wardId, serial) => store().revokeConsent(wardId, serial);
 export const putSyncedContact = async (wardId, serial, contact) => store().putSyncedContact(wardId, serial, contact);
+export const listConsented = async (wardId) => store().listConsented(wardId);

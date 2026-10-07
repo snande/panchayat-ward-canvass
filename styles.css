@@ -431,6 +431,19 @@ main {
   outline-offset: 2px;
 }
 
+/* Call list screen (src/ui/callListFlow.js), opened from the roll view. */
+.call-list-open {
+  margin: 0 0 var(--space-4);
+}
+
+.call-worker-form {
+  margin-bottom: var(--space-3);
+}
+
+.call-list-host {
+  margin: var(--space-3) 0;
+}
+
 /* Voter card (src/ui/voterCard.js): consent checkbox gating the phone field. */
 .voter-card {
   margin: 0 0 var(--space-4);

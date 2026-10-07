@@ -319,3 +319,25 @@ test('the service worker precaches the stores and every module they import (offl
   }
   assert.ok(seen.has('src/storage/deviceDb.js') && seen.has('src/crypto/deviceKey.js'));
 });
+
+test('listConsented returns the ward\'s consented voters in serial order, numbers decrypted', async () => {
+  const { store } = newStore();
+  await store.recordConsent(WARD, 9);
+  await store.saveNumber(WARD, 9, PHONE);
+  await store.recordConsent(WARD, 2);
+  await store.recordConsent('17/125/6313/2', 1);
+  await store.saveNumber('17/125/6313/2', 1, '9123456780');
+  const listed = await store.listConsented(WARD);
+  assert.deepEqual(listed.map(({ serial, phone }) => ({ serial, phone })), [
+    { serial: 2, phone: null },
+    { serial: 9, phone: PHONE },
+  ]);
+  for (const contact of listed) {
+    assert.equal(contact.wardId, WARD);
+    assert.equal(typeof contact.consentAt, 'string');
+  }
+  await store.revokeConsent(WARD, 9);
+  assert.deepEqual((await store.listConsented(WARD)).map((c) => c.serial), [2]);
+  assert.deepEqual(await store.listConsented('17/125/6313/9'), []);
+  await assert.rejects(store.listConsented(''), TypeError);
+});

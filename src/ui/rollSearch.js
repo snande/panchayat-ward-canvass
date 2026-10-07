@@ -9,7 +9,13 @@
 // a voter in the list or in the search results opens the consent and phone
 // panel (src/ui/contactPanel.js) for that voter above the search box.
 // Selecting a search result opens the voter card (src/ui/voterCard.js) instead.
+// The same opts add a call-list button on top: it opens the ward's call list
+// (src/ui/callListFlow.js) in that place, with opts.assignments and
+// opts.roster defaulting to the device's assignment store and worker roster.
 
+import * as defaultAssignments from '../calls/assignmentStore.js';
+import * as defaultRoster from '../calls/workerRoster.js';
+import { mountCallListFlow } from './callListFlow.js';
 import { mountContactPanel } from './contactPanel.js';
 import { el } from './dom.js';
 import { mountVoterCard } from './voterCard.js';
@@ -29,8 +35,9 @@ export function toVoter(entry) {
 
 /**
  * Same signature as mountRollList, which it wraps; opts may also carry
- * contacts and wardKey (see above).
- * @returns {{root, search, list, contactHost, openContact: (entry) => object | null, destroy: () => void}}
+ * contacts, wardKey, assignments and roster (see above).
+ * @returns {{root, search, list, contactHost, callListButton, openContact: (entry) => object | null,
+ *   openVoterCard: (entry) => object | null, openCallList: () => object | null, destroy: () => void}}
  */
 export function mountRollWithSearch(container, entries, strings, opts = {}) {
   const doc = container.ownerDocument;
@@ -38,13 +45,21 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
   const contactHost = el(doc, 'div', 'roll-contact');
   const searchHost = el(doc, 'div', 'roll-search');
   const listHost = el(doc, 'div', 'roll-full');
+
+  const { contacts, wardKey } = opts;
+  const canCapture = Boolean(contacts && typeof wardKey === 'string' && wardKey);
+  let callListButton = null;
+  if (canCapture) {
+    callListButton = el(doc, 'button', 'btn-primary call-list-open', strings && strings.call_list_open);
+    callListButton.setAttribute('type', 'button');
+    callListButton.addEventListener('click', () => { openCallList(); });
+    root.appendChild(callListButton);
+  }
   root.appendChild(contactHost);
   root.appendChild(searchHost);
   root.appendChild(listHost);
   container.replaceChildren(root);
 
-  const { contacts, wardKey } = opts;
-  const canCapture = Boolean(contacts && typeof wardKey === 'string' && wardKey);
   function openContact(entry) {
     if (!canCapture || !entry) return null;
     const panel = mountContactPanel(contactHost, strings, { contacts, wardId: wardKey, entry });
@@ -56,6 +71,18 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     const card = mountVoterCard(contactHost, strings, { contacts, wardId: wardKey, entry });
     if (typeof card.root.scrollIntoView === 'function') card.root.scrollIntoView();
     return card;
+  }
+  function openCallList() {
+    if (!canCapture) return null;
+    const screen = mountCallListFlow(contactHost, strings, {
+      contacts,
+      wardId: wardKey,
+      entries,
+      assignments: opts.assignments || defaultAssignments,
+      roster: opts.roster || defaultRoster,
+    });
+    if (typeof screen.root.scrollIntoView === 'function') screen.root.scrollIntoView();
+    return screen;
   }
   const bySerial = new Map(entries.map((entry) => [entry.serial, entry]));
 
@@ -82,8 +109,10 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     search,
     list,
     contactHost,
+    callListButton,
     openContact,
     openVoterCard,
+    openCallList,
     destroy() {
       search.destroy();
       list.destroy();
