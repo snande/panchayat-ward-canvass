@@ -23,6 +23,9 @@
     <p data-i18n="app_subtitle">मतदाता सूची और घर-घर संपर्क</p>
   </header>
   <main id="app">
+    <!-- Team join (candidate code + team passphrase), shown by js/picker.js
+         while the device holds no team credentials (src/ui/teamJoinScreen.js). -->
+    <section id="team-join" class="picker" hidden></section>
     <section class="empty-state" aria-labelledby="empty-title">
       <h2 id="empty-title" data-i18n="empty_title">मतदाता सूची अभी लोड नहीं हुई है</h2>
       <p data-i18n="empty_body">शुरू करने के लिए अपने वार्ड की मतदाता सूची लोड करें। एक बार लोड होने के बाद यह ऐप बिना इंटरनेट के भी चलेगा।</p>

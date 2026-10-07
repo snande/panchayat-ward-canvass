@@ -1,13 +1,24 @@
 // Cloudflare Pages Function serving the candidate-partitioned sync API on the
 // shell's own origin:
 //
+//   POST /sync/join            body {candidateId, verifier} -> {token, candidateId, deviceId}
 //   POST /sync/push            body {records: [{id, updatedAt, ciphertext, iv}]}
 //   GET  /sync/pull?since=N    -> {records: [...], cursor, more}
 //
-// Every request carries `Authorization: Bearer <token>`, where the token is
+// Push and pull carry `Authorization: Bearer <token>`, where the token is
 // base64url("<candidateId>.<deviceId>") + "." + base64url(HMAC-SHA-256 over
 // "<candidateId>:<deviceId>" keyed with env.SYNC_SECRET). A missing or bad
 // token gets a bare 401.
+//
+// Join is how a device gets its token (src/sync/teamAuth.js). The device
+// sends the candidate code and a passphrase verifier, base64url of
+// SHA-256(PBKDF2 bits || 'verify'); the passphrase itself and the team key
+// never reach the server. The first join for a candidate records its
+// verifier at c/<candidateId>/verifier and that device becomes the team's
+// first member; every later join must present the same verifier or gets a
+// bare 401. KV has no compare-and-set, so two first joins racing for a new
+// candidate can both succeed and the later verifier wins; the first member
+// then rejoins with the passphrase that stuck.
 //
 // Isolation between candidates is enforced here, from the verified token
 // only: records live under c/<candidateId>/r/<seq> with a per-candidate
@@ -32,6 +43,10 @@ export const GAP_GRACE_MS = 5 * 60 * 1000;
 
 const encoder = new TextEncoder();
 
+// src/sync/teamAuth.js carries its own copy of this encoder: this file is
+// bundled into the Pages Function and src/ is served to the device and
+// precached by sw.js, so neither side imports the other. test/teamAuth.test.js
+// pins that the two produce the same verifier encoding.
 function base64urlEncode(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -52,8 +67,8 @@ function hmacKey(secret, usage) {
   return crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [usage]);
 }
 
-// Mints a token for (candidateId, deviceId). The device-side issuing flow is
-// #48; this is exported for it and for tests.
+// Mints a token for (candidateId, deviceId); POST /sync/join issues it to a
+// device that presents the team's passphrase verifier.
 export async function signSyncToken(secret, candidateId, deviceId) {
   if (!ID_PATTERN.test(candidateId) || !ID_PATTERN.test(deviceId)) {
     throw new Error('candidateId and deviceId must match ' + ID_PATTERN);
@@ -81,6 +96,9 @@ export async function verifySyncToken(secret, token) {
   return ok ? { candidateId, deviceId } : null;
 }
 
+const VERIFIER_BYTES = 32;
+const DEVICE_ID_BYTES = 12;
+
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
 function json(status, body) {
@@ -97,6 +115,40 @@ function bare(status, extra = {}) {
 const recordPrefix = (candidateId) => `c/${candidateId}/r/`;
 const recordKey = (candidateId, seq) => recordPrefix(candidateId) + String(seq).padStart(SEQ_DIGITS, '0');
 const counterKey = (candidateId) => `c/${candidateId}/seq`;
+const verifierKey = (candidateId) => `c/${candidateId}/verifier`;
+
+// Constant-time for equal lengths; verifiers always are 32 bytes.
+function sameBytes(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+async function join(request, kv, secret) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json(400, { error: 'body must be JSON' });
+  }
+  const candidateId = body && body.candidateId;
+  const verifier = body && typeof body.verifier === 'string' ? base64urlDecode(body.verifier) : null;
+  if (typeof candidateId !== 'string' || !ID_PATTERN.test(candidateId) || !verifier || verifier.length !== VERIFIER_BYTES) {
+    return json(400, { error: `candidateId must match ${ID_PATTERN} and verifier must be ${VERIFIER_BYTES} base64url bytes` });
+  }
+  const stored = await kv.get(verifierKey(candidateId));
+  if (stored === null || stored === undefined) {
+    // No team yet for this candidate: this device founds it.
+    await kv.put(verifierKey(candidateId), base64urlEncode(verifier));
+  } else {
+    const expected = base64urlDecode(stored);
+    if (!expected || !sameBytes(expected, verifier)) return bare(401);
+  }
+  const deviceId = base64urlEncode(crypto.getRandomValues(new Uint8Array(DEVICE_ID_BYTES)));
+  const token = await signSyncToken(secret, candidateId, deviceId);
+  return json(200, { token, candidateId, deviceId });
+}
 
 function validRecord(record) {
   if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
@@ -207,12 +259,17 @@ export async function onRequest({ request, env }) {
   const kv = env && env.SYNC_KV;
   if (!secret || !kv) return bare(503);
 
+  const url = new URL(request.url);
+  if (url.pathname === '/sync/join') {
+    if (request.method !== 'POST') return bare(405, { Allow: 'POST' });
+    return join(request, kv, secret);
+  }
+
   const header = request.headers.get('Authorization') || '';
   const match = /^Bearer ([^\s]+)$/.exec(header);
   const auth = match ? await verifySyncToken(secret, match[1]) : null;
   if (!auth) return bare(401, { 'WWW-Authenticate': 'Bearer' });
 
-  const url = new URL(request.url);
   if (url.pathname === '/sync/push') {
     if (request.method !== 'POST') return bare(405, { Allow: 'POST' });
     return push(request, kv, auth);

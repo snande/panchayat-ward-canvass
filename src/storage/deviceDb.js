@@ -1,6 +1,7 @@
 // The app's one IndexedDB database on the device, shared by the roll store,
 // the contact store and the call-assignment store. Every object store is created here so that both
-// stores agree on the schema and the version.
+// stores agree on the schema and the version. The team credentials
+// (src/sync/teamAuth.js) live in the keys and meta stores.
 
 export const DB_NAME = 'ward-canvass';
 // v1: keys, rolls, meta. v2: adds contacts. v3: adds assignments.

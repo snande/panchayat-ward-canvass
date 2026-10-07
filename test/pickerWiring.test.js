@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { onRequest as syncOnRequest } from '../functions/sync.js';
 
 const root = (rel) => new URL('../' + rel, import.meta.url);
 const read = (rel) => readFileSync(root(rel));
@@ -23,13 +24,16 @@ async function waitFor(cond, ms = 8000) {
   }
 }
 
-function boot(idb, requests) {
+function boot(idb, requests, { syncEnv } = {}) {
   const doc = createDocument();
   const picker = doc.createElement('section');
   const roll = doc.createElement('section');
   roll.setAttribute('hidden', '');
   const empty = doc.createElement('section');
+  const team = doc.createElement('section');
+  team.setAttribute('hidden', '');
   const byId = { 'ward-picker': picker, roll };
+  if (syncEnv) byId['team-join'] = team;
   const fakeDocument = {
     getElementById: (id) => byId[id] || null,
     querySelector: (sel) => (sel === '.empty-state' ? empty : null),
@@ -37,12 +41,15 @@ function boot(idb, requests) {
     ownerDocument: doc,
   };
   picker.ownerDocument = doc;
-  const fetch = async (input) => {
+  const fetch = async (input, init) => {
     const url = String(input);
     requests.push(url);
     if (url.startsWith('file:')) return new Response(readFileSync(fileURLToPath(url)));
     if (url === 'src/strings.hi.json') return new Response(read('src/strings.hi.json'));
     if (url === 'config/constituency.json') return new Response(read('config/constituency.json'));
+    if (url === '/sync/join' && syncEnv) {
+      return syncOnRequest({ request: new Request(new URL(url, 'https://canvass.takshavid.com'), init), env: syncEnv });
+    }
     if (url.startsWith('/roll?url=')) {
       return new Response(read('fixtures/badli-ward1.pdf'), { headers: { 'Content-Type': 'application/pdf' } });
     }
@@ -60,7 +67,7 @@ function boot(idb, requests) {
       else delete globalThis[k];
     }
   };
-  return { picker, roll, empty, restore };
+  return { picker, roll, empty, team, restore };
 }
 
 function choose(select, value) {
@@ -98,6 +105,41 @@ test('picking a ward opens its roll and hides the empty state; a reload restores
     await waitFor(() => second.roll.querySelectorAll('div.roll-row').length > 0);
     assert.equal(second.empty.hidden, true);
     assert.ok(!reopenRequests.some((u) => u.startsWith('/roll')), reopenRequests.join('\n'));
+  } finally {
+    second.restore();
+  }
+});
+
+test('with no team credentials the join screen shows; after joining a reload skips it', async () => {
+  const idb = createFakeIndexedDB();
+  const store = new Map();
+  const syncEnv = {
+    SYNC_SECRET: 'test-sync-secret',
+    SYNC_KV: { get: async (k) => (store.has(k) ? store.get(k) : null), put: async (k, v) => { store.set(k, String(v)); } },
+  };
+  const first = boot(idb, [], { syncEnv });
+  try {
+    await import('../js/picker.js?wiring=3');
+    await waitFor(() => first.team.querySelector('form') !== null);
+    assert.equal(first.team.hidden, false);
+    const [code, pass] = first.team.querySelectorAll('input');
+    code.value = 'candA';
+    pass.value = 'हमारी टीम';
+    first.team.querySelector('form').dispatchEvent({ type: 'submit', preventDefault() {} });
+    await waitFor(() => first.team.hidden === true);
+    assert.equal(first.team.querySelector('form'), null);
+    assert.ok(store.has('c/candA/verifier'));
+  } finally {
+    first.restore();
+  }
+
+  const second = boot(idb, [], { syncEnv });
+  try {
+    await import('../js/picker.js?wiring=4');
+    await waitFor(() => second.picker.querySelector('select') !== null);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(second.team.hidden, true);
+    assert.equal(second.team.querySelector('form'), null);
   } finally {
     second.restore();
   }

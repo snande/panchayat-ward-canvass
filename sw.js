@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -31,6 +31,9 @@ const PRECACHE = [
   "src/ui/rollList.js",
   "src/ui/rollSearch.js",
   "src/ui/searchScreen.js",
+  // Team join: the join screen and the stored sync credentials.
+  "src/sync/teamAuth.js",
+  "src/ui/teamJoinScreen.js",
   "src/search/hindiSearch.js",
   "src/ui/dom.js",
   "src/strings.hi.json",
