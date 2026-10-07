@@ -286,7 +286,9 @@ main {
 }
 
 /* Voter card (src/ui/voterCard.js): roll details and the consent-gated
-   mobile number. Every control is at least --touch-target (48 px) tall. */
+   mobile number. Text uses the self-hosted Noto Sans Devanagari face above
+   (fonts/noto-sans-devanagari-subset.woff2) through --font-family-base, and
+   every control is at least --touch-target (48 px) tall. */
 .voter-card {
   margin: var(--space-3) 0;
   padding: var(--space-4);
@@ -334,6 +336,7 @@ main {
 
 .voter-card__checkbox:focus-visible,
 .voter-card__phone:focus-visible,
+.voter-card__undo:focus-visible,
 .voter-card__close:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
@@ -375,6 +378,7 @@ main {
 }
 
 .voter-card__save {
+  min-height: var(--touch-target);
   margin-top: var(--space-4);
 }
 
@@ -395,6 +399,7 @@ main {
   color: var(--color-error);
 }
 
+.voter-card__undo,
 .voter-card__close {
   display: block;
   width: 100%;
@@ -407,4 +412,13 @@ main {
   font: inherit;
   font-size: var(--font-size-body);
   cursor: pointer;
+}
+
+.voter-card__undo {
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+.voter-card__undo[hidden] {
+  display: none;
 }

@@ -3,11 +3,12 @@
 // The number field and the save button carry the `disabled` attribute until
 // the voter's consent is on record: marking the consent box records it with
 // recordConsent first and only then unlocks the field; unmarking it locks and
-// clears the field and revokes the consent (deleting any saved number). The
-// card's state is read back with getContact on open, so a saved number shows
-// again whenever the card is reopened. Everything goes through the on-device
-// contact store (src/contacts/contactStore.js); nothing here uses the network.
-// Every label comes from the Hindi string table.
+// clears the field and revokes the consent (deleting any saved number). A
+// revoke can be undone from the card until it closes, in case of a stray tap.
+// The card's state is read back with getContact on open, so a saved number
+// shows again whenever the card is reopened. Everything goes through the
+// on-device contact store (src/contacts/contactStore.js); nothing here uses
+// the network. Every label comes from the Hindi string table.
 
 import { el } from './dom.js';
 import * as contactStore from '../contacts/contactStore.js';
@@ -33,7 +34,7 @@ function setDisabled(node, disabled) {
  * @param {{wardId: string, contacts?: object, onClose?: Function}} opts
  *   contacts defaults to the contact store's module functions (tests pass a
  *   store from createContactStore); onClose adds a close button
- * @returns {{root, consent, phone, save, message, ready: Promise<void>,
+ * @returns {{root, consent, phone, save, undo, message, ready: Promise<void>,
  *   idle: () => Promise<void>, destroy: () => void}}
  */
 export function mountVoterCard(container, entry, strings, opts = {}) {
@@ -83,6 +84,11 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
   message.setAttribute('aria-live', 'polite');
   root.appendChild(message);
 
+  const undo = el(doc, 'button', 'voter-card__undo', text('contact_undo'));
+  undo.setAttribute('type', 'button');
+  undo.setAttribute('hidden', '');
+  root.appendChild(undo);
+
   let close = null;
   if (typeof opts.onClose === 'function') {
     close = el(doc, 'button', 'voter-card__close', text('voter_card_close'));
@@ -94,6 +100,9 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
 
   const state = { loaded: false, consented: false, busy: false };
   let destroyed = false;
+  // The number deleted by the last revoke ('' when there was none), kept in
+  // memory only, so the revoke can be undone until the card closes.
+  let revoked = null;
 
   // The field is unlocked only while consent is on record; the consent box
   // waits for the stored state to load and for each change to finish.
@@ -101,6 +110,9 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
     setDisabled(consent, !state.loaded || state.busy);
     setDisabled(phone, !state.consented);
     setDisabled(save, !state.consented || state.busy);
+    setDisabled(undo, state.busy);
+    if (revoked === null) undo.setAttribute('hidden', '');
+    else undo.removeAttribute('hidden');
   }
 
   function say(key, isError = false) {
@@ -117,6 +129,7 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
     return run;
   }
 
+  say('contact_loading');
   sync();
 
   const ready = track(async () => {
@@ -127,6 +140,7 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
       consent.checked = state.consented;
       phone.value = contact && contact.phone ? contact.phone : '';
       state.loaded = true;
+      say(null);
     } catch {
       // Stay locked: without the stored state no change can be recorded.
       if (!destroyed) say('contact_load_failed', true);
@@ -140,6 +154,7 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
       if (want === state.consented) return;
       const previous = phone.value;
       state.busy = true;
+      revoked = null;
       say(null);
       if (!want) {
         // Lock and clear at once; the stored record goes next.
@@ -154,6 +169,8 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
           state.consented = true;
         } else {
           await contacts.revokeConsent(wardId, serial);
+          revoked = normalisePhone(previous) || '';
+          say('contact_revoked');
         }
       } catch {
         if (!want) {
@@ -192,12 +209,38 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
     });
   }
 
+  // Undo a revoke: record the consent again, then save the deleted number.
+  function onUndo() {
+    return track(async () => {
+      if (revoked === null || state.consented) return;
+      const number = revoked;
+      state.busy = true;
+      say(null);
+      sync();
+      try {
+        await contacts.recordConsent(wardId, serial);
+        state.consented = true;
+        consent.checked = true;
+        if (number) await contacts.saveNumber(wardId, serial, number);
+        phone.value = number;
+        revoked = null;
+        say('contact_restored');
+      } catch {
+        if (state.consented) revoked = null;
+        say('contact_save_failed', true);
+      }
+      state.busy = false;
+      if (!destroyed) sync();
+    });
+  }
+
   function onClose() {
     opts.onClose();
   }
 
   consent.addEventListener('change', onConsentChange);
   save.addEventListener('click', onSave);
+  undo.addEventListener('click', onUndo);
   if (close) close.addEventListener('click', onClose);
 
   return {
@@ -205,14 +248,17 @@ export function mountVoterCard(container, entry, strings, opts = {}) {
     consent,
     phone,
     save,
+    undo,
     message,
     ready,
     /** Resolves once every change made so far has been stored. */
     idle: () => queue,
     destroy() {
       destroyed = true;
+      revoked = null;
       consent.removeEventListener('change', onConsentChange);
       save.removeEventListener('click', onSave);
+      undo.removeEventListener('click', onUndo);
       if (close) close.removeEventListener('click', onClose);
       if (root.parentNode === container) container.removeChild(root);
     },
