@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "v11";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -38,6 +38,7 @@ const PRECACHE = [
   "src/sync/syncEngine.js",
   "src/ui/teamJoinScreen.js",
   "src/search/hindiSearch.js",
+  "src/ui/callListScreen.js",
   "src/ui/dom.js",
   "src/strings.hi.json",
   "fonts/noto-sans-devanagari-subset.woff2",

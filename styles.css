@@ -355,3 +355,72 @@ main {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+.call-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.call-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.call-name {
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+}
+
+.call-assignee {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.call-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+  text-decoration: none;
+}
+
+.call-btn:hover,
+.call-btn:active {
+  background: var(--color-primary-strong);
+}
+
+.call-btn:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.call-assign {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-body);
+}
+
+.call-assign:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
