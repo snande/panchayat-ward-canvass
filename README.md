@@ -69,6 +69,8 @@ correct Hindi, are operator steps outside repo-ci.
 
 ## Search screen
 
+The roll flow mounts this search screen above the roll list via `src/ui/rollSearch.js`, so the name search box shows whenever a roll is loaded (including offline restore).
+
 `src/ui/searchScreen.js` is the on-phone voter search screen. It is plain DOM with no framework:
 
 ```js

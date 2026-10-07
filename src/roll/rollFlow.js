@@ -12,7 +12,7 @@
 import { fetchRoll as defaultFetchRoll, RollFetchError } from './fetchRoll.js';
 import { createRollStore, minimiseEntries, wardKeyFor } from './rollStore.js';
 import { el } from '../ui/dom.js';
-import { mountRollList } from '../ui/rollList.js';
+import { mountRollWithSearch } from '../ui/rollSearch.js';
 
 /** decodeRoll with the master glyph table, loaded only when a PDF needs it. */
 export async function decodeWithTable(pdfBytes) {
@@ -36,7 +36,7 @@ export function createRollFlow(container, strings, deps = {}) {
   const text = (key) => (strings && Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : '');
   const fetchRoll = deps.fetchRoll || defaultFetchRoll;
   const decode = deps.decode || decodeWithTable;
-  const mountList = deps.mountList || mountRollList;
+  const mountList = deps.mountList || mountRollWithSearch;
   const log = deps.log || ((...args) => console.error(...args));
   let store = deps.store || null;
   let generation = 0;

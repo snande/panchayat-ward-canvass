@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -23,6 +23,9 @@ const PRECACHE = [
   "src/roll/rollStore.js",
   "src/roll/rollFlow.js",
   "src/ui/rollList.js",
+  "src/ui/rollSearch.js",
+  "src/ui/searchScreen.js",
+  "src/search/hindiSearch.js",
   "src/ui/dom.js",
   "src/strings.hi.json",
   "fonts/noto-sans-devanagari-subset.woff2",

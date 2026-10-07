@@ -232,3 +232,35 @@ test('the flow source never offers an upload path', () => {
     assert.doesNotMatch(src, /FileReader|createElement\(\s*['"]input['"]/, rel);
   }
 });
+
+test('the default flow shows the name search box above the list and finds a voter by name', async () => {
+  const entries = [
+    { serial: 1, name: 'राम प्रसाद', relative: 'मोहन', age: 40, gender: 'पु', house: '1' },
+    { serial: 2, name: 'सीता देवी', relative: 'राम प्रसाद', age: 38, gender: 'म', house: '1' },
+    { serial: 3, name: 'श्याम लाल', relative: 'गोपाल', age: 50, gender: 'पु', house: '2' },
+  ];
+  const doc = createDocument();
+  const container = doc.createElement('section');
+  doc.body.appendChild(container);
+  const store = createRollStore({ indexedDB: createFakeIndexedDB(), crypto: webcrypto });
+  const flow = createRollFlow(container, strings, {
+    fetchRoll: async () => pdfBuffer(),
+    decode: async () => entries,
+    store,
+    listOptions: { viewportHeight: 600, requestFrame: () => {} },
+  });
+  await flow.open(SELECTION);
+  const input = container.querySelector('input.pwc-search__input');
+  assert.ok(input, 'search input is present');
+  assert.equal(rowCount(container), 3);
+
+  input.value = 'श्याम लाल';
+  input.dispatchEvent({ type: 'input' });
+  await waitFor(() => container.querySelectorAll('li.pwc-search__row').length === 1);
+  assert.match(container.querySelector('.pwc-search__serial').textContent, /3/);
+  assert.equal(container.querySelector('div.roll-full').hidden, true);
+
+  input.value = '';
+  input.dispatchEvent({ type: 'input' });
+  await waitFor(() => container.querySelector('div.roll-full').hidden === false);
+});
