@@ -18,7 +18,6 @@ test('staged site has every precached path and none of the server-side files', (
       if (p !== './') assert.ok(existsSync(join(out, p)), `${p} staged`);
     }
     assert.ok(existsSync(join(out, '_routes.json')));
-    assert.ok(existsSync(join(out, 'CNAME')));
     assert.ok(existsSync(join(out, 'src/decoder/decodeRoll.js')));
     for (const gone of ['relay', 'fixtures', 'functions', 'test', 'scripts', 'src/decoder/glyphMap.test.js']) {
       assert.equal(existsSync(join(out, gone)), false, `${gone} not staged`);

@@ -2,7 +2,8 @@
 // directory (default dist/). Only the browser-facing shell goes in: relay/,
 // fixtures/, tests and tooling stay out. functions/ is not staged because
 // `wrangler pages deploy` reads it from the working directory, and the relay
-// code it imports is bundled into the function, not served.
+// code it imports is bundled into the function, not served. CNAME is a GitHub
+// Pages artefact that Cloudflare does not use, so it is not staged.
 //
 //   node scripts/stage-site.mjs [outDir]
 //
@@ -17,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 export const STAGED = [
-  '_routes.json', 'CNAME', 'index.html', 'manifest.webmanifest', 'styles.css', 'sw.js',
+  '_routes.json', 'index.html', 'manifest.webmanifest', 'styles.css', 'sw.js',
   'config', 'fonts', 'icons', 'js', 'src',
 ];
 

@@ -71,14 +71,15 @@ a CNAME at the registrar to the Pages project.
 precache list is not staged. `wrangler pages deploy dist` then publishes it;
 `functions/` is taken from the repo root and `_routes.json` from `dist/`. Set
 the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` and
-the variable `CF_PAGES_PROJECT`; without them the job warns and skips. The
-Pages project has no build command, and the domain in `CNAME` is attached to
-it. After deploying, the job checks the live domain: `/roll` with a URL outside
-the catalogue answers 403 with an `X-Roll-Relay` header, `/` and `/sw.js` are
-plain static 200s without that header, and a catalogue ward URL downloads as a
-PDF through `/roll`. A 404 or an HTML page at `/roll` means the domain is not
-served by the Pages project, so every download fails with the Hindi retry
-message. That deployment, and the
+the variables `CF_PAGES_PROJECT` and `SITE_DOMAIN` (the live domain); without
+them the job warns and skips. The Pages project has no build command, and
+`SITE_DOMAIN` is attached to it as a custom domain. After deploying, the job
+checks the live domain: `/roll` with a URL outside the catalogue answers 403
+with an `X-Roll-Relay` header, `/` and `/sw.js` are plain static 200s without
+that header, and a catalogue ward URL downloads as a PDF through `/roll`. A 404
+or an HTML page at `/roll` means the domain is not served by the Pages
+project, so every download fails with the Hindi retry message. That
+deployment, and the
 Android Chrome check that Badli ward 1 loads, scrolls smoothly and reads as
 correct Hindi, are operator steps outside repo-ci.
 
