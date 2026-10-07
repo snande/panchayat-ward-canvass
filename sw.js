@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v12";
+const CACHE_VERSION = "v13";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -64,13 +64,58 @@ const OFFLINE_HTML = [
   "<p>" + OFFLINE_TEXT.offline_body + "</p></html>",
 ].join("");
 
+// Cloudflare Pages serves index.html as a 308 redirect to "/", so a fetched
+// copy of it arrives with response.redirected set. Chrome refuses a
+// redirected response for a navigation and shows its no-internet page
+// instead, so every cached copy is rebuilt as a plain, non-redirected one.
+function cleanResponse(response) {
+  if (!response.redirected) {
+    return Promise.resolve(response);
+  }
+  return response.arrayBuffer().then(function (body) {
+    return new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  });
+}
+
+// The shell is the root entry; index.html is a fallback for caches that
+// lack it.
 function cachedShell() {
-  return caches.match("index.html", { cacheName: CACHE_NAME }).then(function (shell) {
-    return (
-      shell ||
-      new Response(OFFLINE_HTML, {
-        status: 503,
-        headers: { "Content-Type": "text/html; charset=utf-8" },
+  return caches
+    .match("./", { cacheName: CACHE_NAME })
+    .then(function (shell) {
+      return shell || caches.match("index.html", { cacheName: CACHE_NAME });
+    })
+    .then(function (shell) {
+      return shell
+        ? cleanResponse(shell)
+        : new Response(OFFLINE_HTML, {
+            status: 503,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+    });
+}
+
+// Like cache.addAll, but stores redirect-free copies. Everything is fetched
+// before anything is stored, and any failure rejects, so install stays
+// all-or-nothing.
+function precacheAll(cache) {
+  return Promise.all(
+    PRECACHE.map(function (url) {
+      return fetch(url).then(function (response) {
+        if (!response.ok) {
+          throw new Error("precache " + url + ": HTTP " + response.status);
+        }
+        return cleanResponse(response);
+      });
+    })
+  ).then(function (responses) {
+    return Promise.all(
+      responses.map(function (response, i) {
+        return cache.put(PRECACHE[i], response);
       })
     );
   });
@@ -80,9 +125,7 @@ self.addEventListener("install", function (event) {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then(function (cache) {
-        return cache.addAll(PRECACHE);
-      })
+      .then(precacheAll)
       .then(function () {
         return self.skipWaiting();
       })

@@ -14,6 +14,12 @@ class FakeResponse {
     init = init || {};
     this.body = body;
     this.status = init.status === undefined ? 200 : init.status;
+    this.statusText = init.statusText || "";
+    this.headers = init.headers || {};
+    this.redirected = false;
+  }
+  async arrayBuffer() {
+    return this.body;
   }
   get ok() {
     return this.status >= 200 && this.status < 300;
@@ -24,7 +30,10 @@ function makeSandbox() {
   const store = new Map(); // cache name -> Map(url -> response)
   const calls = { skipWaiting: 0, claim: 0, fetch: 0 };
   const handlers = {};
-  const net = { mode: "online", status: 200 };
+  // prettyUrls mimics Cloudflare Pages: /index.html is a 308 to "/", so the
+  // fetched copy is the root page with redirected set. body overrides the
+  // response body.
+  const net = { mode: "online", status: 200, prettyUrls: true, body: null };
   const abs = (r) => new URL(typeof r === "string" ? r : r.url, ORIGIN + "/").href;
 
   const caches = {
@@ -34,6 +43,7 @@ function makeSandbox() {
       return {
         addAll: async (list) =>
           list.forEach((u) => cache.set(abs(u), new FakeResponse("body:" + abs(u)))),
+        put: async (u, response) => void cache.set(abs(u), response),
       };
     },
     keys: async () => [...store.keys()],
@@ -53,10 +63,15 @@ function makeSandbox() {
     skipWaiting: async () => void calls.skipWaiting++,
     clients: { claim: async () => void calls.claim++ },
   };
-  const fetchStub = async () => {
+  const fetchStub = async (r) => {
     calls.fetch++;
     if (net.mode === "offline") throw new TypeError("Failed to fetch");
-    return new FakeResponse("network", { status: net.status });
+    let url = abs(r);
+    const redirected = net.prettyUrls && url === ORIGIN + "/index.html";
+    if (redirected) url = ORIGIN + "/";
+    const response = new FakeResponse(net.body || "body:" + url, { status: net.status });
+    response.redirected = redirected;
+    return response;
   };
   const ctx = vm.createContext({
     self, caches, fetch: fetchStub, Response: FakeResponse, URL, Promise, console,
@@ -107,9 +122,27 @@ const tests = {
     assert.strictEqual(sb.calls.claim, 1);
   },
 
+  async "install stores no redirected responses"() {
+    const sb = makeSandbox();
+    await dispatch(sb, "install");
+    const cached = sb.store.get(vm.runInContext("CACHE_NAME", sb.ctx));
+    for (const [url, response] of cached) {
+      assert.ok(!response.redirected, "redirected copy cached for " + url);
+    }
+    assert.strictEqual(cached.get(ORIGIN + "/index.html").body, "body:" + ORIGIN + "/");
+  },
+
+  async "install fails if any precache fetch fails"() {
+    const sb = makeSandbox();
+    sb.net.status = 404;
+    await assert.rejects(dispatch(sb, "install"));
+    assert.strictEqual(sb.calls.skipWaiting, 0);
+  },
+
   async "online navigation returns the network response"() {
     const sb = makeSandbox();
     await dispatch(sb, "install");
+    sb.net.body = "network";
     const res = await dispatch(sb, "fetch", { request: req("/", "navigate") });
     assert.strictEqual(res.body, "network");
   },
@@ -119,7 +152,24 @@ const tests = {
     await dispatch(sb, "install");
     sb.net.mode = "offline";
     const res = await dispatch(sb, "fetch", { request: req("/some/page?utm=x", "navigate") });
-    assert.strictEqual(res.body, "body:" + ORIGIN + "/index.html");
+    assert.strictEqual(res.body, "body:" + ORIGIN + "/");
+    assert.strictEqual(res.status, 200);
+    assert.ok(!res.redirected, "navigation must not get a redirected response");
+  },
+
+  async "offline navigation strips a redirect from a cached shell"() {
+    // A cache filled by cache.addAll under Cloudflare Pages: no "./" entry
+    // and index.html stored with redirected set.
+    const sb = makeSandbox();
+    const cache = await sb.ctx.caches.open(vm.runInContext("CACHE_NAME", sb.ctx));
+    const shell = new FakeResponse("shell", { status: 200 });
+    shell.redirected = true;
+    await cache.put("index.html", shell);
+    sb.net.mode = "offline";
+    const res = await dispatch(sb, "fetch", { request: req("/", "navigate") });
+    assert.strictEqual(res.body, "shell");
+    assert.strictEqual(res.status, 200);
+    assert.ok(!res.redirected, "navigation must not get a redirected response");
   },
 
   async "non-OK navigation response falls back to the shell"() {
@@ -127,7 +177,7 @@ const tests = {
     await dispatch(sb, "install");
     sb.net.status = 502;
     const res = await dispatch(sb, "fetch", { request: req("/", "navigate") });
-    assert.strictEqual(res.body, "body:" + ORIGIN + "/index.html");
+    assert.strictEqual(res.body, "body:" + ORIGIN + "/");
   },
 
   async "offline navigation ignores stale caches and shows a Hindi page"() {
@@ -143,9 +193,10 @@ const tests = {
   async "assets are cache-first and offline misses yield 503"() {
     const sb = makeSandbox();
     await dispatch(sb, "install");
+    const before = sb.calls.fetch;
     const hit = await dispatch(sb, "fetch", { request: req("/styles.css") });
     assert.strictEqual(hit.body, "body:" + ORIGIN + "/styles.css");
-    assert.strictEqual(sb.calls.fetch, 0, "cache hit does not touch the network");
+    assert.strictEqual(sb.calls.fetch, before, "cache hit does not touch the network");
     sb.net.mode = "offline";
     const miss = await dispatch(sb, "fetch", { request: req("/missing.js") });
     assert.strictEqual(miss.status, 503);

@@ -139,6 +139,16 @@ map:
   copies of their strings in `FALLBACK_STRINGS`.
 - `sw.js` keeps copies of `offline_title` and `offline_body` for its
   last-resort offline page, which is served when nothing is cached.
+
+### Offline navigation
+
+Offline, `sw.js` answers every navigation with the cached shell. It uses the
+root entry (`./`) and falls back to `index.html`. Cloudflare Pages redirects
+`/index.html` to `/`, and Chrome refuses a redirected response for a
+navigation: it shows its no-internet page instead. So the worker rebuilds any
+redirected response as a plain one, both when it precaches on install and
+when it serves the shell. Devices pick up a new worker only after they open
+the app once while online.
 - The manifest `name` and `short_name` copy `app_title` and `app_short_name`.
 
 Repo-ci fails if:
