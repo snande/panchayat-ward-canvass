@@ -289,3 +289,60 @@ test('/sync/* is routed to the function', async () => {
   assert.ok(routes.include.includes('/roll'));
   assert.equal(catchAllOnRequest, onRequest);
 });
+
+// POST /sync/join (issue #48). The verifier is opaque to the server: any 32
+// bytes, base64url. src/sync/teamAuth.js derives the real one.
+const verifierOf = (fill) => Buffer.alloc(32, fill).toString('base64url');
+const join = (env, body) => call(env, '/sync/join', { method: 'POST', body });
+
+test('the first join for a candidate records its verifier and issues a working token', async () => {
+  const env = setup();
+  const res = await join(env, { candidateId: 'candA', verifier: verifierOf(1) });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Cache-Control'), 'no-store');
+  const body = await res.json();
+  assert.equal(body.candidateId, 'candA');
+  assert.equal(env.SYNC_KV.map.get('c/candA/verifier'), verifierOf(1));
+  assert.deepEqual(await verifySyncToken(SECRET, body.token), { candidateId: 'candA', deviceId: body.deviceId });
+
+  assert.equal((await pushRecords(env, body.token, [record('r1')])).status, 200);
+  const pulled = await (await pullSince(env, body.token)).json();
+  assert.deepEqual(pulled.records.map((r) => r.id), ['r1']);
+});
+
+test('a later join needs the same verifier; anything else is a 401 and changes nothing', async () => {
+  const env = setup();
+  const first = await (await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).json();
+
+  const again = await join(env, { candidateId: 'candA', verifier: verifierOf(1) });
+  assert.equal(again.status, 200);
+  const second = await again.json();
+  assert.notEqual(second.deviceId, first.deviceId, 'each device gets its own deviceId');
+  assert.equal((await pushRecords(env, second.token, [record('r1')])).status, 200);
+
+  // A wrong passphrase, and candB's passphrase presented as candA.
+  await join(env, { candidateId: 'candB', verifier: verifierOf(2) });
+  for (const verifier of [verifierOf(3), verifierOf(2)]) {
+    const res = await join(env, { candidateId: 'candA', verifier });
+    assert.equal(res.status, 401);
+    assert.equal(await res.text(), '');
+  }
+  assert.equal(env.SYNC_KV.map.get('c/candA/verifier'), verifierOf(1));
+  assert.equal(env.SYNC_KV.map.get('c/candB/verifier'), verifierOf(2));
+});
+
+test('join rejects malformed bodies and other methods, and needs config', async () => {
+  const env = setup();
+  for (const body of [
+    'not json', {}, { candidateId: 'candA' }, { verifier: verifierOf(1) },
+    { candidateId: 'a/b', verifier: verifierOf(1) },
+    { candidateId: 'candA', verifier: 'short' },
+    { candidateId: 'candA', verifier: Buffer.alloc(33).toString('base64url') },
+    { candidateId: 'candA', verifier: verifierOf(1) + '+' },
+  ]) {
+    assert.equal((await join(env, body)).status, 400, JSON.stringify(body));
+  }
+  assert.equal(env.SYNC_KV.map.size, 0);
+  assert.equal((await call(env, '/sync/join')).status, 405);
+  assert.equal((await call({ SYNC_KV: memoryKV() }, '/sync/join', { method: 'POST', body: {} })).status, 503);
+});

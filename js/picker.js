@@ -1,5 +1,7 @@
 import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
+import { getAuth, joinTeam } from '../src/sync/teamAuth.js';
+import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
 
 // Copies of src/strings.hi.json entries, used if the table itself failed to
 // load. repo-ci fails if they drift.
@@ -13,6 +15,7 @@ var FALLBACK_STRINGS = {
 
 var container = document.getElementById('ward-picker');
 var rollContainer = document.getElementById('roll');
+var teamContainer = document.getElementById('team-join');
 
 function loadJson(url) {
   return fetch(url).then(function (r) {
@@ -52,6 +55,31 @@ function startRoll(strings) {
   return roll;
 }
 
+// Until this device has joined its candidate's team, show the join screen
+// (candidate code + team passphrase). The ward roll works either way.
+function startTeamJoin(strings) {
+  if (!teamContainer) {
+    return;
+  }
+  getAuth()
+    .then(function (auth) {
+      if (auth) {
+        return;
+      }
+      teamContainer.hidden = false;
+      mountTeamJoin(teamContainer, strings, {
+        joinTeam: joinTeam,
+        onJoined: function () {
+          teamContainer.hidden = true;
+          teamContainer.replaceChildren();
+        },
+      });
+    })
+    .catch(function (err) {
+      console.error('team credentials could not be read', err);
+    });
+}
+
 if (container) {
   var table = null;
   var roll = null;
@@ -63,6 +91,7 @@ if (container) {
     .then(function (strings) {
       table = strings;
       roll = startRoll(strings);
+      startTeamJoin(strings);
       return loadJson('config/constituency.json');
     })
     .then(function (config) {
