@@ -1,10 +1,15 @@
 // Team join screen (issue #48): shown while the device holds no team
 // credentials. A candidate code field and a team passphrase field; all text
 // comes from the strings table handed in. Joining itself is
-// src/sync/teamAuth.js; this screen never keeps the passphrase once a join
-// attempt is over.
+// src/sync/teamAuth.js. The passphrase is cleared from its field after a
+// successful join and after a rejected one (wrong passphrase); it is kept
+// when only the candidate code needs fixing or the network failed, so the
+// user does not have to retype it.
+
+import { CANDIDATE_ID_PATTERN } from '../sync/teamAuth.js';
 
 const MESSAGE_FOR_CODE = {
+  'invalid-code': 'team_join_bad_code',
   invalid: 'team_join_invalid',
   unauthorized: 'team_join_wrong',
 };
@@ -68,6 +73,12 @@ export function mountTeamJoin(container, strings, opts) {
       message.textContent = text('team_join_invalid');
       return;
     }
+    // Caught here, before any work, with a message that says what a code
+    // may contain; the typed passphrase stays in its field.
+    if (!CANDIDATE_ID_PATTERN.test(candidateId)) {
+      message.textContent = text('team_join_bad_code');
+      return;
+    }
     busy = true;
     button.setAttribute('disabled', '');
     message.textContent = text('team_join_pending');
@@ -77,8 +88,9 @@ export function mountTeamJoin(container, strings, opts) {
       message.textContent = '';
       if (typeof opts.onJoined === 'function') opts.onJoined(auth);
     } catch (err) {
-      passphrase.input.value = '';
-      message.textContent = text(MESSAGE_FOR_CODE[err && err.code] || 'team_join_failed');
+      const code = err && err.code;
+      if (code === 'unauthorized') passphrase.input.value = '';
+      message.textContent = text(MESSAGE_FOR_CODE[code] || 'team_join_failed');
     } finally {
       busy = false;
       button.removeAttribute('disabled');

@@ -45,8 +45,7 @@ function server() {
     requests.push({ url: String(url), init });
     return onRequest({ request: new Request(new URL(url, ORIGIN), init), env });
   };
-  const call = (path, init) => fetch(path, init);
-  return { env, fetch, call, requests };
+  return { env, fetch, call: fetch, requests };
 }
 
 function device(srv, crypto = webcrypto) {
@@ -65,6 +64,7 @@ async function encrypt(key, text) {
 const decrypt = async (key, { iv, data }) =>
   new TextDecoder().decode(await webcrypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data));
 
+// An independent derivation; Node's base64url matches the server's encoder.
 async function expectedVerifier(candidateId, passphrase) {
   const base = await webcrypto.subtle.importKey('raw', encoder.encode(passphrase), 'PBKDF2', false, ['deriveBits']);
   const bits = new Uint8Array(await webcrypto.subtle.deriveBits(
@@ -93,7 +93,8 @@ test('the same passphrase on two devices yields working tokens and one team key'
   assert.equal(a.key.algorithm.name, 'AES-GCM');
   assert.equal(a.key.algorithm.length, 256);
   assert.deepEqual(a.key.usages.sort(), ['decrypt', 'encrypt']);
-  // The first join recorded exactly the verifier of the PBKDF2 bits.
+  // The first join recorded exactly the verifier of the PBKDF2 bits, so the
+  // client's base64url copy and the server's encoder agree.
   const { bits, verifier } = await expectedVerifier('candA', PASS_A);
   assert.equal(srv.env.SYNC_KV.map.get('c/candA/verifier'), verifier);
   assert.deepEqual(JSON.parse(srv.requests[0].init.body), { candidateId: 'candA', verifier });
@@ -199,8 +200,11 @@ test('PBKDF2 runs with salt = candidateId and the configured iterations', async 
 test('bad input and network failures reject without storing anything', async () => {
   const srv = server();
   const dev = device(srv);
-  for (const [id, pass] of [['', PASS_A], ['a/b', PASS_A], ['candA', ''], ['candA', '   '], [null, PASS_A]]) {
-    await assert.rejects(dev.auth.joinTeam(id, pass), { code: 'invalid' });
+  for (const id of ['', 'a/b', 'उम्मीदवार', null]) {
+    await assert.rejects(dev.auth.joinTeam(id, PASS_A), { code: 'invalid-code' });
+  }
+  for (const pass of ['', '   ', null]) {
+    await assert.rejects(dev.auth.joinTeam('candA', pass), { code: 'invalid' });
   }
   assert.equal(srv.requests.length, 0);
 

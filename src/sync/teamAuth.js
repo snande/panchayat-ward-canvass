@@ -25,7 +25,10 @@ export const TEAM_AUTH_ID = 'team-auth';
 export const CANDIDATE_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const RECORD_VERSION = 1;
 
-/** code: 'invalid' (bad input), 'unauthorized' (wrong passphrase) or 'failed'. */
+/**
+ * code: 'invalid-code' (candidate code has the wrong shape), 'invalid'
+ * (empty passphrase), 'unauthorized' (wrong passphrase) or 'failed'.
+ */
 export class TeamJoinError extends Error {
   constructor(code, message) {
     super(message);
@@ -34,6 +37,11 @@ export class TeamJoinError extends Error {
   }
 }
 
+// The same encoding as base64urlEncode in functions/sync.js. It is a copy,
+// not an import: that file is bundled into the Pages Function, while this
+// module runs on the device and is precached by sw.js, so neither side
+// imports the other. test/teamAuth.test.js checks that the server stores
+// exactly the verifier this produces.
 function base64url(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -109,7 +117,7 @@ export function createTeamAuth({
    */
   async function joinTeam(candidateId, teamPassphrase) {
     const id = typeof candidateId === 'string' ? candidateId.trim() : '';
-    if (!CANDIDATE_ID_PATTERN.test(id)) throw new TeamJoinError('invalid', 'candidate code is not valid');
+    if (!CANDIDATE_ID_PATTERN.test(id)) throw new TeamJoinError('invalid-code', 'candidate code is not valid');
     if (typeof teamPassphrase !== 'string' || !teamPassphrase.trim()) {
       throw new TeamJoinError('invalid', 'team passphrase is empty');
     }

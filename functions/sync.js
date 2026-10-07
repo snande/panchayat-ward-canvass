@@ -43,6 +43,10 @@ export const GAP_GRACE_MS = 5 * 60 * 1000;
 
 const encoder = new TextEncoder();
 
+// src/sync/teamAuth.js carries its own copy of this encoder: this file is
+// bundled into the Pages Function and src/ is served to the device and
+// precached by sw.js, so neither side imports the other. test/teamAuth.test.js
+// pins that the two produce the same verifier encoding.
 function base64urlEncode(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
