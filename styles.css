@@ -441,6 +441,11 @@ main {
   font-family: var(--font-family-base);
 }
 
+/* .btn-primary sets display, which would otherwise override [hidden]. */
+.voter-card [hidden] {
+  display: none;
+}
+
 .voter-card-name {
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-lg);
