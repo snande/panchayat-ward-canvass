@@ -356,3 +356,36 @@ test('destroy cancels a pending search and removes the screen', async () => {
   assert.equal(renders.length, 0);
   assert.equal(doc.body.children.length, 0);
 });
+
+test('with onSelect, tapping or pressing Enter on a result selects that voter', async () => {
+  const doc = createDocument();
+  const selected = [];
+  let resolveRender;
+  const screen = mountSearchScreen(doc.body, voters2000, {
+    onSelect: (voter) => selected.push(voter),
+    onRender: () => resolveRender(),
+  });
+  const rendered = new Promise((resolve) => (resolveRender = resolve));
+  type(screen.input, 'सीता');
+  await rendered;
+  const rows = screen.list.querySelectorAll('li');
+  assert.ok(rows.length > 1);
+  assert.equal(rows[1].getAttribute('role'), 'button');
+  assert.equal(rows[1].getAttribute('tabindex'), '0');
+
+  rows[1].dispatchEvent({ type: 'click' });
+  rows[0].dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault() {} });
+  rows[0].dispatchEvent({ type: 'keydown', key: 'a' });
+  const results = search(buildIndex(voters2000), 'सीता', { limit: 50 });
+  assert.deepEqual(selected.map((v) => v.id), [results[1].id, results[0].id]);
+  screen.destroy();
+});
+
+test('without onSelect, result rows are plain list items', async () => {
+  const { screen, nextRender, rows } = mount();
+  const rendered = nextRender();
+  type(screen.input, 'सीता');
+  await rendered;
+  assert.equal(rows()[0].getAttribute('role'), null);
+  screen.destroy();
+});

@@ -20,6 +20,8 @@ const STYLE = `
 .pwc-search__name { display: block; font-size: 1.25rem; font-weight: 600; color: var(--color-text, #1f2933); }
 .pwc-search__meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 1rem; color: var(--color-text-muted, #52606d); }
 .pwc-search__serial { font-weight: 600; color: var(--color-primary-strong, #115e59); }
+.pwc-search__row[role="button"] { cursor: pointer; min-height: 44px; }
+.pwc-search__row[role="button"]:focus-visible { outline: 3px solid var(--color-focus, #f59e0b); outline-offset: -3px; }
 .pwc-search__empty { margin: 1rem 0.25rem; font-size: 1.125rem; color: var(--color-text-muted, #52606d); }
 `;
 
@@ -30,8 +32,18 @@ function el(doc, tag, className, text) {
   return node;
 }
 
-function renderRow(doc, voter) {
+function renderRow(doc, voter, onSelect) {
   const row = el(doc, 'li', 'pwc-search__row');
+  if (onSelect) {
+    row.setAttribute('role', 'button');
+    row.setAttribute('tabindex', '0');
+    row.addEventListener('click', () => onSelect(voter));
+    row.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      onSelect(voter);
+    });
+  }
   row.appendChild(el(doc, 'span', 'pwc-search__name', voter.name));
   const meta = el(doc, 'span', 'pwc-search__meta');
   meta.appendChild(el(doc, 'span', 'pwc-search__relative', voter.relativeName ?? ''));
@@ -46,11 +58,14 @@ function renderRow(doc, voter) {
  * ({ id, serial, name, relativeName, houseNo }).
  *
  * options.onRender(results) is called after each render (used by tests and
- * for instrumentation). Returns { input, list, message, destroy }.
+ * for instrumentation). options.onSelect(voter), when given, makes each
+ * result row tappable and is called with that row's voter.
+ * Returns { input, list, message, destroy }.
  */
 export function mountSearchScreen(container, voters, options = {}) {
   const doc = container.ownerDocument || globalThis.document;
   const onRender = typeof options.onRender === 'function' ? options.onRender : null;
+  const onSelect = typeof options.onSelect === 'function' ? options.onSelect : null;
   const index = buildIndex(voters);
 
   const root = el(doc, 'section', 'pwc-search');
@@ -81,7 +96,7 @@ export function mountSearchScreen(container, voters, options = {}) {
     const query = input.value || '';
     const results = query.trim() ? search(index, query, { limit: RESULT_LIMIT }) : [];
     const fragment = doc.createDocumentFragment();
-    for (const voter of results) fragment.appendChild(renderRow(doc, voter));
+    for (const voter of results) fragment.appendChild(renderRow(doc, voter, onSelect));
     list.replaceChildren(fragment);
     if (query.trim() && results.length === 0) message.removeAttribute('hidden');
     else message.setAttribute('hidden', '');

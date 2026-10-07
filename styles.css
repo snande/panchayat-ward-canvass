@@ -23,6 +23,7 @@
   --color-text-muted: #52606d;
   --color-border: #e1ddd3;
   --color-focus: #f59e0b;
+  --color-danger: #b42318;
 
   /* Spacing (4 px grid). */
   --space-1: 0.25rem;
@@ -282,4 +283,127 @@ main {
 .roll-meta {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+/* Voter card (src/ui/voterCard.js): opened from a search result. The phone
+   field and save button stay disabled until consent is ticked. Every control
+   is at least --touch-target (48px) tall; text inherits the self-hosted
+   Noto Sans Devanagari face through --font-family-base. */
+.roll-card {
+  margin-bottom: var(--space-4);
+}
+
+.voter-card {
+  font-family: var(--font-family-base);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.voter-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.voter-card-name {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-heading);
+  color: var(--color-text);
+}
+
+.voter-card-close {
+  flex: none;
+  min-height: var(--touch-target);
+  min-width: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.voter-card-relative,
+.voter-card-meta {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.voter-card-consent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  margin: var(--space-4) 0;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.voter-card-consent-box {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.voter-card-field {
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+.voter-card-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.voter-card-phone {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-lg);
+}
+
+.voter-card-phone:disabled,
+.voter-card-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.voter-card-phone:disabled {
+  background: var(--color-bg);
+}
+
+.voter-card-close:focus-visible,
+.voter-card-consent-box:focus-visible,
+.voter-card-phone:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.voter-card-message {
+  margin: var(--space-3) 0 0;
+  min-height: 1.5rem;
+  color: var(--color-primary-strong);
+  font-size: var(--font-size-sm);
+}
+
+.voter-card-message-error {
+  color: var(--color-danger);
 }
