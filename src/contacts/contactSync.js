@@ -45,7 +45,7 @@ function contactFromRecord(record) {
 
 /**
  * @param {{
- *   contacts?: {recordConsent, saveNumber, getContact, revokeConsent, putSyncedContact},
+ *   contacts?: {recordConsent, saveNumber, getContact, revokeConsent, putSyncedContact, listConsented},
  *   engine?: {enqueue: Function, onRemoteRecords: Function},
  *   now?: () => string, log?: Function,
  * }} [deps] defaults to the device's contact store and sync engine; tests pass their own
@@ -94,6 +94,11 @@ export function createContactSync({
     return contacts.getContact(wardId, serial);
   }
 
+  /** The ward's consented voters, as this device holds them (teammates' included). */
+  async function listConsented(wardId) {
+    return contacts.listConsented(wardId);
+  }
+
   /** Apply records pulled from the team; other record types are ignored. Returns how many applied. */
   async function applyRemote(records) {
     let applied = 0;
@@ -116,5 +121,5 @@ export function createContactSync({
     return engine.onRemoteRecords(applyRemote);
   }
 
-  return { recordConsent, saveNumber, revokeConsent, getContact, applyRemote, listen };
+  return { recordConsent, saveNumber, revokeConsent, getContact, listConsented, applyRemote, listen };
 }
