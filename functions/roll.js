@@ -24,6 +24,14 @@ async function buildRelay(request, env) {
   return createRollRelay({ allowedUrls: allowedRollUrls(config) });
 }
 
+// Marks every answer from this function so a live smoke test can tell the
+// relay apart from a static host's 404 or HTML fallback.
+function marked(response) {
+  const out = new Response(response.body, response);
+  out.headers.set('X-Roll-Relay', '1');
+  return out;
+}
+
 export async function onRequest({ request, env }) {
   if (!relayPromise) {
     relayPromise = buildRelay(request, env).catch((err) => {
@@ -35,10 +43,10 @@ export async function onRequest({ request, env }) {
   try {
     relay = await relayPromise;
   } catch {
-    return new Response('relay not ready\n', {
+    return marked(new Response('relay not ready\n', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
-    });
+    }));
   }
-  return relay(request);
+  return marked(await relay(request));
 }
