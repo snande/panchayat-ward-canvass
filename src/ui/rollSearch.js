@@ -8,9 +8,11 @@
 // With opts.contacts (src/contacts/contactSync.js) and opts.wardKey, tapping
 // a voter in the list or in the search results opens the consent and phone
 // panel (src/ui/contactPanel.js) for that voter above the search box.
+// Selecting a search result opens the voter card (src/ui/voterCard.js) instead.
 
 import { mountContactPanel } from './contactPanel.js';
 import { el } from './dom.js';
+import { mountVoterCard } from './voterCard.js';
 import { mountRollList } from './rollList.js';
 import { mountSearchScreen } from './searchScreen.js';
 
@@ -49,11 +51,17 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (typeof panel.root.scrollIntoView === 'function') panel.root.scrollIntoView();
     return panel;
   }
+  function openVoterCard(entry) {
+    if (!canCapture || !entry) return null;
+    const card = mountVoterCard(contactHost, strings, { contacts, wardId: wardKey, entry });
+    if (typeof card.root.scrollIntoView === 'function') card.root.scrollIntoView();
+    return card;
+  }
   const bySerial = new Map(entries.map((entry) => [entry.serial, entry]));
 
   let list = null;
   const search = mountSearchScreen(searchHost, entries.map(toVoter), {
-    onSelect: canCapture ? (voter) => openContact(bySerial.get(voter.serial)) : undefined,
+    onSelect: canCapture ? (voter) => openVoterCard(bySerial.get(voter.serial)) : undefined,
     onRender() {
       // Re-read the box: onRender fires after every debounced render.
       const querying = (search.input.value || '').trim() !== '';
@@ -75,6 +83,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     list,
     contactHost,
     openContact,
+    openVoterCard,
     destroy() {
       search.destroy();
       list.destroy();

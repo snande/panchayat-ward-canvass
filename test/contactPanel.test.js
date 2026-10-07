@@ -163,7 +163,7 @@ test('tapping a roll row or a search result opens the panel for that voter', asy
   type(view.search.input, 'मोहन');
   await waitFor(() => view.search.list.querySelectorAll('li').length === 1);
   view.search.list.querySelector('li').dispatchEvent({ type: 'click' });
-  assert.equal(view.contactHost.querySelector('h2').textContent, '8. मोहन लाल');
+  assert.equal(view.contactHost.querySelector('h2').textContent, 'मोहन लाल');
   view.destroy();
 });
 
