@@ -35,7 +35,9 @@ function defaultFrame(fn) {
  * Mount the list into container (replacing its content).
  * @param {object[]} entries {serial, name, relative, age, gender, house}
  * @param {Record<string,string>} strings the Hindi string table
- * @param {{viewportHeight?: number, requestFrame?: Function}} [opts] test hooks
+ * @param {{viewportHeight?: number, requestFrame?: Function, onSelect?: (entry: object) => void}} [opts]
+ *   onSelect is called with the entry of a tapped row (Enter or Space on a
+ *   focused row too); viewportHeight and requestFrame are test hooks
  * @returns {{root, viewport, rendered: () => number[], render: () => void, destroy: () => void}}
  */
 export function mountRollList(container, entries, strings, opts = {}) {
@@ -66,10 +68,13 @@ export function mountRollList(container, entries, strings, opts = {}) {
 
   const live = new Map(); // entry index -> row node
   const pool = [];
+  const shownIndex = new Map(); // row node -> entry index it shows
+  const onSelect = typeof opts.onSelect === 'function' ? opts.onSelect : null;
 
   function fillRow(row, entry, index) {
     row.setAttribute('style', `height: ${ROW_HEIGHT}px; transform: translateY(${index * ROW_HEIGHT}px)`);
     row.setAttribute('aria-posinset', String(index + 1));
+    shownIndex.set(row, index);
     const [name, relative, meta] = row.childNodes;
     name.textContent = `${entry.serial}. ${entry.name}`;
     relative.textContent = entry.relative;
@@ -87,6 +92,16 @@ export function mountRollList(container, entries, strings, opts = {}) {
     row.appendChild(el(doc, 'span', 'roll-name'));
     row.appendChild(el(doc, 'span', 'roll-relative'));
     row.appendChild(el(doc, 'span', 'roll-meta'));
+    if (onSelect) {
+      row.setAttribute('tabindex', '0');
+      const select = () => onSelect(entries[shownIndex.get(row)]);
+      row.addEventListener('click', select);
+      row.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        select();
+      });
+    }
     return row;
   }
 

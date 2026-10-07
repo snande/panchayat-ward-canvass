@@ -30,8 +30,17 @@ function el(doc, tag, className, text) {
   return node;
 }
 
-function renderRow(doc, voter) {
+function renderRow(doc, voter, onSelect) {
   const row = el(doc, 'li', 'pwc-search__row');
+  if (onSelect) {
+    row.setAttribute('tabindex', '0');
+    row.addEventListener('click', () => onSelect(voter));
+    row.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      onSelect(voter);
+    });
+  }
   row.appendChild(el(doc, 'span', 'pwc-search__name', voter.name));
   const meta = el(doc, 'span', 'pwc-search__meta');
   meta.appendChild(el(doc, 'span', 'pwc-search__relative', voter.relativeName ?? ''));
@@ -46,11 +55,13 @@ function renderRow(doc, voter) {
  * ({ id, serial, name, relativeName, houseNo }).
  *
  * options.onRender(results) is called after each render (used by tests and
- * for instrumentation). Returns { input, list, message, destroy }.
+ * for instrumentation). options.onSelect(voter), when given, is called when a
+ * result row is tapped. Returns { input, list, message, destroy }.
  */
 export function mountSearchScreen(container, voters, options = {}) {
   const doc = container.ownerDocument || globalThis.document;
   const onRender = typeof options.onRender === 'function' ? options.onRender : null;
+  const onSelect = typeof options.onSelect === 'function' ? options.onSelect : null;
   const index = buildIndex(voters);
 
   const root = el(doc, 'section', 'pwc-search');
@@ -81,7 +92,7 @@ export function mountSearchScreen(container, voters, options = {}) {
     const query = input.value || '';
     const results = query.trim() ? search(index, query, { limit: RESULT_LIMIT }) : [];
     const fragment = doc.createDocumentFragment();
-    for (const voter of results) fragment.appendChild(renderRow(doc, voter));
+    for (const voter of results) fragment.appendChild(renderRow(doc, voter, onSelect));
     list.replaceChildren(fragment);
     if (query.trim() && results.length === 0) message.removeAttribute('hidden');
     else message.setAttribute('hidden', '');

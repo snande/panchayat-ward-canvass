@@ -158,7 +158,22 @@ export function createContactStore({
     await done;
   }
 
-  return { recordConsent, saveNumber, getContact, revokeConsent };
+  /**
+   * Store a voter's consent as a teammate's device recorded it (it arrives
+   * through src/contacts/contactSync.js): its consent timestamp and number,
+   * or null for none, replace what this device holds.
+   */
+  async function putSyncedContact(wardId, serial, { phone = null, consentAt } = {}) {
+    const n = voterSerial(wardId, serial);
+    if (typeof consentAt !== 'string' || !consentAt) throw new TypeError('consentAt must be a timestamp string');
+    const digits = phone === null ? null : normalisePhone(phone);
+    if (phone !== null && !digits) throw new TypeError('phone must be a 10-digit mobile number');
+    await write(wardId, n, { phone: digits, consentAt }, { requireExisting: false });
+    if (digits) requestPersistence();
+    return { wardId, serial: n, phone: digits, consentAt };
+  }
+
+  return { recordConsent, saveNumber, getContact, revokeConsent, putSyncedContact };
 }
 
 let defaultStore = null;
@@ -168,3 +183,4 @@ export const recordConsent = async (wardId, serial) => store().recordConsent(war
 export const saveNumber = async (wardId, serial, phone) => store().saveNumber(wardId, serial, phone);
 export const getContact = async (wardId, serial) => store().getContact(wardId, serial);
 export const revokeConsent = async (wardId, serial) => store().revokeConsent(wardId, serial);
+export const putSyncedContact = async (wardId, serial, contact) => store().putSyncedContact(wardId, serial, contact);

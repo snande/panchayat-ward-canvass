@@ -283,3 +283,67 @@ main {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
+
+/* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
+   shown above the roll's search box. Rows open it, so they show they can. */
+.roll-row[tabindex],
+.pwc-search__row[tabindex] {
+  cursor: pointer;
+}
+
+.roll-row[tabindex]:focus-visible,
+.pwc-search__row[tabindex]:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+
+.contact-panel {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* .btn-primary sets display, which would otherwise override [hidden]. */
+.contact-panel [hidden] {
+  display: none;
+}
+
+.contact-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+}
+
+.contact-body {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.contact-message {
+  margin-top: var(--space-3);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--touch-target);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  font: inherit;
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+.btn-secondary:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
