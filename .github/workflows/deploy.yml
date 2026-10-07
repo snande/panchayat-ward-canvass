@@ -2,7 +2,7 @@ name: Deploy
 
 # Publishes the shell and the /roll relay (functions/roll.js) to Cloudflare
 # Pages. A static-only host has no /roll, so every roll download fails with
-# the Hindi retry message; the smoke step fails the run if that happens.
+# the Hindi retry message; the smoke steps fail the run if that happens.
 #
 # Repo settings: secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID,
 # variable CF_PAGES_PROJECT (the Pages project name).
@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      # CI runs the same tests on this push; repeated here so a deploy
+      # triggered by workflow_dispatch is gated too.
       - run: npm test
       - name: Check deploy configuration
         id: config
@@ -40,27 +42,48 @@ jobs:
           fi
       - name: Stage the static site
         if: steps.config.outputs.ready == 'true'
-        # Only the shell is published as static files; fixtures, tests and
-        # tooling stay out. functions/ is picked up from the repo root.
-        run: |
-          mkdir dist
-          cp -r _routes.json CNAME index.html manifest.webmanifest styles.css sw.js \
-            config fonts icons js relay src dist/
+        # Fails if a sw.js precache path is not staged.
+        run: node scripts/stage-site.mjs dist
       - name: Deploy to Cloudflare Pages
         if: steps.config.outputs.ready == 'true'
+        # functions/ comes from the working directory; _routes.json from dist.
         run: npx --yes wrangler@3 pages deploy dist --project-name "$CF_PAGES_PROJECT" --branch main
-      - name: Smoke test /roll on the live domain
+      - name: Smoke test the live domain
         if: steps.config.outputs.ready == 'true'
         run: |
           domain="$(tr -d '[:space:]' < CNAME)"
+          base="https://$domain"
+          ward_url="$(node -e '
+            const c = JSON.parse(require("fs").readFileSync("config/constituency.json", "utf8"));
+            for (const d of c.districts) for (const s of d.samitis) for (const p of s.panchayats)
+              for (const w of p.wards) if (w.pdfUrl) { console.log(w.pdfUrl); process.exit(0); }
+            process.exit(1);
+          ')"
+
+          # 1. The relay answers /roll and refuses a URL outside the config.
+          ok=false
           for attempt in 1 2 3 4 5 6; do
-            headers="$(curl -s -D - -o /dev/null "https://$domain/roll?url=https://example.com/x.pdf" || true)"
-            if echo "$headers" | head -n1 | grep -q ' 403' && echo "$headers" | grep -qi '^x-roll-relay:'; then
-              echo "/roll is served by the relay on $domain"
-              exit 0
-            fi
+            headers="$(curl -s -D - -o /dev/null "$base/roll?url=https://example.com/x.pdf" || true)"
+            if echo "$headers" | head -n1 | grep -q ' 403' && echo "$headers" | grep -qi '^x-roll-relay:'; then ok=true; break; fi
             sleep 10
           done
-          echo "::error::/roll on $domain did not answer 403 from the relay:"
-          echo "$headers"
-          exit 1
+          if [ "$ok" != true ]; then
+            echo "::error::/roll on $domain did not answer 403 from the relay:"; echo "$headers"; exit 1
+          fi
+
+          # 2. _routes.json is in effect: static files are not intercepted.
+          for path in / /sw.js; do
+            headers="$(curl -s -D - -o /dev/null "$base$path")"
+            if ! echo "$headers" | head -n1 | grep -q ' 200' || echo "$headers" | grep -qi '^x-roll-relay:'; then
+              echo "::error::$path on $domain is not a plain static 200:"; echo "$headers"; exit 1
+            fi
+          done
+
+          # 3. A real ward roll downloads through the relay as a PDF.
+          headers="$(curl -s -D - -o /tmp/roll.pdf --max-time 60 -G "$base/roll" --data-urlencode "url=$ward_url")"
+          if ! echo "$headers" | head -n1 | grep -q ' 200' \
+            || ! echo "$headers" | grep -qi '^content-type: application/pdf' \
+            || [ "$(head -c 5 /tmp/roll.pdf)" != "%PDF-" ]; then
+            echo "::error::an allowed ward roll did not download as a PDF through $base/roll:"; echo "$headers"; exit 1
+          fi
+          echo "live domain $domain serves the shell and relays ward rolls"

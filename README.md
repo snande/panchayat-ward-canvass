@@ -65,22 +65,20 @@ static-asset binding on first use. `_routes.json` routes only `/roll` to the
 function, so every other URL stays a plain static file. The custom domain is
 a CNAME at the registrar to the Pages project.
 
-`.github/workflows/deploy.yml` publishes it on every push to `main`: it stages
-only the shell's files into `dist/` (no `fixtures/`, tests or tooling), runs
-`wrangler pages deploy dist` (the `functions/` directory is taken from the
-repo root), then smoke-tests the live domain. Set the repository secrets
-`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` and the variable
-`CF_PAGES_PROJECT`; without them the job warns and skips. The Pages project
-settings are: no build command, and the custom domain from `CNAME` attached
-to the project. The smoke check is:
-
-```
-curl -si 'https://canvass.takshavid.com/roll?url=https://example.com/x.pdf'   # 403 with an X-Roll-Relay header
-```
-
-A 404 or an HTML page there means the domain is not served by the Pages
-project, so every download fails with the Hindi retry message. That
-deployment, and the
+`.github/workflows/deploy.yml` publishes it on every push to `main`.
+`scripts/stage-site.mjs` copies only the browser-facing shell into `dist/` (no
+`relay/`, `fixtures/`, tests or tooling) and fails if a path in `sw.js`'s
+precache list is not staged. `wrangler pages deploy dist` then publishes it;
+`functions/` is taken from the repo root and `_routes.json` from `dist/`. Set
+the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` and
+the variable `CF_PAGES_PROJECT`; without them the job warns and skips. The
+Pages project has no build command, and the domain in `CNAME` is attached to
+it. After deploying, the job checks the live domain: `/roll` with a URL outside
+the catalogue answers 403 with an `X-Roll-Relay` header, `/` and `/sw.js` are
+plain static 200s without that header, and a catalogue ward URL downloads as a
+PDF through `/roll`. A 404 or an HTML page at `/roll` means the domain is not
+served by the Pages project, so every download fails with the Hindi retry
+message. That deployment, and the
 Android Chrome check that Badli ward 1 loads, scrolls smoothly and reads as
 correct Hindi, are operator steps outside repo-ci.
 
