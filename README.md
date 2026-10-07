@@ -56,9 +56,16 @@ curl -s -o /dev/null -w '%{http_code}' 'http://localhost:8080/roll?url=https://e
 
 The domain in `CNAME` must be served by this server (or the handler mounted
 at `/roll` on the same host), not by a static-only host. A static-only host
-has no relay, so every download fails with the Hindi retry message. That
-deployment, and the Android Chrome check that Badli ward 1 loads, scrolls
-smoothly and reads as correct Hindi, are operator steps outside repo-ci.
+has no relay, so every download fails with the Hindi retry message.
+
+The live deployment is Cloudflare Pages: the repository root is the static
+site, and `functions/roll.js` mounts the same `createRollRelay` handler on
+`/roll` as a Pages Function, reading `config/constituency.json` through the
+static-asset binding on first use. `_routes.json` routes only `/roll` to the
+function, so every other URL stays a plain static file. The custom domain is
+a CNAME at the registrar to the Pages project. That deployment, and the
+Android Chrome check that Badli ward 1 loads, scrolls smoothly and reads as
+correct Hindi, are operator steps outside repo-ci.
 
 ## Search screen
 
