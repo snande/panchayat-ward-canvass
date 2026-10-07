@@ -33,15 +33,22 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
   root.appendChild(listHost);
   container.replaceChildren(root);
 
+  let list = null;
   const search = mountSearchScreen(searchHost, entries.map(toVoter), {
     onRender() {
       // Re-read the box: onRender fires after every debounced render.
       const querying = (search.input.value || '').trim() !== '';
-      if (querying) listHost.setAttribute('hidden', '');
-      else listHost.removeAttribute('hidden');
+      if (querying) {
+        listHost.setAttribute('hidden', '');
+      } else if (listHost.hasAttribute('hidden')) {
+        listHost.removeAttribute('hidden');
+        // While hidden the viewport had no height, so lay the rows out again
+        // now that it has one.
+        if (list) list.render();
+      }
     },
   });
-  const list = mountRollList(listHost, entries, strings, opts);
+  list = mountRollList(listHost, entries, strings, opts);
 
   return {
     root,
