@@ -29,5 +29,10 @@
   "roll_list_label": "वार्ड की मतदाता सूची",
   "roll_age": "उम्र",
   "roll_house": "मकान नं.",
-  "roll_empty": "इस वार्ड की सूची में कोई मतदाता नहीं मिला।"
+  "roll_empty": "इस वार्ड की सूची में कोई मतदाता नहीं मिला।",
+  "call_list_label": "कॉल सूची",
+  "call_action": "कॉल करें",
+  "call_not_assigned": "किसी को नहीं सौंपा गया",
+  "call_assign_label": "कार्यकर्ता सौंपें",
+  "call_assign_prompt": "कार्यकर्ता चुनें"
 }
