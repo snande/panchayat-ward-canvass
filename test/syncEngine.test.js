@@ -10,7 +10,7 @@ import { webcrypto } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import {
-  createSyncEngine, CURSOR_ID, PUSH_URL, PULL_URL, SYNC_INTERVAL_MS, isNewer,
+  createSyncEngine, CURSOR_ID, PUSH_URL, PULL_URL, PUSH_BATCH_SIZE, SYNC_INTERVAL_MS, isNewer,
 } from '../src/sync/syncEngine.js';
 import * as syncEngineModule from '../src/sync/syncEngine.js';
 import { createTeamAuth } from '../src/sync/teamAuth.js';
@@ -52,20 +52,28 @@ async function teamAuth(candidateId = 'candA', deviceId = 'dev1', key) {
   return { token: await signSyncToken(SECRET, candidateId, deviceId), candidateId, key: teamKey };
 }
 
+// state.offline makes every request throw like a phone with no signal;
+// state.pushStatus(n) may answer the n-th push (1-based) with that status
+// instead of reaching the server.
 function device(srv, getAuth) {
   const idb = createFakeIndexedDB();
   const requests = [];
-  const state = { offline: false, pushStatus: null, beforePushResponse: null };
+  const state = { offline: false, pushStatus: () => null, beforePushResponse: null, pushCalls: 0, pushedOk: 0, pullsOk: 0 };
   const fetch = async (url, init = {}) => {
     requests.push({ url: String(url), init });
     if (state.offline) throw new TypeError('Failed to fetch');
     if (String(url) === PUSH_URL) {
-      if (state.pushStatus) return new Response('', { status: state.pushStatus });
+      state.pushCalls += 1;
+      const status = state.pushStatus(state.pushCalls);
+      if (status) return new Response('', { status });
       const response = await srv.fetch(url, init);
       if (state.beforePushResponse) await state.beforePushResponse();
+      if (response.ok) state.pushedOk += 1;
       return response;
     }
-    return srv.fetch(url, init);
+    const response = await srv.fetch(url, init);
+    if (String(url).startsWith(PULL_URL) && response.ok) state.pullsOk += 1;
+    return response;
   };
   const win = new EventTarget();
   const doc = Object.assign(new EventTarget(), { visibilityState: 'visible' });
@@ -105,7 +113,16 @@ function device(srv, getAuth) {
 const stored = (idb, store) => idb.databases.get(DB_NAME)?.stores.get(store) ?? new Map();
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 const pushes = (dev) => dev.requests.filter((r) => r.url === PUSH_URL);
+const pulls = (dev) => dev.requests.filter((r) => r.url.startsWith(`${PULL_URL}?`));
 const fromB64 = (text) => Buffer.from(text.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+
+async function waitFor(cond, what, ms = 5000) {
+  const until = Date.now() + ms;
+  while (!cond()) {
+    if (Date.now() > until) throw new Error(`timed out waiting for ${what}`);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
 
 test('enqueue keeps the record in the outbox, encrypted with the device key', async () => {
   const srv = server();
@@ -121,6 +138,7 @@ test('enqueue keeps the record in the outbox, encrypted with the device key', as
 
   await assert.rejects(dev.engine.enqueue({ id: '', updatedAt: 1, data: {} }), TypeError);
   await assert.rejects(dev.engine.enqueue({ id: 'x', updatedAt: NaN, data: {} }), TypeError);
+  await assert.rejects(dev.engine.enqueue({ id: 'x', updatedAt: 'yesterday', data: {} }), TypeError);
   await assert.rejects(dev.engine.enqueue({ id: 'x', updatedAt: 1, data: undefined }), TypeError);
   await assert.rejects(dev.engine.enqueue(null), TypeError);
 });
@@ -172,13 +190,11 @@ test('a failed or offline push keeps every outbox record until a later sync deli
   const mate = device(srv, await teamAuth('candA', 'dev2', auth.key));
   await dev.engine.enqueue({ id: 'c:1', updatedAt: 1000, data: { phone: PHONE } });
 
-  dev.state.pushStatus = 503;
+  dev.state.pushStatus = () => 503;
   assert.equal((await dev.engine.syncNow()).status, 'failed');
   assert.equal(stored(dev.idb, OUTBOX_STORE).size, 1);
-  // No pull after a failed push.
-  assert.ok(!dev.requests.some((r) => r.url.startsWith(PULL_URL)));
 
-  dev.state.pushStatus = null;
+  dev.state.pushStatus = () => null;
   dev.state.offline = true;
   assert.equal((await dev.engine.syncNow()).status, 'failed');
   assert.equal(stored(dev.idb, OUTBOX_STORE).size, 1);
@@ -191,12 +207,61 @@ test('a failed or offline push keeps every outbox record until a later sync deli
   assert.deepEqual(mate.received, [{ id: 'c:1', updatedAt: 1000, data: { phone: PHONE } }]);
 });
 
+test('a push the server keeps refusing does not stop the pull', async () => {
+  const srv = server();
+  const auth = await teamAuth('candA', 'dev1');
+  const dev = device(srv, auth);
+  const mate = device(srv, await teamAuth('candA', 'dev2', auth.key));
+  await mate.engine.enqueue({ id: 'v:mate', updatedAt: 5, data: { phone: PHONE } });
+  await mate.engine.syncNow();
+
+  await dev.engine.enqueue({ id: 'v:mine', updatedAt: 6, data: { phone: PHONE } });
+  dev.state.pushStatus = () => 400;
+  for (let i = 0; i < 2; i += 1) {
+    const result = await dev.engine.syncNow();
+    assert.equal(result.status, 'failed');
+    assert.match(String(result.error), /HTTP 400/);
+  }
+  assert.deepEqual([...stored(dev.idb, OUTBOX_STORE).keys()], ['v:mine']);
+  assert.deepEqual(dev.received, [{ id: 'v:mate', updatedAt: 5, data: { phone: PHONE } }]);
+});
+
+test('more than one push batch: every batch is pushed and cleared, and a failed batch keeps only its records', async () => {
+  const srv = server();
+  const auth = await teamAuth('candA', 'dev1');
+  const dev = device(srv, auth);
+  const total = 2 * PUSH_BATCH_SIZE + 1;
+  for (let i = 0; i < total; i += 1) await dev.engine.enqueue({ id: `v:${i}`, updatedAt: i, data: { n: i } });
+
+  // The second batch fails: the first stays delivered, the second and third
+  // stay in the outbox.
+  dev.state.pushStatus = (n) => (n === 2 ? 503 : null);
+  const first = await dev.engine.syncNow();
+  assert.equal(first.status, 'failed');
+  assert.equal(first.pushed, PUSH_BATCH_SIZE);
+  assert.equal(pushes(dev).length, 2);
+  const deliveredIds = JSON.parse(pushes(dev)[0].init.body).records.map((r) => r.id);
+  assert.equal(deliveredIds.length, PUSH_BATCH_SIZE);
+  const left = [...stored(dev.idb, OUTBOX_STORE).keys()].sort();
+  const all = Array.from({ length: total }, (_, i) => `v:${i}`);
+  assert.deepEqual(left, all.filter((id) => !deliveredIds.includes(id)).sort());
+  assert.equal(srv.env.SYNC_KV.map.get('c/candA/seq'), String(PUSH_BATCH_SIZE));
+
+  const second = await dev.engine.syncNow();
+  assert.equal(second.status, 'ok');
+  assert.equal(second.pushed, PUSH_BATCH_SIZE + 1);
+  // Two more pushes: a full batch and the one record left over.
+  const later = pushes(dev).slice(2).map((p) => JSON.parse(p.init.body).records.length);
+  assert.deepEqual(later, [PUSH_BATCH_SIZE, 1]);
+  assert.equal(stored(dev.idb, OUTBOX_STORE).size, 0);
+  assert.equal(srv.env.SYNC_KV.map.get('c/candA/seq'), String(total));
+});
+
 test('no record is lost across a simulated day offline', async () => {
   const srv = server();
   const auth = await teamAuth('candA', 'dev1');
   const dev = device(srv, auth);
   const mate = device(srv, await teamAuth('candA', 'dev2', auth.key));
-  dev.state.offline = true;
   const day = 24 * 60 * 60 * 1000;
   const start = Date.UTC(2026, 9, 7);
   const expected = new Map();
@@ -209,8 +274,8 @@ test('no record is lost across a simulated day offline', async () => {
     await dev.engine.enqueue(record);
     expected.set(id, record);
     if (n % 2 === 1) {
-      dev.state.pushStatus = n % 4 === 1 ? null : 500;
       dev.state.offline = n % 4 === 1;
+      dev.state.pushStatus = () => (n % 4 === 1 ? null : 500);
       assert.equal((await dev.engine.syncNow()).status, 'failed');
     }
   }
@@ -218,7 +283,7 @@ test('no record is lost across a simulated day offline', async () => {
   assert.equal(srv.env.SYNC_KV.map.size, 0);
 
   dev.state.offline = false;
-  dev.state.pushStatus = null;
+  dev.state.pushStatus = () => null;
   assert.equal((await dev.engine.syncNow()).status, 'ok');
   assert.equal(stored(dev.idb, OUTBOX_STORE).size, 0);
 
@@ -334,6 +399,49 @@ test('pulled records merge by id keeping the higher updatedAt; pulling twice giv
   assert.equal(stored(reader.idb, SYNCED_STORE).size, 1);
 });
 
+test('a pulled record loses to a newer edit still waiting in the outbox and wins over an older one', async () => {
+  const srv = server();
+  const auth = await teamAuth('candA', 'dev1');
+  const dev = device(srv, auth);
+  const mate = device(srv, await teamAuth('candA', 'dev2', auth.key));
+
+  // This device has unsent edits (its pushes fail, so they stay pending).
+  await dev.engine.enqueue({ id: 'v:local-newer', updatedAt: 2000, data: { phone: 'mine' } });
+  await dev.engine.enqueue({ id: 'v:remote-newer', updatedAt: 1000, data: { phone: 'mine' } });
+  dev.state.pushStatus = () => 503;
+
+  await mate.engine.enqueue({ id: 'v:local-newer', updatedAt: 1000, data: { phone: 'theirs' } });
+  await mate.engine.enqueue({ id: 'v:remote-newer', updatedAt: 3000, data: { phone: 'theirs' } });
+  await mate.engine.syncNow();
+
+  assert.equal((await dev.engine.syncNow()).status, 'failed');
+  assert.deepEqual(dev.received, [{ id: 'v:remote-newer', updatedAt: 3000, data: { phone: 'theirs' } }]);
+  assert.equal(stored(dev.idb, OUTBOX_STORE).get('v:local-newer').updatedAt, 2000);
+});
+
+test('the pull cursor starts again from 0 after the device joins another candidate', async () => {
+  const srv = server();
+  const auth = await teamAuth('candA', 'dev1');
+  const dev = device(srv, auth);
+  const mate = device(srv, await teamAuth('candA', 'dev2', auth.key));
+  await mate.engine.enqueue({ id: 'v:1', updatedAt: 1, data: { phone: PHONE } });
+  await mate.engine.syncNow();
+
+  // A cursor left by a previous team, far past this team's records.
+  await dev.engine.enqueue({ id: 'v:open', updatedAt: 1, data: {} });
+  stored(dev.idb, OUTBOX_STORE).clear();
+  stored(dev.idb, META_STORE).set(CURSOR_ID, { v: 1, candidateId: 'candB', cursor: 99 });
+
+  await dev.engine.syncNow();
+  assert.deepEqual(pulls(dev).map((r) => r.url), [`${PULL_URL}?since=0`]);
+  assert.deepEqual(dev.received.map((r) => r.id), ['v:1']);
+  assert.deepEqual(stored(dev.idb, META_STORE).get(CURSOR_ID), { v: 1, candidateId: 'candA', cursor: 1 });
+
+  // The same team's cursor is used as stored.
+  await dev.engine.syncNow();
+  assert.equal(pulls(dev).at(-1).url, `${PULL_URL}?since=1`);
+});
+
 test('a pulled record that does not decrypt with the team key is discarded', async () => {
   const srv = server();
   const auth = await teamAuth('candA', 'dev1');
@@ -355,6 +463,8 @@ test('a pulled record that does not decrypt with the team key is discarded', asy
     // Re-labelled by the server to win a merge: the timestamp is bound in.
     await seal(auth.key, 'v:moved', 99, { phone: PHONE }, 1),
     { id: 'v:garbage', updatedAt: 1, ciphertext: 'AAAA', iv: 'AAAAAAAAAAAAAAAA' },
+    // Not a date: it could not be ordered against other edits.
+    await seal(auth.key, 'v:undated', 'soon', { phone: PHONE }),
     await seal(auth.key, 'v:good', 1, { phone: PHONE }),
   ];
   const response = await srv.fetch(PUSH_URL, {
@@ -369,7 +479,7 @@ test('a pulled record that does not decrypt with the team key is discarded', asy
   assert.deepEqual(reader.received, [{ id: 'v:good', updatedAt: 1, data: { phone: PHONE } }]);
   assert.deepEqual([...stored(reader.idb, SYNCED_STORE).keys()], ['v:good']);
   // The cursor moved past the discarded records, so they are not retried.
-  assert.equal(stored(reader.idb, META_STORE).get(CURSOR_ID).cursor, 4);
+  assert.equal(stored(reader.idb, META_STORE).get(CURSOR_ID).cursor, 5);
 });
 
 test('L3: a record enqueued offline on device 1 reaches device 2 after reconnect and one pull cycle', async () => {
@@ -384,29 +494,39 @@ test('L3: a record enqueued offline on device 1 reaches device 2 after reconnect
   const [auth1, auth2] = [await join(), await join()];
   const dev1 = device(srv, () => auth1.getAuth());
   const dev2 = device(srv, () => auth2.getAuth());
-  dev1.engine.start();
-  dev2.engine.start();
 
-  // Device 1 has no signal: the save waits in its outbox.
+  // Device 1 has no signal from the start. Only the engine's own triggers
+  // run syncs below: the test never calls syncNow().
   dev1.nav.onLine = false;
   dev1.state.offline = true;
+  dev1.engine.start();
+  dev2.engine.start();
+  await waitFor(() => pulls(dev1).length >= 1, 'device 1 startup sync');
+  await waitFor(() => stored(dev2.idb, META_STORE).has(CURSOR_ID), 'device 2 startup pull');
+  await settle();
+
   const record = { id: 'voter:42', updatedAt: Date.now(), data: { phone: PHONE, consentAt: 1 } };
   await dev1.engine.enqueue(record);
+  const offlineRequests = dev1.requests.length;
   dev1.tick();
   await settle();
+  assert.equal(dev1.requests.length, offlineRequests, 'no interval sync while navigator.onLine is false');
   assert.equal(stored(dev1.idb, OUTBOX_STORE).size, 1);
+  assert.equal(dev1.state.pushedOk, 0);
 
-  // Signal returns: the online event pushes straight away.
+  // Signal returns: the online event alone pushes the outbox.
   dev1.nav.onLine = true;
   dev1.state.offline = false;
   dev1.win.dispatchEvent(new Event('online'));
-  await dev1.engine.syncNow();
-  assert.equal(stored(dev1.idb, OUTBOX_STORE).size, 0);
+  await waitFor(() => stored(dev1.idb, OUTBOX_STORE).size === 0, 'device 1 push after online');
+  assert.equal(dev1.state.pushedOk, 1);
 
-  // Device 2's next 30 s tick pulls it.
+  // Device 2's next 30 s tick alone pulls it.
   assert.deepEqual(dev2.received, []);
+  const pullsBefore = dev2.state.pullsOk;
   dev2.tick();
-  await dev2.engine.syncNow();
+  await waitFor(() => dev2.received.length > 0, 'device 2 pull on the interval tick');
+  assert.equal(dev2.state.pullsOk, pullsBefore + 1);
   assert.deepEqual(dev2.received, [record]);
   dev1.engine.stop();
   dev2.engine.stop();

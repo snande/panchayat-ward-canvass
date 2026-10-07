@@ -8,18 +8,22 @@
 // - syncNow() pushes the outbox, then pulls. Each record's `data` is
 //   encrypted for the team with the team key from getAuth() (AES-GCM, fresh
 //   12-byte IV, additional data JSON.stringify([id, updatedAt]) so the server
-//   cannot move a ciphertext to another id or time) and POSTed to /sync/push.
-//   Outbox entries are deleted only after a 2xx response, and only if they
-//   were not saved again while the push was in flight; a failed or offline
-//   push leaves every entry for the next attempt.
+//   cannot move a ciphertext to another id or time) and POSTed to /sync/push
+//   in batches of PUSH_BATCH_SIZE. A batch's outbox entries are deleted only
+//   after its 2xx response, and only if they were not saved again while the
+//   push was in flight; a failed or offline push leaves every undelivered
+//   entry for the next attempt. The pull runs even when the push failed, so
+//   a push the server keeps refusing never cuts the device off from its
+//   teammates' records.
 // - The pull asks GET /sync/pull?since=<cursor>, with the cursor kept in the
 //   meta store. Records that fail to decrypt with this team's key are
 //   discarded. The rest are merged by id against the `synced` store, which
 //   keeps only {updatedAt} per id (never the plaintext): a record reaches
 //   the onRemoteRecords callbacks only when its updatedAt is newer than what
-//   this device has already seen or pushed, so pulling a record twice
-//   delivers it once. The index and the cursor are written after the
-//   callbacks return, so a crash in between re-delivers rather than loses.
+//   this device has already seen, pushed or still has waiting in its outbox,
+//   so pulling a record twice delivers it once. The index and the cursor are
+//   written after the callbacks return, so a crash in between re-delivers
+//   rather than loses.
 // - start() runs syncNow() at startup, on the window `online` event, when the
 //   page becomes visible, and every SYNC_INTERVAL_MS while navigator.onLine.
 //
@@ -62,13 +66,16 @@ function base64urlDecode(text) {
   }
 }
 
-// The same id/updatedAt rules the server applies to a pushed record.
+// The server's id rule for a pushed record.
 function validId(id) {
   return typeof id === 'string' && id.length > 0 && id.length <= 200;
 }
 
+// Epoch milliseconds, or a date string Date.parse reads (ISO 8601). Stricter
+// than the server, so every updatedAt can be compared with every other one.
 function validUpdatedAt(updatedAt) {
-  return typeof updatedAt === 'string' || (typeof updatedAt === 'number' && Number.isFinite(updatedAt));
+  if (typeof updatedAt === 'number') return Number.isFinite(updatedAt);
+  return typeof updatedAt === 'string' && Number.isFinite(Date.parse(updatedAt));
 }
 
 /**
@@ -129,7 +136,9 @@ export function createSyncEngine({
   async function enqueue(record) {
     const { id, updatedAt, data } = record || {};
     if (!validId(id)) throw new TypeError('record id must be a string of 1-200 characters');
-    if (!validUpdatedAt(updatedAt)) throw new TypeError('record updatedAt must be a string or a finite number');
+    if (!validUpdatedAt(updatedAt)) {
+      throw new TypeError('record updatedAt must be epoch milliseconds or an ISO date string');
+    }
     const plain = JSON.stringify(data);
     if (plain === undefined) throw new TypeError('record data must be JSON-serialisable');
 
@@ -209,43 +218,49 @@ export function createSyncEngine({
     return response;
   }
 
+  // Returns {pushed, error}: the entries delivered before the first failure,
+  // which (if any) stops the push and leaves the rest of the outbox in place.
   async function push(auth) {
-    const entries = await readAll(OUTBOX_STORE);
     let pushed = 0;
-    for (let start = 0; start < entries.length; start += PUSH_BATCH_SIZE) {
-      const batch = [];
-      const records = [];
-      for (const entry of entries.slice(start, start + PUSH_BATCH_SIZE)) {
-        const sealed = await sealForTeam(auth.key, entry);
-        if (!sealed) continue;
-        batch.push(entry);
-        records.push(sealed);
-      }
-      if (records.length === 0) continue;
-      await send(pushUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ records }),
-      }, auth);
-
-      // Delivered: drop the entries that were not saved again meanwhile, and
-      // note their updatedAt so their echo from the next pull is not news.
-      const tx = (await db()).transaction([OUTBOX_STORE, SYNCED_STORE], 'readwrite');
-      const done = complete(tx);
-      const outbox = tx.objectStore(OUTBOX_STORE);
-      const synced = tx.objectStore(SYNCED_STORE);
-      for (const entry of batch) {
-        const current = await request(outbox.get(entry.id));
-        if (current && current.updatedAt === entry.updatedAt && sameBytes(current.iv, entry.iv)) {
-          outbox.delete(entry.id);
+    try {
+      const entries = await readAll(OUTBOX_STORE);
+      for (let start = 0; start < entries.length; start += PUSH_BATCH_SIZE) {
+        const batch = [];
+        const records = [];
+        for (const entry of entries.slice(start, start + PUSH_BATCH_SIZE)) {
+          const sealed = await sealForTeam(auth.key, entry);
+          if (!sealed) continue;
+          batch.push(entry);
+          records.push(sealed);
         }
-        const seen = await request(synced.get(entry.id));
-        if (!seen || isNewer(entry.updatedAt, seen.updatedAt)) synced.put({ updatedAt: entry.updatedAt }, entry.id);
+        if (records.length === 0) continue;
+        await send(pushUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ records }),
+        }, auth);
+
+        // Delivered: drop the entries that were not saved again meanwhile, and
+        // note their updatedAt so their echo from the next pull is not news.
+        const tx = (await db()).transaction([OUTBOX_STORE, SYNCED_STORE], 'readwrite');
+        const done = complete(tx);
+        const outbox = tx.objectStore(OUTBOX_STORE);
+        const synced = tx.objectStore(SYNCED_STORE);
+        for (const entry of batch) {
+          const current = await request(outbox.get(entry.id));
+          if (current && current.updatedAt === entry.updatedAt && sameBytes(current.iv, entry.iv)) {
+            outbox.delete(entry.id);
+          }
+          const seen = await request(synced.get(entry.id));
+          if (!seen || isNewer(entry.updatedAt, seen.updatedAt)) synced.put({ updatedAt: entry.updatedAt }, entry.id);
+        }
+        await done;
+        pushed += batch.length;
       }
-      await done;
-      pushed += batch.length;
+    } catch (error) {
+      return { pushed, error };
     }
-    return pushed;
+    return { pushed, error: null };
   }
 
   async function readCursor(candidateId) {
@@ -335,14 +350,15 @@ export function createSyncEngine({
       return { status: 'failed', pushed: 0, received: 0, error };
     }
     if (!auth || !auth.key || typeof auth.token !== 'string') return { status: 'no-auth', pushed: 0, received: 0 };
-    let pushed = 0;
+    const { pushed, error: pushError } = await push(auth);
+    let received = 0;
     try {
-      pushed = await push(auth);
-      const received = await pull(auth);
-      return { status: 'ok', pushed, received };
+      received = await pull(auth);
     } catch (error) {
-      return { status: 'failed', pushed, received: 0, error };
+      return { status: 'failed', pushed, received, error: pushError || error };
     }
+    if (pushError) return { status: 'failed', pushed, received, error: pushError };
+    return { status: 'ok', pushed, received };
   }
 
   let running = null;
