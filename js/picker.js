@@ -3,6 +3,7 @@ import { createRollFlow } from '../src/roll/rollFlow.js';
 import { getAuth, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
 import { startSync } from '../src/sync/syncEngine.js';
+import { createContactSync } from '../src/contacts/contactSync.js';
 
 // Copies of src/strings.hi.json entries, used if the table itself failed to
 // load. repo-ci fails if they drift.
@@ -17,6 +18,12 @@ var FALLBACK_STRINGS = {
 var container = document.getElementById('ward-picker');
 var rollContainer = document.getElementById('roll');
 var teamContainer = document.getElementById('team-join');
+
+// Tapping a voter in the roll records their consent and number on the device,
+// encrypted, and queues it for the team; numbers teammates saved arrive with
+// every pull (src/contacts/contactSync.js).
+var contacts = createContactSync();
+contacts.listen();
 
 function loadJson(url) {
   return fetch(url).then(function (r) {
@@ -51,6 +58,7 @@ function startRoll(strings) {
   }
   var roll = createRollFlow(rollContainer, Object.assign({}, FALLBACK_STRINGS, strings || {}), {
     onShow: hideEmptyState,
+    listOptions: { contacts: contacts },
   });
   roll.restore();
   return roll;
