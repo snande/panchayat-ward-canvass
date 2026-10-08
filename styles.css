@@ -112,7 +112,7 @@ main {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: var(--space-6) var(--space-5);
+  padding: var(--space-5);
   text-align: center;
 }
 
@@ -125,8 +125,14 @@ main {
 }
 
 .empty-state p {
-  margin: 0 0 var(--space-5);
+  margin: 0;
   color: var(--color-text-muted);
+}
+
+/* The gap belongs to the action, so a card whose action is still hidden
+   ends right under its body text. */
+.empty-state .btn-primary {
+  margin-top: var(--space-5);
 }
 
 .btn-primary {
