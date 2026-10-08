@@ -346,3 +346,52 @@ test('join rejects malformed bodies and other methods, and needs config', async 
   assert.equal((await call(env, '/sync/join')).status, 405);
   assert.equal((await call({ SYNC_KV: memoryKV() }, '/sync/join', { method: 'POST', body: {} })).status, 503);
 });
+
+// Seen-voting marks (issue #78): one entry per team and mark id.
+const markRecord = (id, updatedAt = 1760000000000) => ({ ...record(id, '{"workerId":"w1"}'), updatedAt });
+
+test('a mark pushed twice, in one batch or across batches, is stored once', async () => {
+  const env = setup();
+  const dev1 = await signSyncToken(SECRET, 'candA', 'dev1');
+  const dev2 = await signSyncToken(SECRET, 'candA', 'dev2');
+  const markId = 'mark:17/125/6313/1:42';
+
+  const first = await pushRecords(env, dev1, [markRecord(markId), markRecord(markId, 1760000000001)]);
+  assert.deepEqual(await first.json(), { accepted: 2, cursor: 1 });
+  // A teammate's mark of the same voter, then a retry of the first push.
+  const second = await pushRecords(env, dev2, [markRecord(markId, 1760000000005)]);
+  assert.equal(second.status, 200);
+  assert.deepEqual(await second.json(), { accepted: 1, cursor: 1 });
+  assert.deepEqual(await (await pushRecords(env, dev1, [markRecord(markId)])).json(), { accepted: 1, cursor: 1 });
+
+  assert.equal(env.SYNC_KV.map.get('c/candA/seq'), '1');
+  assert.equal(env.SYNC_KV.map.get(`c/candA/m/${markId}`), '1');
+  const pulled = await (await pullSince(env, dev2, 0)).json();
+  assert.deepEqual(pulled.records.map((r) => [r.id, r.updatedAt]), [[markId, 1760000000000]]);
+});
+
+test('a mark is de-duplicated within its own team only', async () => {
+  const env = setup();
+  const a = await signSyncToken(SECRET, 'candA', 'dev1');
+  const b = await signSyncToken(SECRET, 'candB', 'dev1');
+  const markId = 'mark:17/125/6313/1:42';
+
+  await pushRecords(env, a, [markRecord(markId)]);
+  const res = await pushRecords(env, b, [markRecord(markId)]);
+  assert.deepEqual(await res.json(), { accepted: 1, cursor: 1 });
+  assert.equal(env.SYNC_KV.map.get('c/candB/m/' + markId), '1');
+
+  for (const [token, candidateId] of [[a, 'candA'], [b, 'candB']]) {
+    const pulled = await (await pullSince(env, token, 0)).json();
+    assert.equal(pulled.records.length, 1, candidateId);
+  }
+});
+
+test('records other than marks keep every push', async () => {
+  const env = setup();
+  const token = await signSyncToken(SECRET, 'candA', 'dev1');
+  await pushRecords(env, token, [record('contact:w:1'), record('contact:w:1')]);
+  await pushRecords(env, token, [record('contact:w:1')]);
+  assert.equal(env.SYNC_KV.map.get('c/candA/seq'), '3');
+  assert.equal([...env.SYNC_KV.map.keys()].filter((k) => k.startsWith('c/candA/m/')).length, 0);
+});

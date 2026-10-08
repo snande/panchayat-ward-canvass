@@ -27,6 +27,12 @@
 // - start() runs syncNow() at startup, on the window `online` event, when the
 //   page becomes visible, and every SYNC_INTERVAL_MS while navigator.onLine.
 //
+// - Seen-voting marks (src/tally/seenVotingStore.js) travel the same way, as
+//   records with id `mark:<wardId>:<serial>`: a mark made offline waits in
+//   the outbox and is pushed once a sync reaches the server. Their merge is a
+//   set union on that id, the server keeping one entry per team and id
+//   (functions/sync.js), so the engine needs nothing mark-specific.
+//
 // With no team credentials (getAuth() returns null) nothing touches the
 // network. Requests use cache: 'no-store', and sw.js leaves /sync/* to the
 // network.

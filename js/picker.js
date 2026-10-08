@@ -4,6 +4,7 @@ import { getAuth, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
 import { startSync } from '../src/sync/syncEngine.js';
 import { createContactSync } from '../src/contacts/contactSync.js';
+import { listenForTeamMarks } from '../src/tally/seenVotingStore.js';
 
 // Copies of src/strings.hi.json entries, used if the table itself failed to
 // load. repo-ci fails if they drift.
@@ -24,6 +25,10 @@ var teamContainer = document.getElementById('team-join');
 // every pull (src/contacts/contactSync.js).
 var contacts = createContactSync();
 contacts.listen();
+
+// Seen-voting marks teammates made arrive with every pull too
+// (src/tally/seenVotingStore.js), so the team count covers the whole team.
+listenForTeamMarks();
 
 function loadJson(url) {
   return fetch(url).then(function (r) {
