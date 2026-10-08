@@ -1,15 +1,16 @@
 // The app's one IndexedDB database on the device, shared by the roll store,
-// the contact store, the call-assignment store, the seen-voting mark store and
-// the official-turnout store. Every object store is created here so that all
-// stores agree on the schema and the version. The team credentials
-// (src/sync/teamAuth.js) live in the keys and meta stores; the sync engine
-// (src/sync/syncEngine.js) keeps its outbox, its merge index and its pull
-// cursor (in meta) here too.
+// the contact store, the call-assignment store, the seen-voting mark store,
+// the official-turnout store and the SMS tally inbox. Every object store is
+// created here so that all stores agree on the schema and the version. The
+// team credentials (src/sync/teamAuth.js) live in the keys and meta stores;
+// the sync engine (src/sync/syncEngine.js) keeps its outbox, its merge index
+// and its pull cursor (in meta) here too.
 
 export const DB_NAME = 'ward-canvass';
 // v1: keys, rolls, meta. v2: adds contacts. v3: adds assignments.
 // v4: adds outbox and synced. v5: adds marks. v6: adds turnout.
-export const DB_VERSION = 6;
+// v7: adds smsTally.
+export const DB_VERSION = 7;
 export const KEYS_STORE = 'keys';
 export const ROLLS_STORE = 'rolls';
 export const META_STORE = 'meta';
@@ -19,8 +20,10 @@ export const OUTBOX_STORE = 'outbox';
 export const SYNCED_STORE = 'synced';
 export const MARKS_STORE = 'marks';
 export const TURNOUT_STORE = 'turnout';
+export const SMS_TALLY_STORE = 'smsTally';
 const ALL_STORES = Object.freeze([
   KEYS_STORE, ROLLS_STORE, META_STORE, CONTACTS_STORE, ASSIGNMENTS_STORE, OUTBOX_STORE, SYNCED_STORE, MARKS_STORE, TURNOUT_STORE,
+  SMS_TALLY_STORE,
 ]);
 
 export function request(req) {
