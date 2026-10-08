@@ -61,7 +61,9 @@ function show(value, content, isFigure) {
  * }} opts strings is the parsed src/strings.hi.json; store defaults to the
  *   device turnout store (tests pass one over a fake IndexedDB)
  * @returns {{root, input, button, turnoutValue, supporterValue, message,
- *   ready: Promise<void>, save: () => Promise<void>}}
+ *   ready: Promise<void>, save: () => Promise<void>,
+ *   refreshCount: () => Promise<void>}} refreshCount reads getSupporterCount()
+ *   again, e.g. after teammates' marks arrive
  */
 export function renderTurnoutScreen(container, opts = {}) {
   const { ward, getSupporterCount, strings } = opts;
@@ -185,5 +187,6 @@ export function renderTurnoutScreen(container, opts = {}) {
     message,
     ready,
     save,
+    refreshCount: refreshSupporterCount,
   };
 }

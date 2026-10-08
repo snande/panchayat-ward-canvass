@@ -145,6 +145,29 @@ The team number comes from an optional `teamSmsNumber` key in
 which the operator provisions. Without that key the button is disabled and
 shows `tally.smsNumberMissing`.
 
+## Polling-day count beside official turnout
+
+Tapping a voter in the ward roll opens their contact panel (or card) with a
+`वोट डालते देखा` button under it (`src/ui/seenVotingMark.js`). Tapping it
+saves a seen-voting mark through `src/tally/seenVotingStore.js`: kept on the
+phone, encrypted, and queued for the team, so it works offline. A voter
+already marked, on this phone or a teammate's, shows `वोट डाल दिया — दर्ज है।`
+instead of the button. The mark is attributed to this phone's id in its team
+(`getDeviceId()` in `src/sync/teamAuth.js`), or `device` before it has joined.
+
+The `मतदान के दिन का हिसाब खोलें` button above the roll opens the turnout
+screen (`src/ui/turnoutScreen.js`) in the same place. Its supporter count is
+`wardCount(ward)`: the distinct voters of that ward marked by the team, as far
+as this phone knows. A voter marked on two phones is one mark, on the phones
+and on the server, so it counts once. The count is read again whenever marks
+are added, including teammates' marks arriving with a sync, while the screen
+is open.
+
+To check it: mark the same voter on two phones in airplane mode, reconnect
+both, and open the turnout screen on each; the voter adds 1, not 2.
+`test/turnoutWiring.test.js` does this with two in-memory phones and the real
+`functions/sync.js` handler.
+
 ## PWA shell
 
 The installable Hindi shell is plain static files: `index.html`,
