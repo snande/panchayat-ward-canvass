@@ -62,7 +62,8 @@ Each feedback text colour on its own background is at least 4.5:1.
 | Danger button | `.btn-danger` | The filled red "yes, delete" inside an alert. The only filled red. |
 | Field | `.picker-field`, `.picker-label`, `.picker-select` | Label above, 48 px input. Phone numbers add `.field-phone`: larger, tabular, spaced digits. |
 | Choice | `.choice`, `.choice-input` | A tappable row holding a checkbox and its sentence; turns green when checked. |
-| Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record"; the success tone draws a tick. |
+| Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record" or "marked" in place of the seen-voting button; the success tone draws a tick. |
+| Count line | `.seen-voting-count` | A muted label with a `--font-size-lg` numeral on the right, above a hairline: context under the action, never a second action. Shows a muted placeholder while counting or when the count cannot be read. |
 | Notice | `.notice` (+ `data-tone`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. |
 | Alert | `.alert` (+ `data-tone="error"`) | A block that asks before something is deleted: the consequence in body text, then the danger button and a secondary "no". |
 

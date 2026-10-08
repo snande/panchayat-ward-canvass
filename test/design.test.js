@@ -271,7 +271,7 @@ test('seen-voting control: info while loading, error on a failed read, success o
   const doc = createDocument();
   const firstRead = deferred();
   const view = mountSeenVotingMark(doc.body, strings, {
-    marks: { getMark: () => firstRead.promise, recordSeen: async () => ({ added: true, mark: { serial: 7 } }) },
+    marks: { getMark: () => firstRead.promise, markSeen: async (wardId, serial, workerId) => ({ wardId, serial, workerId, markedAt: 't' }) },
     wardId: WARD, entry: ENTRY, log: () => {},
   });
   assert.ok(classes(view.root).includes('panel'));
@@ -284,13 +284,18 @@ test('seen-voting control: info while loading, error on a failed read, success o
   assert.equal(tone(view.status), null);
 
   await view.mark();
-  assert.equal(view.status.textContent, strings.seen_marked);
-  assert.equal(tone(view.status), 'success');
+  // Marked: a success badge replaces the button, and the status line is empty.
+  assert.equal(view.button.hidden, true);
+  assert.equal(view.badge.hidden, false);
+  assert.ok(classes(view.badge).includes('badge'));
+  assert.equal(view.badge.textContent, strings.seen_marked);
+  assert.equal(tone(view.badge), 'success');
+  assert.equal(view.status.textContent, '');
   assert.equal(view.message.textContent, strings.seen_mark_saved);
   assert.equal(tone(view.message), 'success');
 
   const failed = mountSeenVotingMark(createDocument().body, strings, {
-    marks: { getMark: async () => { throw new Error('locked'); }, recordSeen: async () => { throw new Error('x'); } },
+    marks: { getMark: async () => { throw new Error('locked'); }, markSeen: async () => { throw new Error('x'); } },
     wardId: WARD, entry: ENTRY, log: () => {},
   });
   await failed.ready;
