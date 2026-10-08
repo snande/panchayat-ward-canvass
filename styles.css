@@ -23,6 +23,14 @@
   --color-text-muted: #52606d;
   --color-border: #e1ddd3;
   --color-focus: #f59e0b;
+  --color-primary-tint: #e7f3f1;
+  /* Feedback tones: text colour on its tinted background (both >= 4.5:1). */
+  --color-success: #166534;
+  --color-success-bg: #ecfdf3;
+  --color-danger: #b42318;
+  --color-danger-strong: #912018;
+  --color-danger-bg: #fef3f2;
+  --color-on-danger: #ffffff;
 
   /* Spacing (4 px grid). */
   --space-1: 0.25rem;
@@ -150,9 +158,25 @@ main {
 
 .status {
   margin: var(--space-4) 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  text-align: center;
+}
+
+/* Buttons set display, which would otherwise override [hidden]. */
+.btn-primary[hidden],
+.btn-secondary[hidden] {
+  display: none;
+}
+
+.status-retry {
+  margin-top: var(--space-3);
+}
+
+/* While the ward picker only holds its loading or failure notice, the notice
+   is the whole surface: no second card around it. */
+.picker:has(> .notice:only-child) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .picker {
@@ -190,6 +214,7 @@ main {
 .picker-select:disabled {
   color: var(--color-text-muted);
   background: var(--color-bg);
+  border-style: dashed;
 }
 
 .picker-select:focus-visible {
@@ -297,50 +322,162 @@ main {
   outline-offset: -3px;
 }
 
-.contact-panel {
+/* Panel (DESIGN.md): the card every voter-level surface sits in, e.g. the
+   contact panel, the voter card and the seen-voting control. */
+.panel {
   margin: 0 0 var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-md);
+  padding: var(--space-5);
   background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
-/* .btn-primary sets display, which would otherwise override [hidden]. */
-.contact-panel [hidden] {
+/* Buttons set display, which would otherwise override [hidden]. */
+.panel [hidden] {
   display: none;
 }
 
-/* Seen-voting control under a voter's contact panel or card. */
-.seen-voting {
-  margin: 0 0 var(--space-4);
+/* While a save is in flight the actions stay put but cannot be tapped twice. */
+.panel[aria-busy="true"] button {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
-.seen-voting [hidden] {
-  display: none;
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.contact-title {
-  margin: 0 0 var(--space-2);
+.panel-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: var(--space-2);
+}
+
+.panel-title {
+  margin: 0;
   font-size: var(--font-size-lg);
+  font-weight: 400;
+  line-height: var(--line-height-heading);
   color: var(--color-text);
 }
 
+.panel-subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+  color: var(--color-text-muted);
+}
+
+.panel-subtitle:empty {
+  display: none;
+}
+
+.seen-voting {
+  padding: var(--space-4) var(--space-5);
+}
+
 .contact-body {
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
 
-.contact-confirm {
+/* Badge: a short state label, e.g. "consent on record". */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-strong);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+}
+
+.badge[data-tone="success"] {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+/* The tick is drawn with borders, so it needs no glyph outside the font. */
+.badge[data-tone="success"]::before {
+  content: "";
+  flex: none;
+  width: 0.375rem;
+  height: 0.75rem;
+  margin: 0 var(--space-1) 0.2rem;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Notice: the one feedback line of a surface, tinted by its tone. Empty
+   notices take no space. */
+.notice {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-tint);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+}
+
+.notice:empty,
+.notice[hidden] {
+  display: none;
+}
+
+.notice[data-tone="success"] {
+  border-left-color: var(--color-success);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.notice[data-tone="error"] {
+  border-left-color: var(--color-danger);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* Alert: a block that asks before something is deleted. */
+.alert {
   margin-top: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg);
 }
 
-.contact-message {
-  margin-top: var(--space-3);
+.alert[data-tone="error"] {
+  border-color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.alert p {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+}
+
+/* Phone number field: larger, evenly spaced digits. */
+.field-phone {
+  font-size: var(--font-size-lg);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+.picker-select:focus {
+  border-color: var(--color-primary);
 }
 
 .btn-secondary {
@@ -361,6 +498,86 @@ main {
 }
 
 .btn-secondary:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.btn-secondary:hover,
+.btn-secondary:active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+.btn-primary:disabled {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+/* Danger: the one filled button that deletes data, after an alert asks. */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-5);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-danger);
+  color: var(--color-on-danger);
+  font: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+  cursor: pointer;
+}
+
+.btn-danger:hover,
+.btn-danger:active {
+  background: var(--color-danger-strong);
+}
+
+/* Quiet: a text-only action, e.g. a panel's close. */
+.btn-quiet,
+.btn-quiet-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-primary-strong);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.btn-quiet:hover,
+.btn-quiet:active {
+  background: var(--color-primary-tint);
+}
+
+/* Quiet danger: starts a destructive flow without competing with the
+   primary action; set apart under a hairline. */
+.btn-quiet-danger {
+  width: 100%;
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+  color: var(--color-danger);
+}
+
+.btn-quiet-danger:hover,
+.btn-quiet-danger:active {
+  background: var(--color-danger-bg);
+}
+
+.btn-danger:focus-visible,
+.btn-quiet:focus-visible,
+.btn-quiet-danger:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
@@ -453,58 +670,40 @@ main {
   margin: var(--space-3) 0;
 }
 
-/* Voter card (src/ui/voterCard.js): consent checkbox gating the phone field. */
-.voter-card {
-  margin: 0 0 var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  font-family: var(--font-family-base);
-}
-
-/* .btn-primary sets display, which would otherwise override [hidden]. */
-.voter-card [hidden] {
-  display: none;
-}
-
-.voter-card-name {
-  margin: 0 0 var(--space-2);
-  font-size: var(--font-size-lg);
-  color: var(--color-text);
-}
-
-.voter-card-meta {
-  margin: 0 0 var(--space-3);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.voter-card-consent {
+/* Voter card (src/ui/voterCard.js): a panel whose consent choice gates the
+   phone field. */
+.choice {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   min-height: var(--touch-target);
-  margin-bottom: var(--space-3);
-  font-size: var(--font-size-body);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
   color: var(--color-text);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+  cursor: pointer;
 }
 
-.voter-card-consent-input {
-  width: var(--touch-target);
-  height: var(--touch-target);
+.choice:has(.choice-input:checked) {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.choice-input {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
   flex: none;
+  accent-color: var(--color-primary);
 }
 
-.voter-card-phone,
-.voter-card-save {
-  min-height: var(--touch-target);
-}
-
-.voter-card-save:disabled {
-  background: var(--color-border);
-  color: var(--color-text-muted);
-  cursor: not-allowed;
+.choice:focus-within {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 /* Polling-day turnout screen (src/ui/turnoutScreen.js): the official turnout

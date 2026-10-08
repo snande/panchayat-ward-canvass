@@ -13,7 +13,7 @@ var strings = {};
 var FALLBACK_STRINGS = {
   action_pending: "नीचे अपना वार्ड चुनें।",
   status_offline_ready: "ऑफ़लाइन उपयोग के लिए तैयार।",
-  status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",
+  status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी। इंटरनेट जाँचें और फिर से कोशिश करें।",
 };
 
 function lookup(table, key) {
@@ -52,13 +52,24 @@ var stringsReady = fetch(STRINGS_URL)
     console.error("string table failed to load", err);
   });
 
-function setStatus(key) {
+// The status line is a notice (DESIGN.md): tone is info, success or error.
+function setStatus(key, tone) {
   return stringsReady.then(function () {
     var status = document.getElementById("status");
     if (status) {
       status.textContent = t(key);
+      if (typeof status.setAttribute === "function") {
+        status.setAttribute("data-tone", tone || "info");
+      }
     }
   });
+}
+
+function showRetry(shown) {
+  var retry = document.getElementById("status-retry");
+  if (retry) {
+    retry.hidden = !shown;
+  }
 }
 
 var primaryAction = document.getElementById("primary-action");
@@ -74,20 +85,38 @@ if (primaryAction) {
   });
 }
 
+// A failed registration shows an error notice and a retry button. Only one
+// attempt runs at a time, so a double tap on retry registers once.
+var registering = null;
+function registerWorker() {
+  if (registering) {
+    return registering;
+  }
+  showRetry(false);
+  // No explicit scope: it defaults to the directory sw.js is served from.
+  registering = navigator.serviceWorker
+    .register("sw.js")
+    .then(function () {
+      return navigator.serviceWorker.ready;
+    })
+    .then(function () {
+      setStatus("status_offline_ready", "success");
+    })
+    .catch(function (err) {
+      setStatus("status_offline_failed", "error");
+      showRetry(true);
+      console.error("service worker registration failed", err);
+    })
+    .then(function () {
+      registering = null;
+    });
+  return registering;
+}
+
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    // No explicit scope: it defaults to the directory sw.js is served from.
-    navigator.serviceWorker
-      .register("sw.js")
-      .then(function () {
-        return navigator.serviceWorker.ready;
-      })
-      .then(function () {
-        setStatus("status_offline_ready");
-      })
-      .catch(function (err) {
-        setStatus("status_offline_failed");
-        console.error("service worker registration failed", err);
-      });
-  });
+  window.addEventListener("load", registerWorker);
+  var statusRetry = document.getElementById("status-retry");
+  if (statusRetry) {
+    statusRetry.addEventListener("click", registerWorker);
+  }
 }

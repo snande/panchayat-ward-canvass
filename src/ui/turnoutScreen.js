@@ -13,7 +13,7 @@
 // All text comes from the turnout.* entries of src/strings.hi.json.
 
 import { loadOfficialTurnout, parseTurnoutCount, saveOfficialTurnout } from '../tally/turnoutStore.js';
-import { el } from './dom.js';
+import { el, setNotice } from './dom.js';
 
 // Copies of the turnout.* entries in src/strings.hi.json, used when the caller
 // passes no string table; test/turnoutScreen.test.js fails if they drift.
@@ -106,7 +106,7 @@ export function renderTurnoutScreen(container, opts = {}) {
   button.setAttribute('type', 'submit');
   root.appendChild(button);
 
-  const message = el(doc, 'p', 'picker-message turnout-message');
+  const message = el(doc, 'p', 'notice turnout-message');
   message.setAttribute('aria-live', 'polite');
   root.appendChild(message);
 
@@ -150,21 +150,21 @@ export function renderTurnoutScreen(container, opts = {}) {
     try {
       parseTurnoutCount(entered);
     } catch {
-      message.textContent = text('turnout.invalid');
+      setNotice(message, text('turnout.invalid'), 'error');
       return;
     }
     busy = true;
     button.setAttribute('disabled', '');
-    message.textContent = '';
+    setNotice(message, '');
     try {
       const count = await store.saveOfficialTurnout(ward, entered);
       savedHere = true;
       showTurnout(count);
       input.value = '';
-      message.textContent = text('turnout.saved');
+      setNotice(message, text('turnout.saved'), 'success');
     } catch (err) {
       log('official turnout could not be saved', err);
-      message.textContent = text('turnout.saveFailed');
+      setNotice(message, text('turnout.saveFailed'), 'error');
       return;
     } finally {
       busy = false;
