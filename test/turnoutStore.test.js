@@ -7,6 +7,7 @@ import { webcrypto } from 'node:crypto';
 import {
   createTurnoutStore, parseTurnoutCount, saveOfficialTurnout, loadOfficialTurnout, TURNOUT_STORE,
 } from '../src/tally/turnoutStore.js';
+import { createRollStore } from '../src/roll/rollStore.js';
 import { DB_NAME, KEYS_STORE } from '../src/storage/deviceDb.js';
 import { DEVICE_KEY_ID } from '../src/crypto/deviceKey.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
@@ -102,6 +103,17 @@ test('the record is AES-GCM encrypted with the device key and holds no plaintext
     record.ct,
   );
   assert.deepEqual(JSON.parse(new TextDecoder().decode(plain)), { count: 412 });
+});
+
+test('the turnout store and the roll store share one device key', async () => {
+  const idb = createFakeIndexedDB();
+  const rolls = createRollStore({ indexedDB: idb, crypto: webcrypto });
+  await rolls.encryptAndStore(WARD, [{ serial: 1, name: 'क', relative: 'ख', age: 30, gender: 'पुरूष', house: '1' }]);
+  const { store } = newStore(idb);
+  await store.saveOfficialTurnout(WARD, 412);
+  assert.equal(raw(idb, KEYS_STORE).size, 1);
+  assert.equal(await store.loadOfficialTurnout(WARD), 412);
+  assert.equal((await rolls.loadStored(WARD)).length, 1);
 });
 
 test('a fresh IV is used for each write', async () => {

@@ -9,7 +9,8 @@
 //   ward. `ct` is the WebCrypto AES-GCM encryption (the shared device key from
 //   src/crypto/deviceKey.js, fresh 12-byte IV per write, `turnout:${ward}` as
 //   additional data) of JSON.stringify({count}); the figure is never stored in
-//   clear.
+//   clear. This is the same key and AES-GCM handling as the roll store
+//   (src/roll/rollStore.js).
 //
 // No network access: saving and loading work offline, and nothing is synced.
 

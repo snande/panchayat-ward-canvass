@@ -8,8 +8,9 @@
 // - The key is the shared device key (src/crypto/deviceKey.js): generated on
 //   the device with extractable: false and kept in IndexedDB as a CryptoKey
 //   object, so its bytes can never be read by script. The contact store
-//   (src/contacts/contactStore.js) and the call-assignment store
-//   (src/calls/assignmentStore.js) use this same key and AES-GCM handling.
+//   (src/contacts/contactStore.js), the call-assignment store
+//   (src/calls/assignmentStore.js) and the official-turnout store
+//   (src/tally/turnoutStore.js) use this same key and AES-GCM handling.
 //
 // No network access: reopening a stored ward works offline.
 
