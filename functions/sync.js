@@ -26,6 +26,17 @@
 // can name a candidate. Payloads are opaque: the server stores `ciphertext`
 // and `iv` as given and never decodes them.
 //
+// Seen-voting marks (src/tally/seenVotingStore.js) are records whose id is
+// `mark:<wardId>:<serial>`. Marks are a grow-only set keyed on the voter, so
+// the server keeps one entry per team and mark id: the first push of a mark
+// is appended like any record and indexed at c/<candidateId>/m/<id>, and a
+// later push of the same id (a teammate marking the same voter, or a retry
+// after a dropped response) is acknowledged without being stored again. The
+// index lives under the candidate's own prefix, so another team's marks are
+// never read or counted. As with the seq counter, KV has no compare-and-set:
+// two pushes of the same new mark at the same instant can both be appended,
+// and devices then still hold one mark each (they merge by id).
+//
 // Storage goes through the KV binding env.SYNC_KV (get/put/list), so tests
 // back it with an in-memory store of the same shape.
 //
@@ -116,6 +127,9 @@ const recordPrefix = (candidateId) => `c/${candidateId}/r/`;
 const recordKey = (candidateId, seq) => recordPrefix(candidateId) + String(seq).padStart(SEQ_DIGITS, '0');
 const counterKey = (candidateId) => `c/${candidateId}/seq`;
 const verifierKey = (candidateId) => `c/${candidateId}/verifier`;
+const MARK_ID_PREFIX = 'mark:';
+const isMarkId = (id) => id.startsWith(MARK_ID_PREFIX);
+const markIndexKey = (candidateId, id) => `c/${candidateId}/m/${id}`;
 
 // Constant-time for equal lengths; verifiers always are 32 bytes.
 function sameBytes(a, b) {
@@ -171,23 +185,39 @@ async function push(request, kv, { candidateId, deviceId }) {
   if (!Array.isArray(records) || records.length > MAX_PUSH_RECORDS || !records.every(validRecord)) {
     return json(400, { error: `records must be an array of at most ${MAX_PUSH_RECORDS} {id, updatedAt, ciphertext, iv}` });
   }
+  // A mark the team already has, or one repeated in this batch, is
+  // acknowledged but not stored again.
+  const fresh = [];
+  const marks = new Set();
+  for (const record of records) {
+    if (isMarkId(record.id)) {
+      if (marks.has(record.id)) continue;
+      marks.add(record.id);
+      const indexed = await kv.get(markIndexKey(candidateId, record.id));
+      if (indexed !== null && indexed !== undefined) continue;
+    }
+    fresh.push(record);
+  }
   const last = Number((await kv.get(counterKey(candidateId))) || 0);
-  if (records.length === 0) return json(200, { accepted: 0, cursor: last });
+  if (fresh.length === 0) return json(200, { accepted: records.length, cursor: last });
   // KV has no atomic increment. The seq range is claimed before the records
   // are written, so an overlapping push from the same team lands on later
   // slots and may write them before this push finishes; pull never reads
   // past a slot that is still empty, so no record is skipped. Two pushes
   // that read the counter at the same instant can still claim the same
   // slots and overwrite each other, but never across candidates.
-  const end = last + records.length;
+  const end = last + fresh.length;
   const claimedAt = Date.now();
   await kv.put(counterKey(candidateId), String(end));
   let seq = last;
-  for (const { id, updatedAt, ciphertext, iv } of records) {
+  for (const { id, updatedAt, ciphertext, iv } of fresh) {
     seq += 1;
     // Only the known fields are kept; the payload stays opaque ciphertext.
     const stored = { id, updatedAt, ciphertext, iv, seq, deviceId, claimedAt };
     await kv.put(recordKey(candidateId, seq), JSON.stringify(stored));
+    // Indexed after the record is written: a push that dies in between is
+    // retried into a second entry rather than leaving an index with no mark.
+    if (isMarkId(id)) await kv.put(markIndexKey(candidateId, id), String(seq));
   }
   return json(200, { accepted: records.length, cursor: end });
 }

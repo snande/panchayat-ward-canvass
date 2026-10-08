@@ -13,7 +13,11 @@
 //   object, like the device key in src/crypto/deviceKey.js. The passphrase
 //   and the derived bits are never stored.
 //
-// getAuth() is how the sync engine gets its credentials.
+// getAuth() is how the sync engine gets its credentials. The token's
+// candidate code is the team identity the server scopes everything by,
+// seen-voting marks included: their per-team index (functions/sync.js) lives
+// under that candidate only, so one team's token never reads or counts
+// another team's marks.
 
 import { KEYS_STORE, META_STORE, complete, createDbOpener, readValue } from '../storage/deviceDb.js';
 
