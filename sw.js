@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v13";
+const CACHE_VERSION = "v14";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -42,6 +42,10 @@ const PRECACHE = [
   "src/search/hindiSearch.js",
   "src/ui/callListScreen.js",
   "src/ui/callListFlow.js",
+  // Tally by SMS: works with mobile data off.
+  "src/decoder/sha256.js",
+  "src/tally/smsCodec.js",
+  "src/ui/smsSendButton.js",
   "src/ui/dom.js",
   "src/strings.hi.json",
   "fonts/noto-sans-devanagari-subset.woff2",
