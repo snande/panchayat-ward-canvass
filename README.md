@@ -117,6 +117,34 @@ const screen = mountSearchScreen(document.body, voters); // voters: [{ id, seria
 
 Tests in `test/searchScreen.test.js` run with `npm test` (and in CI) against a small in-process fake DOM (`test/helpers/fakeDom.js`), not jsdom or a browser, so no extra dependencies are needed. The timing bound and the `lang`/`inputmode` attributes are therefore verified in that test DOM environment, not on a real Android Chrome device.
 
+## Tally by SMS
+
+`src/tally/smsCodec.js` packs a worker's "seen voting" roll serials into SMS
+messages of the form `PT1 <teamTag> <workerId> <serials> <checksum>`:
+
+- The serials are base36, sorted, with no repeats, and joined by `.`. They are
+  packed greedily so that each message has at most 160 plain ASCII (GSM-7)
+  characters.
+- The checksum is the first 4 hex digits of SHA-256 over the rest of the
+  message.
+- Each message stands alone, and it carries roll serials only: no names, phone
+  numbers or EPIC numbers.
+- `decodeTallySms(text, expectedTeamTag)` ignores the whitespace and line
+  breaks that SMS apps add. It rejects a bad checksum, an unknown prefix, or
+  another candidate's `teamTag` with `{ok:false, reason}`.
+
+`src/ui/smsSendButton.js` renders the `एसएमएस से भेजें` button with
+`renderSmsSendButton(container, {getSerials, config})`. `config` carries
+`teamSmsNumber`, `teamTag` and `workerId`. Pressing the button sets
+`location.href` to `sms:<teamSmsNumber>?body=<first message>`, which Android
+Chrome hands to the default SMS app. When there are more parts, it shows a
+"next part" button for each one. It makes no network request.
+
+The team number comes from an optional `teamSmsNumber` key in
+`config/constituency.json` (for example `"teamSmsNumber": "+91XXXXXXXXXX"`),
+which the operator provisions. Without that key the button is disabled and
+shows `tally.smsNumberMissing`.
+
 ## PWA shell
 
 The installable Hindi shell is plain static files: `index.html`,
