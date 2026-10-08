@@ -20,6 +20,20 @@ const ID_RE = /^[A-Za-z0-9_-]{1,16}$/;
 const SERIAL_RE = /^[0-9a-z]+$/;
 
 const checksum = (body) => sha256Hex(body).slice(0, CHECKSUM_CHARS);
+const TEAM_TAG_CHARS = 16;
+
+/**
+ * The teamTag a team's messages carry: its candidate code when that fits an
+ * SMS id (1-16 of A-Z a-z 0-9 _ -), otherwise the first 16 hex digits of the
+ * code's SHA-256, so every phone of one team derives the same tag.
+ * @param {string} candidateId the team's candidate code (src/sync/teamAuth.js)
+ * @returns {string} '' when there is no candidate code
+ */
+export function teamTagFor(candidateId) {
+  const id = typeof candidateId === 'string' ? candidateId.trim() : '';
+  if (!id) return '';
+  return ID_RE.test(id) ? id : sha256Hex(id).slice(0, TEAM_TAG_CHARS);
+}
 
 function seal(header, tokens) {
   const body = `${header} ${tokens.join('.')}`;

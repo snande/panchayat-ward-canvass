@@ -23,6 +23,13 @@
 // and it is read again whenever marks are added, including teammates' marks
 // arriving with a pull. Whatever is open in the contact host is replaced when
 // another view opens there, and its mark subscriptions end with it.
+//
+// With opts.sms ({settings, inbox?, location?}) as well, an SMS tally button
+// on top opens src/ui/smsTallyView.js in the same place: the worker's marks
+// in this ward go out by SMS, and a pasted tally SMS becomes marks of this
+// ward in opts.marks, for the serials that are in this ward's roll. That view
+// is imported when first opened, as its SMS checksum comes from
+// src/decoder/sha256.js and nothing under src/decoder loads at startup.
 
 import * as defaultAssignments from '../calls/assignmentStore.js';
 import * as defaultRoster from '../calls/workerRoster.js';
@@ -48,10 +55,12 @@ export function toVoter(entry) {
 
 /**
  * Same signature as mountRollList, which it wraps; opts may also carry
- * contacts, wardKey, assignments, roster, marks, workerId and turnout (see above).
- * @returns {{root, search, list, contactHost, callListButton, turnoutButton,
+ * contacts, wardKey, assignments, roster, marks, workerId, turnout and sms (see above).
+ * @returns {{root, search, list, contactHost, callListButton, turnoutButton, smsTallyButton,
  *   openContact: (entry) => object | null, openVoterCard: (entry) => object | null,
- *   openCallList: () => object | null, openTurnout: () => object | null, destroy: () => void}}
+ *   openCallList: () => object | null, openTurnout: () => object | null,
+ *   openSmsTally: () => Promise<object | null>, destroy: () => void}}
+ *   openSmsTally resolves to null when another view opened there first
  *   openContact and openVoterCard return the panel or card, with seenVoting
  *   set to its seen-voting control when opts.marks is given
  */
@@ -80,6 +89,14 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     turnoutButton.addEventListener('click', () => { openTurnout(); });
     root.appendChild(turnoutButton);
   }
+  const canSms = canTally && Boolean(opts.sms && typeof opts.sms.settings === 'function');
+  let smsTallyButton = null;
+  if (canSms) {
+    smsTallyButton = el(doc, 'button', 'btn-secondary sms-tally-open', strings && strings.sms_tally_open);
+    smsTallyButton.setAttribute('type', 'button');
+    smsTallyButton.addEventListener('click', () => { openSmsTally(); });
+    root.appendChild(smsTallyButton);
+  }
   root.appendChild(contactHost);
   root.appendChild(searchHost);
   root.appendChild(listHost);
@@ -88,7 +105,11 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
   // Ends the mark subscriptions of whatever the contact host shows; each
   // opener's mount then replaces the host's content.
   let endHostView = null;
+  // Counts leaveHost() calls, so a view that loads late can tell that
+  // another one opened (or the roll view went away) meanwhile.
+  let hostTurn = 0;
   function leaveHost() {
+    hostTurn += 1;
     if (endHostView) endHostView();
     endHostView = null;
   }
@@ -130,6 +151,33 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (typeof screen.root.scrollIntoView === 'function') screen.root.scrollIntoView();
     return screen;
   }
+  // Roll serials as text, so 5 and '5' are one voter.
+  const rollSerials = new Set(entries.map((entry) => String(entry.serial)));
+  async function openSmsTally() {
+    if (!canSms) return null;
+    leaveHost();
+    const turn = hostTurn;
+    let mountSmsTally;
+    try {
+      ({ mountSmsTally } = await import('./smsTallyView.js'));
+    } catch (err) {
+      console.error('SMS tally view could not be loaded', err);
+      return null;
+    }
+    if (turn !== hostTurn) return null;
+    const view = mountSmsTally(contactHost, strings, {
+      marks,
+      wardId: wardKey,
+      workerId: opts.workerId,
+      settings: opts.sms.settings,
+      inbox: opts.sms.inbox,
+      location: opts.sms.location,
+      inRoll: (serial) => rollSerials.has(String(serial)),
+    });
+    endHostView = view.destroy;
+    if (typeof view.root.scrollIntoView === 'function') view.root.scrollIntoView();
+    return view;
+  }
   function openCallList() {
     if (!canCapture) return null;
     leaveHost();
@@ -170,10 +218,12 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     contactHost,
     callListButton,
     turnoutButton,
+    smsTallyButton,
     openContact,
     openVoterCard,
     openCallList,
     openTurnout,
+    openSmsTally,
     destroy() {
       leaveHost();
       search.destroy();
