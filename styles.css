@@ -813,3 +813,66 @@ main {
   font-weight: 400;
   color: var(--color-text-muted);
 }
+
+/* Coordinator's SMS entry screen (src/ui/smsEntryScreen.js): a paste field and
+   the add button, then the message's new serials (the one emphasis) beside
+   the ones already counted. */
+.sms-entry-title {
+  margin-bottom: var(--space-4);
+}
+
+.sms-entry-input {
+  min-height: calc(var(--touch-target) * 2);
+  resize: vertical;
+  line-height: var(--line-height-body);
+  overflow-wrap: anywhere;
+}
+
+.sms-entry-help {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+  color: var(--color-text-muted);
+}
+
+.sms-entry-add {
+  margin-bottom: var(--space-3);
+}
+
+.sms-entry-result {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.sms-entry-figure {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.sms-entry-value {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--line-height-heading);
+  color: var(--color-text-muted);
+}
+
+.sms-entry-figure-new .sms-entry-value {
+  color: var(--color-primary-strong);
+}
+
+.sms-entry-caption {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+  color: var(--color-text-muted);
+}
