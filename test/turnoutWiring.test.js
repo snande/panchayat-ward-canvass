@@ -19,6 +19,7 @@ import { createTeamAuth } from '../src/sync/teamAuth.js';
 import { createSeenVotingStore, markRecordId } from '../src/tally/seenVotingStore.js';
 import { createTurnoutStore } from '../src/tally/turnoutStore.js';
 import { mountRollWithSearch } from '../src/ui/rollSearch.js';
+import { mountSeenVotingMark } from '../src/ui/seenVotingMark.js';
 import { DB_NAME, MARKS_STORE, OUTBOX_STORE } from '../src/storage/deviceDb.js';
 
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url));
@@ -114,33 +115,30 @@ function rowFor(p, serial) {
     .find((row) => row.querySelector('span.roll-name').textContent === `${serial}. मतदाता ${serial}`);
 }
 
+const host = (p) => p.view.contactHost;
+const markButton = (p) => host(p).querySelector('button.seen-voting-mark');
+const markStatus = (p) => host(p).querySelector('p.seen-voting-status').textContent;
+
 // Tap the voter in the roll, then "seen voting" in the panel that opens.
 async function markByTap(p, serial) {
   rowFor(p, serial).dispatchEvent({ type: 'click' });
-  const host = p.view.contactHost;
-  await waitFor(() => {
-    const button = host.querySelector('button.seen-voting-mark');
-    return button && !button.hidden;
-  });
-  host.querySelector('button.seen-voting-mark').dispatchEvent({ type: 'click' });
-  await waitFor(() => host.querySelector('p.seen-voting-message').textContent === strings.seen_mark_saved);
-  assert.equal(host.querySelector('p.seen-voting-status').textContent, strings.seen_marked);
-  assert.equal(host.querySelector('button.seen-voting-mark').hidden, true);
+  await waitFor(() => markButton(p) && !markButton(p).hidden);
+  markButton(p).dispatchEvent({ type: 'click' });
+  await waitFor(() => host(p).querySelector('p.seen-voting-message').textContent === strings.seen_mark_saved);
+  assert.equal(markStatus(p), strings.seen_marked);
+  assert.equal(markButton(p).hidden, true);
 }
 
-// Tap the turnout button; resolves to the open screen once its count is read.
+// Tap the turnout button; resolves once the count is read.
 async function openTurnout(p) {
   p.view.turnoutButton.dispatchEvent({ type: 'click' });
-  const screen = p.view.contactHost.querySelector('form.turnout-screen');
-  assert.ok(screen, 'the turnout screen opens in the roll view');
+  assert.ok(host(p).querySelector('form.turnout-screen'), 'the turnout screen opens in the roll view');
   await waitFor(() => /^\d+$/.test(supporterText(p)));
-  return screen;
 }
 
-const supporterText = (p) => p.view.contactHost.querySelector('form.turnout-screen')
-  .querySelectorAll('p.turnout-value')[1].textContent;
-const turnoutText = (p) => p.view.contactHost.querySelector('form.turnout-screen')
-  .querySelectorAll('p.turnout-value')[0].textContent;
+const values = (p) => host(p).querySelector('form.turnout-screen').querySelectorAll('p.turnout-value');
+const supporterText = (p) => values(p)[1].textContent;
+const turnoutText = (p) => values(p)[0].textContent;
 const stored = (idb, name) => idb.databases.get(DB_NAME)?.stores.get(name) ?? new Map();
 
 test('one voter marked on two offline phones counts once beside the official turnout after both reconnect', async () => {
@@ -183,7 +181,7 @@ test('one voter marked on two offline phones counts once beside the official tur
 
   // The coordinator enters the official turnout on phone A: it shows beside
   // the de-duplicated count.
-  const screen = a.view.contactHost.querySelector('form.turnout-screen');
+  const screen = host(a).querySelector('form.turnout-screen');
   type(screen.querySelector('input'), '४१२');
   screen.dispatchEvent({ type: 'submit', preventDefault() {} });
   await waitFor(() => turnoutText(a) === '412');
@@ -191,11 +189,45 @@ test('one voter marked on two offline phones counts once beside the official tur
 
   // A voter a teammate marked shows as marked, with no button to mark again.
   rowFor(b, 5).dispatchEvent({ type: 'click' });
-  await waitFor(() => b.view.contactHost.querySelector('p.seen-voting-status').textContent === strings.seen_marked);
-  assert.equal(b.view.contactHost.querySelector('button.seen-voting-mark').hidden, true);
+  await waitFor(() => markStatus(b) === strings.seen_marked);
+  assert.equal(markButton(b).hidden, true);
 });
 
-test('the supporter count is the ward\'s marks only, and a closed screen stops refreshing', async () => {
+test('a teammate\'s mark arriving while the panel is open replaces the button', async () => {
+  const srv = server();
+  const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
+  const b = phone(srv, 'worker-b', '2026-10-07T10:00:00.500Z');
+  await a.auth.joinTeam('candA', PASS);
+  await b.auth.joinTeam('candA', PASS);
+  a.state.offline = true;
+  await markByTap(b, 7);
+  await b.engine.syncNow();
+
+  rowFor(a, 7).dispatchEvent({ type: 'click' });
+  await waitFor(() => markButton(a) && !markButton(a).hidden);
+  a.state.offline = false;
+  await a.engine.syncNow();
+  await waitFor(() => markStatus(a) === strings.seen_marked);
+  assert.equal(markButton(a).hidden, true);
+});
+
+test('tapping two voters in a row leaves one seen-voting control, for the second voter', async () => {
+  const srv = server();
+  const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
+  await markByTap(a, 1);
+  rowFor(a, 2).dispatchEvent({ type: 'click' });
+  await waitFor(() => markButton(a) && !markButton(a).hidden);
+  assert.equal(host(a).querySelectorAll('section.seen-voting').length, 1);
+  assert.equal(host(a).querySelectorAll('section.contact-panel').length, 1);
+  assert.equal(host(a).querySelector('h2').textContent, '2. मतदाता 2');
+
+  // Opening the turnout screen replaces the control.
+  await openTurnout(a);
+  assert.equal(host(a).querySelectorAll('section.seen-voting').length, 0);
+  assert.equal(host(a).querySelectorAll('form.turnout-screen').length, 1);
+});
+
+test('the supporter count is the ward\'s marks only, and a destroyed roll view stops refreshing it', async () => {
   const srv = server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   await a.marks.markSeen(WARD, 1, 'worker-a');
@@ -209,7 +241,7 @@ test('the supporter count is the ward\'s marks only, and a closed screen stops r
   await openTurnout(a);
   assert.equal(supporterText(a), '1');
   await markByTap(a, 2);
-  assert.equal(a.view.contactHost.querySelector('form.turnout-screen'), null);
+  assert.equal(host(a).querySelector('form.turnout-screen'), null);
   await openTurnout(a);
   assert.equal(supporterText(a), '2');
 
@@ -230,6 +262,90 @@ test('without a mark store the roll view has no turnout button and no seen-votin
   const panel = view.openContact(ENTRIES[0]);
   assert.equal(panel.seenVoting, undefined);
   assert.equal(view.contactHost.querySelector('section.seen-voting'), null);
+});
+
+// The control against a scripted mark store.
+function control({ getMark = async () => null, recordSeen, ...rest } = {}) {
+  const doc = createDocument();
+  const container = doc.createElement('div');
+  const logged = [];
+  const listeners = new Set();
+  const marks = {
+    getMark,
+    recordSeen: recordSeen || (async (wardId, serial, workerId) => ({
+      mark: { wardId, serial, workerId, markedAt: 't' }, added: true,
+    })),
+    onMarksChanged: (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
+    ...rest,
+  };
+  const view = mountSeenVotingMark(container, strings, {
+    marks, wardId: WARD, entry: { serial: 4 }, log: (...args) => logged.push(args),
+  });
+  return { ...view, container, logged, listeners, notify: () => [...listeners].forEach((cb) => cb()) };
+}
+
+test('a voter marked by a teammate before the tap shows as marked, without the saved message', async () => {
+  const existing = { wardId: WARD, serial: 4, workerId: 'someone-else', markedAt: 't0' };
+  const c = control({ recordSeen: async () => ({ mark: existing, added: false }) });
+  await c.ready;
+  assert.equal(c.button.hidden, false);
+  c.button.dispatchEvent({ type: 'click' });
+  await waitFor(() => c.status.textContent === strings.seen_marked);
+  assert.equal(c.message.textContent, '');
+  assert.equal(c.button.hidden, true);
+});
+
+test('a failed save shows the failure message and keeps the button', async () => {
+  const c = control({ recordSeen: async () => { throw new Error('disk full'); } });
+  await c.ready;
+  c.button.dispatchEvent({ type: 'click' });
+  await waitFor(() => c.message.textContent === strings.seen_mark_failed);
+  assert.equal(c.button.hidden, false);
+  assert.equal(c.button.hasAttribute('disabled'), false);
+  assert.equal(c.logged.length, 1);
+});
+
+test('a failed read says so and keeps the button instead of presenting the voter as unmarked', async () => {
+  const c = control({ getMark: async () => { throw new Error('locked'); } });
+  await c.ready;
+  assert.equal(c.status.textContent, strings.seen_mark_read_failed);
+  assert.equal(c.button.hidden, false);
+  assert.equal(c.logged.length, 1);
+});
+
+test('a slow initial read does not overwrite the state a later change set', async () => {
+  let release;
+  let calls = 0;
+  const c = control({
+    getMark: () => {
+      calls += 1;
+      if (calls === 1) return new Promise((resolve) => { release = () => resolve(null); });
+      return Promise.resolve({ wardId: WARD, serial: 4, workerId: 'w', markedAt: 't' });
+    },
+  });
+  assert.equal(c.button.hidden, true);
+  assert.equal(c.status.textContent, strings.seen_mark_loading);
+  c.notify();
+  await waitFor(() => c.status.textContent === strings.seen_marked);
+  release();
+  await c.ready;
+  await settle();
+  assert.equal(c.status.textContent, strings.seen_marked);
+  assert.equal(c.button.hidden, true);
+});
+
+test('destroy() stops the control listening, and a control that left the page unsubscribes itself', async () => {
+  const c = control();
+  await c.ready;
+  assert.equal(c.listeners.size, 1);
+  c.destroy();
+  assert.equal(c.listeners.size, 0);
+
+  const d = control();
+  await d.ready;
+  d.container.replaceChildren();
+  d.notify();
+  assert.equal(d.listeners.size, 0);
 });
 
 // The running app: js/picker.js on the fake DOM with a stubbed fetch, as in
@@ -310,8 +426,7 @@ test('in the running app, a voter tapped in the roll can be marked and the turno
     page.roll.querySelector('button.seen-voting-mark').dispatchEvent({ type: 'click' });
     await waitFor(() => page.roll.querySelector('p.seen-voting-message').textContent === strings.seen_mark_saved);
 
-    // Stored on the device and queued for the team under the voter's mark id,
-    // attributed to this device's id in the team.
+    // Stored on the device and queued for the team under the voter's mark id.
     assert.deepEqual([...stored(idb, MARKS_STORE).keys()], [`${WARD}:${serial}`]);
     assert.ok(stored(idb, OUTBOX_STORE).has(markRecordId(WARD, serial)));
 

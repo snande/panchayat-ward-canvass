@@ -7,8 +7,11 @@
 // seen-voting store (src/tally/seenVotingStore.js), which keeps it on the
 // device and queues it for the team, so it works offline. A voter already
 // marked, on this phone or by a teammate, shows that instead of the button,
-// so the same voter is never offered twice. All text comes from the strings
-// table.
+// so the same voter is never offered twice: the mark is read again whenever
+// the store reports added marks, until destroy() is called. The "saved" line
+// shows only when the tap added a mark. If the mark cannot be read, a warning
+// shows and the button stays (marking is safe to repeat). All text comes from
+// the strings table.
 
 import { el } from './dom.js';
 
@@ -17,11 +20,12 @@ import { el } from './dom.js';
  * @param {Element} container
  * @param {Record<string, string>} strings the Hindi string table
  * @param {{
- *   marks: {markSeen: Function, getMark: Function},
+ *   marks: {recordSeen: Function, getMark: Function, onMarksChanged?: Function},
  *   wardId: string, entry: {serial: number},
  *   workerId?: () => string | Promise<string>, log?: Function,
  * }} opts workerId names who marks the voter (defaults to 'device')
- * @returns {{root, button, status, message, ready: Promise<void>, mark: () => Promise<void>}}
+ * @returns {{root, button, status, message, ready: Promise<void>, mark: () => Promise<void>,
+ *   destroy: () => void}}
  */
 export function mountSeenVotingMark(container, strings, opts) {
   const doc = container.ownerDocument;
@@ -43,10 +47,27 @@ export function mountSeenVotingMark(container, strings, opts) {
   root.appendChild(message);
   container.appendChild(root);
 
-  // undefined: still reading; null: not marked; otherwise the mark.
-  function showState(mark) {
-    button.hidden = mark !== null;
-    status.textContent = mark === undefined ? text('seen_mark_loading') : mark ? text('seen_marked') : '';
+  // undefined: still reading; null: not marked; false: could not be read;
+  // otherwise the mark.
+  function showState(state) {
+    button.hidden = state === undefined || Boolean(state);
+    if (state === undefined) status.textContent = text('seen_mark_loading');
+    else if (state === false) status.textContent = text('seen_mark_read_failed');
+    else status.textContent = state ? text('seen_marked') : '';
+  }
+
+  // Later reads win over slower earlier ones.
+  let readRequest = 0;
+  async function read() {
+    const request = ++readRequest;
+    let state;
+    try {
+      state = (await marks.getMark(wardId, entry.serial)) || null;
+    } catch (err) {
+      log('seen-voting mark could not be read', err);
+      state = false;
+    }
+    if (request === readRequest) showState(state);
   }
 
   let busy = false;
@@ -56,8 +77,10 @@ export function mountSeenVotingMark(container, strings, opts) {
     button.setAttribute('disabled', '');
     message.textContent = '';
     try {
-      showState(await marks.markSeen(wardId, entry.serial, await workerId()));
-      message.textContent = text('seen_mark_saved');
+      const result = await marks.recordSeen(wardId, entry.serial, await workerId());
+      readRequest += 1;
+      showState(result.mark);
+      if (result.added) message.textContent = text('seen_mark_saved');
     } catch (err) {
       log('seen-voting mark could not be saved', err);
       message.textContent = text('seen_mark_failed');
@@ -70,12 +93,24 @@ export function mountSeenVotingMark(container, strings, opts) {
   button.addEventListener('click', () => { mark(); });
 
   showState(undefined);
-  const ready = Promise.resolve()
-    .then(() => marks.getMark(wardId, entry.serial))
-    .then((found) => showState(found || null), (err) => {
-      log('seen-voting mark could not be read', err);
-      showState(null);
-    });
+  const ready = read();
 
-  return { root, button, status, message, ready, mark };
+  // The mark may arrive from a teammate while this is open. A control that
+  // has left the page stops listening.
+  let unsubscribe = null;
+  function destroy() {
+    if (unsubscribe) unsubscribe();
+    unsubscribe = null;
+  }
+  if (typeof marks.onMarksChanged === 'function') {
+    unsubscribe = marks.onMarksChanged(() => {
+      if (root.parentNode !== container) {
+        destroy();
+        return;
+      }
+      read();
+    });
+  }
+
+  return { root, button, status, message, ready, mark, destroy };
 }

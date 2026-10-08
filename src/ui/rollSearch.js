@@ -19,9 +19,10 @@
 // opens the polling-day screen (src/ui/turnoutScreen.js) in the same place.
 // opts.turnout defaults to the device's turnout store
 // (src/tally/turnoutStore.js). Its supporter count is the mark store's
-// wardCount for this ward, so a voter
-// marked on several phones counts once, and it is read again whenever marks
-// are added, including teammates' marks arriving with a pull.
+// wardCount for this ward, so a voter marked on several phones counts once,
+// and it is read again whenever marks are added, including teammates' marks
+// arriving with a pull. Whatever is open in the contact host is replaced when
+// another view opens there, and its mark subscriptions end with it.
 
 import * as defaultAssignments from '../calls/assignmentStore.js';
 import * as defaultRoster from '../calls/workerRoster.js';
@@ -84,37 +85,39 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
   root.appendChild(listHost);
   container.replaceChildren(root);
 
-  // The open turnout screen's subscription to mark changes, if any.
-  let stopTurnoutRefresh = null;
-  function leaveTurnout() {
-    if (stopTurnoutRefresh) stopTurnoutRefresh();
-    stopTurnoutRefresh = null;
+  // Ends the mark subscriptions of whatever the contact host shows; each
+  // opener's mount then replaces the host's content.
+  let endHostView = null;
+  function leaveHost() {
+    if (endHostView) endHostView();
+    endHostView = null;
   }
   function addSeenVoting(view, entry) {
     if (canTally) {
       view.seenVoting = mountSeenVotingMark(contactHost, strings, {
         marks, wardId: wardKey, entry, workerId: opts.workerId,
       });
+      endHostView = view.seenVoting.destroy;
     }
     return view;
   }
   function openContact(entry) {
     if (!canCapture || !entry) return null;
-    leaveTurnout();
+    leaveHost();
     const panel = addSeenVoting(mountContactPanel(contactHost, strings, { contacts, wardId: wardKey, entry }), entry);
     if (typeof panel.root.scrollIntoView === 'function') panel.root.scrollIntoView();
     return panel;
   }
   function openVoterCard(entry) {
     if (!canCapture || !entry) return null;
-    leaveTurnout();
+    leaveHost();
     const card = addSeenVoting(mountVoterCard(contactHost, strings, { contacts, wardId: wardKey, entry }), entry);
     if (typeof card.root.scrollIntoView === 'function') card.root.scrollIntoView();
     return card;
   }
   function openTurnout() {
     if (!canTally) return null;
-    leaveTurnout();
+    leaveHost();
     const screen = renderTurnoutScreen(contactHost, {
       ward: wardKey,
       strings,
@@ -122,14 +125,14 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
       getSupporterCount: () => marks.wardCount(wardKey),
     });
     if (typeof marks.onMarksChanged === 'function') {
-      stopTurnoutRefresh = marks.onMarksChanged(() => { screen.refreshCount(); });
+      endHostView = marks.onMarksChanged(() => { screen.refreshCount(); });
     }
     if (typeof screen.root.scrollIntoView === 'function') screen.root.scrollIntoView();
     return screen;
   }
   function openCallList() {
     if (!canCapture) return null;
-    leaveTurnout();
+    leaveHost();
     const screen = mountCallListFlow(contactHost, strings, {
       contacts,
       wardId: wardKey,
@@ -172,7 +175,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     openCallList,
     openTurnout,
     destroy() {
-      leaveTurnout();
+      leaveHost();
       search.destroy();
       list.destroy();
     },

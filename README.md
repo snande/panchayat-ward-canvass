@@ -152,8 +152,9 @@ Tapping a voter in the ward roll opens their contact panel (or card) with a
 saves a seen-voting mark through `src/tally/seenVotingStore.js`: kept on the
 phone, encrypted, and queued for the team, so it works offline. A voter
 already marked, on this phone or a teammate's, shows `वोट डाल दिया — दर्ज है।`
-instead of the button. The mark is attributed to this phone's id in its team
-(`getDeviceId()` in `src/sync/teamAuth.js`), or `device` before it has joined.
+instead of the button, and this follows marks that arrive while the panel is
+open. The mark is attributed to this phone's id in its team (`getDeviceId()`
+in `src/sync/teamAuth.js`), or `device` before it has joined.
 
 The `मतदान के दिन का हिसाब खोलें` button above the roll opens the turnout
 screen (`src/ui/turnoutScreen.js`) in the same place. Its supporter count is

@@ -147,9 +147,10 @@ export function createSeenVotingStore({
    * mark, which is returned unchanged and not queued again. A new mark is
    * saved on the device and then queued for the team; a failure to queue it
    * is logged rather than reported, as the mark is already saved.
-   * @returns {Promise<{wardId, serial: number, workerId: string, markedAt: string}>}
+   * @returns {Promise<{mark: {wardId, serial: number, workerId: string, markedAt: string}, added: boolean}>}
+   *   added is false when the voter already had a mark
    */
-  async function markSeen(wardId, serial, workerId) {
+  async function recordSeen(wardId, serial, workerId) {
     const n = voterSerial(wardId, serial);
     if (!validWorkerId(workerId)) throw new TypeError('workerId must be a string of 1-100 characters');
     const { mark, added } = await insert(wardId, n, workerId, now());
@@ -161,7 +162,12 @@ export function createSeenVotingStore({
         log('seen-voting mark could not be queued for the team', err);
       }
     }
-    return mark;
+    return { mark, added };
+  }
+
+  /** Like recordSeen, returning only the mark now on record. */
+  async function markSeen(wardId, serial, workerId) {
+    return (await recordSeen(wardId, serial, workerId)).mark;
   }
 
   /**
@@ -256,7 +262,7 @@ export function createSeenVotingStore({
     return () => changeListeners.delete(callback);
   }
 
-  return { markSeen, getMark, listMarks, teamCount, wardCount, applyRemote, listen, onMarksChanged };
+  return { markSeen, recordSeen, getMark, listMarks, teamCount, wardCount, applyRemote, listen, onMarksChanged };
 }
 
 let defaultStore = null;
@@ -264,6 +270,7 @@ const store = () => (defaultStore ||= createSeenVotingStore());
 
 export const markSeen = async (wardId, serial, workerId) => store().markSeen(wardId, serial, workerId);
 export const listMarks = async () => store().listMarks();
+export const recordSeen = async (wardId, serial, workerId) => store().recordSeen(wardId, serial, workerId);
 export const getMark = async (wardId, serial) => store().getMark(wardId, serial);
 export const teamCount = async () => store().teamCount();
 export const wardCount = async (wardId) => store().wardCount(wardId);
