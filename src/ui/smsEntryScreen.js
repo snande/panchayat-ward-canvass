@@ -5,6 +5,8 @@
 //   union of roll serials: pasting the same message again, or messages that
 //   overlap, never counts a serial twice. After an add the screen shows how
 //   many of the message's serials were new and how many were already there.
+// - When the outcome lists outsideSerials (serials not in the ward's roll,
+//   left out of the count), an error says so and the pasted text stays.
 // - A rejected message (not a tally SMS, damaged, or another team's) shows
 //   its Hindi reason; the pasted text stays so it can be checked and fixed.
 // - Without a teamTag the field and button are disabled and say why.
@@ -32,6 +34,7 @@ export const FALLBACK_TEXT = {
   'tally.smsEntryRejectedTeam': 'यह संदेश किसी दूसरी टीम का है, इसलिए नहीं जोड़ा गया।',
   'tally.smsEntryTeamMissing': 'इस फ़ोन पर टीम सेट नहीं है, इसलिए एसएमएस नहीं जोड़े जा सकते। अपने उम्मीदवार की टीम से पूछें।',
   'tally.smsEntryFailed': 'संदेश इस फ़ोन पर सहेजा नहीं जा सका। फिर से कोशिश करें।',
+  'tally.smsEntryOutsideWard': 'इस संदेश के कुछ क्रमांक इस वार्ड की सूची में नहीं हैं, इसलिए वे नहीं गिने गए। देखें कि एसएमएस इसी वार्ड का है।',
 };
 
 // decodeTallySms reasons and the string that explains each one.
@@ -157,6 +160,10 @@ export function renderSmsEntryScreen(container, opts = {}) {
     added.value.textContent = String(outcome.newSerials.length);
     duplicates.value.textContent = String(outcome.duplicateSerials.length);
     result.hidden = false;
+    if (Array.isArray(outcome.outsideSerials) && outcome.outsideSerials.length) {
+      setNotice(message, text('tally.smsEntryOutsideWard'), 'error');
+      return;
+    }
     input.value = '';
     if (outcome.newSerials.length) setNotice(message, text('tally.smsEntryAdded'), 'success');
     else setNotice(message, text('tally.smsEntryNothingNew'), 'info');

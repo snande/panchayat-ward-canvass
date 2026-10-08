@@ -145,6 +145,30 @@ The team number comes from an optional `teamSmsNumber` key in
 which the operator provisions. Without that key the button is disabled and
 shows `tally.smsNumberMissing`.
 
+## SMS tally in the ward roll
+
+The `बिना इंटरनेट: एसएमएस से गिनती` button above the roll opens
+`src/ui/smsTallyView.js` in the same place, for when there is no mobile data:
+
+- The top panel counts this worker's seen-voting marks in the ward and sends
+  them with the `एसएमएस से भेजें` button. The messages carry the team's
+  `teamTag` (`teamTagFor(candidateId)` in `src/tally/smsCodec.js`: the
+  candidate code, or a 16-digit hash of it when it is longer than an SMS id)
+  and this phone's worker id.
+- The panel below is the coordinator's paste form. A pasted SMS goes through
+  the SMS inbox and then becomes a seen-voting mark for each serial
+  (`src/tally/smsMarks.js`), in the name of the worker who sent it. Marks are
+  keyed by ward and serial, so a voter who arrives by SMS from two phones, or
+  by SMS and by sync, counts once. Serials that are not in the ward's roll are
+  not counted, and the form says so. The ward's team count sits under the
+  form, and the turnout screen shows the same figure.
+
+To check it: mark the same voter on two phones in airplane mode, send each
+phone's marks by SMS and paste both on the coordinator's phone (the count goes
+up by 1), then reconnect all three. The count stays the same on every phone.
+`test/smsTallyWiring.test.js` does this with three in-memory phones and the
+real `functions/sync.js` handler.
+
 ## Polling-day count beside official turnout
 
 Tapping a voter in the ward roll opens their contact panel (or card) with a

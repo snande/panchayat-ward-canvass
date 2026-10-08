@@ -42,6 +42,15 @@ function workerId() {
     });
 }
 
+// The SMS tally (src/ui/smsTallyView.js) sends to the team number from
+// config/constituency.json and tags its messages with the joined team.
+var teamSmsNumber = '';
+function smsSettings() {
+  return getAuth().then(function (auth) {
+    return { teamSmsNumber: teamSmsNumber, candidateId: auth ? auth.candidateId : '' };
+  });
+}
+
 function loadJson(url) {
   return fetch(url).then(function (r) {
     if (!r.ok) {
@@ -78,7 +87,9 @@ function startRoll(strings) {
     onShow: hideEmptyState,
     // marks: tapping a voter offers "seen voting", and the turnout button
     // shows the ward's de-duplicated count beside the official turnout.
-    listOptions: { contacts: contacts, marks: marks, workerId: workerId },
+    // sms: with no mobile data, marks go out and come in by SMS and join the
+    // same de-duplicated count.
+    listOptions: { contacts: contacts, marks: marks, workerId: workerId, sms: { settings: smsSettings } },
   });
   roll.restore();
   return roll;
@@ -129,6 +140,9 @@ if (container) {
       return loadJson('config/constituency.json');
     })
     .then(function (config) {
+      if (config && typeof config.teamSmsNumber === 'string') {
+        teamSmsNumber = config.teamSmsNumber.trim();
+      }
       var picker = mountWardPicker(container, config, table, {
         onSelect: function (selection) {
           if (roll) {
