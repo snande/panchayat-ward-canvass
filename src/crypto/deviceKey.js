@@ -6,7 +6,8 @@
 //
 // Its users: the roll store, the contact store, the sync engine's outbox and
 // the seen-voting mark store (src/tally/seenVotingStore.js), whose marks are
-// encrypted at rest with this same key.
+// encrypted at rest with this same key, and the official-turnout store
+// (src/tally/turnoutStore.js).
 
 import { KEYS_STORE, complete, readValue, request } from '../storage/deviceDb.js';
 
