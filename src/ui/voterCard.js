@@ -167,6 +167,7 @@ export function mountVoterCard(container, strings, opts) {
     // The store's own rule, so a typo keeps what was typed and saves nothing.
     if (normalisePhone(phone) === null) {
       setNotice(message, text('contact_phone_invalid'), 'error');
+      if (typeof phoneInput.focus === 'function') phoneInput.focus();
       return;
     }
     run(() => contacts.saveNumber(wardId, entry.serial, phone), 'contact_saved');

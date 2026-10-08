@@ -11,7 +11,8 @@
 // device and queues the change for the team, so every step works offline.
 // All text comes from the strings table. The layout is the shared panel of
 // DESIGN.md: header with close, consent badge, phone field, one primary
-// action, a quiet destructive action and a toned notice line.
+// action, a quiet destructive action and a toned notice line. If the saved
+// state cannot be read, an error notice and a retry button show.
 
 import { el, panelHeader, setNotice, voterMeta } from './dom.js';
 
@@ -24,7 +25,8 @@ import { el, panelHeader, setNotice, voterMeta } from './dom.js';
  *   onClose?: () => void, log?: Function,
  * }} opts
  * @returns {{root, ready: Promise<void>, badge, consentButton, phoneInput, saveButton, revokeButton,
- *   confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, message}}
+ *   confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, retryButton, message,
+ *   reload: () => Promise<void>}}
  */
 export function mountContactPanel(container, strings, opts) {
   const doc = container.ownerDocument;
@@ -84,6 +86,9 @@ export function mountContactPanel(container, strings, opts) {
 
   const message = el(doc, 'p', 'notice contact-message');
   message.setAttribute('aria-live', 'polite');
+  const retryButton = el(doc, 'button', 'btn-secondary contact-retry', text('roll_retry'));
+  retryButton.setAttribute('type', 'button');
+  retryButton.hidden = true;
 
   root.appendChild(badge);
   root.appendChild(ask);
@@ -91,6 +96,7 @@ export function mountContactPanel(container, strings, opts) {
   root.appendChild(form);
   root.appendChild(confirmBox);
   root.appendChild(message);
+  root.appendChild(retryButton);
   container.replaceChildren(root);
 
   function focus(node) {
@@ -169,20 +175,29 @@ export function mountContactPanel(container, strings, opts) {
     if (typeof opts.onClose === 'function') opts.onClose();
   });
 
-  showState(undefined);
-  setNotice(message, text('contact_loading'));
-  const ready = Promise.resolve()
-    .then(() => contacts.getContact(wardId, entry.serial))
-    .then((contact) => {
-      showState(contact || null);
-      setNotice(message, '');
-    }, (err) => {
-      log('contact could not be read', err);
-      setNotice(message, text('contact_failed'), 'error');
-    });
+  // Read the stored state. A failed read keeps every action hidden, so a
+  // consented voter never looks un-consented, and offers a retry.
+  function reload() {
+    retryButton.hidden = true;
+    showState(undefined);
+    setNotice(message, text('contact_loading'));
+    return Promise.resolve()
+      .then(() => contacts.getContact(wardId, entry.serial))
+      .then((contact) => {
+        showState(contact || null);
+        setNotice(message, '');
+      }, (err) => {
+        log('contact could not be read', err);
+        setNotice(message, text('contact_failed'), 'error');
+        retryButton.hidden = false;
+      });
+  }
+  retryButton.addEventListener('click', () => { reload(); });
+
+  const ready = reload();
 
   return {
     root, ready, badge, consentButton, phoneInput, saveButton, revokeButton,
-    confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, message,
+    confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, retryButton, message, reload,
   };
 }

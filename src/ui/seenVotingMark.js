@@ -53,7 +53,8 @@ export function mountSeenVotingMark(container, strings, opts) {
     button.hidden = state === undefined || Boolean(state);
     if (state === undefined) setNotice(status, text('seen_mark_loading'));
     else if (state === false) setNotice(status, text('seen_mark_read_failed'), 'error');
-    else setNotice(status, state ? text('seen_marked') : '', 'success');
+    else if (state) setNotice(status, text('seen_marked'), 'success');
+    else setNotice(status, '');
   }
 
   // Later reads win over slower earlier ones.

@@ -46,6 +46,7 @@ Each feedback text colour on its own background is at least 4.5:1.
   `--font-size-lg` (titles, phone numbers), `--font-size-xl` (app title);
   `--line-height-body`, `--line-height-heading`. Headings are weight 400: the
   Devanagari face ships one weight and a synthesised bold looks smeared.
+  Symbols outside the font subset (ticks, crosses) are drawn in CSS, not typed.
 - Layout: `--touch-target` (48 px), `--content-max-width`, `--shadow-card`.
 
 ## Shared controls
@@ -61,11 +62,13 @@ Each feedback text colour on its own background is at least 4.5:1.
 | Danger button | `.btn-danger` | The filled red "yes, delete" inside an alert. The only filled red. |
 | Field | `.picker-field`, `.picker-label`, `.picker-select` | Label above, 48 px input. Phone numbers add `.field-phone`: larger, tabular, spaced digits. |
 | Choice | `.choice`, `.choice-input` | A tappable row holding a checkbox and its sentence; turns green when checked. |
-| Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record". |
+| Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record"; the success tone draws a tick. |
 | Notice | `.notice` (+ `data-tone`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. |
 | Alert | `.alert` (+ `data-tone="error"`) | A block that asks before something is deleted: the consequence in body text, then the danger button and a secondary "no". |
 
 ## States every surface carries
+
+A surface shows one state at a time.
 
 | State | Look |
 | --- | --- |
