@@ -4,8 +4,9 @@
 // (src/ui/smsEntryScreen.js) and it reaches every teammate's phone through the
 // sync engine, like contacts.
 //
-// - The number is kept in international form: '+' and 8-15 digits. A
-//   10-digit Indian mobile number (with or without a leading 0) gets +91;
+// - The number is kept in international form: '+' and 8-15 digits. An
+//   Indian mobile number (10 digits starting 6-9) written without '+' (bare,
+//   with a leading 0, or with 91 in front) gets +91;
 //   spaces, dashes and brackets are dropped, and Devanagari digits read as
 //   ASCII ones. Anything else is rejected before the store is touched.
 // - On the device the `team` object store holds one record, keyed
@@ -40,7 +41,10 @@ export function normaliseSmsNumber(value) {
     .replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - DEVANAGARI_ZERO))
     .replace(/[\s\-().]/g, '');
   if (text.startsWith('00')) text = `+${text.slice(2)}`;
-  if (/^0?\d{10}$/.test(text)) return `+91${text.slice(-10)}`;
+  // An Indian mobile number (6-9 then nine digits) written without the '+':
+  // bare, with the trunk 0, or with the country code 91.
+  const indian = /^(?:0|91)?([6-9]\d{9})$/.exec(text);
+  if (indian) return `+91${indian[1]}`;
   return /^\+[1-9]\d{7,14}$/.test(text) ? text : null;
 }
 
@@ -107,10 +111,20 @@ export function createTeamSmsNumber({
     }
   }
 
-  /** The team's SMS number, or '' when none is set on this phone yet. */
+  /**
+   * The team's SMS number, or '' when none is set on this phone yet. A stored
+   * record that cannot be read (corrupt, or a lost device key) also gives '',
+   * so the send button says the number is missing and the coordinator can
+   * save it again; this never rejects.
+   */
   async function getTeamSmsNumber() {
-    const local = await serialised(readLocal);
-    return local ? local.number : '';
+    try {
+      const local = await serialised(readLocal);
+      return local ? local.number : '';
+    } catch (err) {
+      log('the stored team SMS number could not be read', err);
+      return '';
+    }
   }
 
   /**

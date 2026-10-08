@@ -67,8 +67,15 @@ test('normaliseSmsNumber keeps international numbers and gives Indian mobiles +9
   assert.equal(normaliseSmsNumber('9876543210'), '+919876543210');
   assert.equal(normaliseSmsNumber('09876543210'), '+919876543210');
   assert.equal(normaliseSmsNumber('0091 9876543210'), '+919876543210');
+  assert.equal(normaliseSmsNumber('919876543210'), '+919876543210');
+  assert.equal(normaliseSmsNumber('91 98765 43210'), '+919876543210');
+  assert.equal(normaliseSmsNumber('6123456789'), '+916123456789');
   assert.equal(normaliseSmsNumber('+९१ ९८७६५ ४३२१०'), '+919876543210');
   assert.equal(normaliseSmsNumber('+447700900123'), '+447700900123');
+  // Ten digits outside the Indian mobile range are not given +91.
+  for (const bad of ['1234567890', '0123456789', '5876543210', '01234567890', '911234567890']) {
+    assert.equal(normaliseSmsNumber(bad), null, bad);
+  }
   for (const bad of ['', '   ', '12345', 'abc', '+91 98765 4321x', '+0123456789', '+1234567890123456', null, undefined, 9876543210]) {
     assert.equal(normaliseSmsNumber(bad), null, String(bad));
   }
@@ -93,6 +100,30 @@ test('a saved number is read back, kept encrypted and queued for the team', asyn
   assert.equal(record.id, TEAM_SMS_RECORD_ID);
   assert.deepEqual(record.data, { smsNumber: '+919876543210' });
   assert.ok(Number.isFinite(Date.parse(record.updatedAt)));
+});
+
+test('a stored number that cannot be decrypted reads as none, and a new save replaces it', async () => {
+  const { idb, team, logged } = store();
+  await team.setTeamSmsNumber('+919876543210');
+  // Corrupt the ciphertext, as a lost or rotated device key would leave it.
+  const db = await new Promise((resolve, reject) => {
+    const req = idb.open('ward-canvass');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  const tx = db.transaction(TEAM_STORE, 'readwrite');
+  const done = new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  tx.objectStore(TEAM_STORE).put({ v: 1, iv: new Uint8Array(12), ct: new Uint8Array(32) }, 'smsNumber');
+  await done;
+
+  assert.equal(await team.getTeamSmsNumber(), '');
+  assert.equal(logged.length, 1);
+
+  assert.equal(await team.setTeamSmsNumber('+919811111111'), '+919811111111');
+  assert.equal(await team.getTeamSmsNumber(), '+919811111111');
 });
 
 test('a value that is not a phone number is refused and the stored one stays', async () => {
