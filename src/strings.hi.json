@@ -73,5 +73,15 @@
   "tally.sendNextPart": "अगला भाग भेजें",
   "tally.smsNumberMissing": "टीम का एसएमएस नंबर सेट नहीं है। अपने उम्मीदवार की टीम से पूछें।",
   "tally.nothingToSend": "भेजने के लिए अभी कोई निशान नहीं है।",
-  "tally.smsFailed": "एसएमएस तैयार नहीं हो सका। फिर से कोशिश करें।"
+  "tally.smsFailed": "एसएमएस तैयार नहीं हो सका। फिर से कोशिश करें।",
+  "tally.smsEntryTitle": "मिला हुआ गिनती एसएमएस जोड़ें",
+  "tally.smsEntryLabel": "कार्यकर्ता से मिला गिनती का एसएमएस यहाँ चिपकाएँ",
+  "tally.smsEntryAdd": "जोड़ें",
+  "tally.smsEntryNewCount": "नए क्रमांक जोड़े गए:",
+  "tally.smsEntryDuplicateCount": "पहले से दर्ज क्रमांक:",
+  "tally.smsEntryEmpty": "पहले एसएमएस यहाँ चिपकाएँ।",
+  "tally.smsEntryFailed": "एसएमएस जोड़ा नहीं जा सका। फिर से कोशिश करें।",
+  "tally.smsEntryRejectedChecksum": "यह एसएमएस अधूरा या बदला हुआ है, इसलिए नहीं जोड़ा गया। पूरा एसएमएस फिर से चिपकाएँ।",
+  "tally.smsEntryRejectedTeam": "यह एसएमएस आपकी टीम का नहीं है, इसलिए नहीं जोड़ा गया।",
+  "tally.smsEntryRejectedFormat": "यह गिनती का एसएमएस नहीं लगता। पूरा एसएमएस बिना बदले चिपकाएँ।"
 }

@@ -145,6 +145,26 @@ The team number comes from an optional `teamSmsNumber` key in
 which the operator provisions. Without that key the button is disabled and
 shows `tally.smsNumberMissing`.
 
+### Coordinator SMS entry
+
+The coordinator pastes each tally SMS received at the team number into the
+screen from `mountSmsEntryScreen(container, strings, {teamTag})`
+(`src/ui/smsEntryScreen.js`). It shows a textarea and a `जोड़ें` button,
+labelled with the `tally.smsEntry*` strings. After the coordinator presses the
+button, it reports how many of the message's serials were new and how many
+were already counted, or gives the Hindi reason the message was rejected. It
+makes no network request.
+
+`applyTallySms(text, {teamTag})` in `src/tally/smsInbox.js` decodes the
+message with `decodeTallySms`. It merges the serials by set union into one
+AES-GCM record (`meta` store, key `sms-tally-serials`) under the shared device
+key, and returns `{ok, workerId, newSerials, duplicateSerials}`. Because of the
+set union, a resent message, a split part or two overlapping messages never
+count a serial twice. A message with a bad checksum, a bad format or another
+candidate's `teamTag` returns `{ok:false, reason}` and leaves the stored set
+unchanged. `onSerialsAdded(callback)` is called with each non-empty batch of
+new serials after it is stored. The team count subscribes to this hook.
+
 ## PWA shell
 
 The installable Hindi shell is plain static files: `index.html`,
