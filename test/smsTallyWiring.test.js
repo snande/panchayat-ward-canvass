@@ -133,18 +133,19 @@ async function markByTap(p, serial) {
   await waitFor(() => q(p, 'p.seen-voting-message').textContent === strings.seen_mark_saved);
 }
 
-// Tap the SMS tally button; resolves once the view has read its counts.
-async function openSms(p) {
-  p.view.smsTallyButton.dispatchEvent({ type: 'click' });
-  await waitFor(() => q(p, 'div.sms-tally') && /^\d+$/.test(wardCount(p)));
-}
-
+// The fake DOM takes simple selectors only, so nested lookups are chained.
 const countIn = (line) => (line ? line.querySelector('span.seen-voting-count-value').textContent : '');
 const wardCount = (p) => countIn(q(p, 'p.sms-tally-ward-count'));
 const ownCount = (p) => countIn(q(p, 'p.sms-tally-own-count'));
 const figureValue = (p, cls) => q(p, `div.${cls}`).querySelector('p.sms-entry-value').textContent;
 const status = (p) => q(p, 'p.sms-tally-status');
 const entryMessage = (p) => q(p, 'p.sms-entry-message');
+
+// Tap the SMS tally button; resolves once the view has read its counts.
+async function openSms(p) {
+  p.view.smsTallyButton.dispatchEvent({ type: 'click' });
+  await waitFor(() => q(p, 'div.sms-tally') && /^\d+$/.test(wardCount(p)));
+}
 
 // Tap "send by SMS" and return the message the phone's SMS app was given.
 function sendBySms(p) {
@@ -157,9 +158,14 @@ function sendBySms(p) {
 // Paste an SMS into the coordinator's form and add it.
 async function paste(p, message) {
   const form = q(p, 'form.sms-entry-screen');
+  setNoticeEmpty(p);
   type(form.querySelector('textarea.sms-entry-input'), message);
   form.dispatchEvent({ type: 'submit', preventDefault() {} });
   await waitFor(() => !form.hasAttribute('aria-busy') && entryMessage(p).textContent !== '');
+}
+// Clears the form's last message so paste() waits for this add's outcome.
+function setNoticeEmpty(p) {
+  entryMessage(p).textContent = '';
 }
 
 test('one voter marked on two offline phones and sent by SMS counts once, before and after both reconnect', async () => {
@@ -178,11 +184,11 @@ test('one voter marked on two offline phones and sent by SMS counts once, before
 
   // Each worker opens the SMS tally and sends their own marks.
   await openSms(a);
-  assert.equal(ownCount(a), '2');
+  await waitFor(() => ownCount(a) === '2');
   assert.equal(status(a).textContent, '');
   const fromA = sendBySms(a);
   await openSms(b);
-  assert.equal(ownCount(b), '1');
+  await waitFor(() => ownCount(b) === '1');
   const fromB = sendBySms(b);
   assert.deepEqual(decodeTallySms(fromA, TEAM), { ok: true, workerId: 'worker-a', serials: [3, 5] });
   assert.deepEqual(decodeTallySms(fromB, TEAM), { ok: true, workerId: 'worker-b', serials: [3] });
@@ -219,8 +225,6 @@ test('one voter marked on two offline phones and sent by SMS counts once, before
 test('pasting the same SMS again changes nothing', async () => {
   const srv = server();
   const c = phone(srv, 'coord', '2026-10-07T10:00:00.000Z');
-  await c.auth.joinTeam(TEAM, PASS);
-  c.state.offline = true;
   const [message] = encodeTallySms({ teamTag: TEAM, workerId: 'w1', serials: [1, 2, 4] });
   await openSms(c);
   await paste(c, message);
@@ -235,7 +239,6 @@ test('pasting the same SMS again changes nothing', async () => {
 test('serials that are not in this ward\'s roll are not counted, and the pasted text stays', async () => {
   const srv = server();
   const c = phone(srv, 'coord', '2026-10-07T10:00:00.000Z');
-  await c.auth.joinTeam(TEAM, PASS);
   const [message] = encodeTallySms({ teamTag: TEAM, workerId: 'w1', serials: [2, 99] });
   await openSms(c);
   await paste(c, message);
@@ -249,7 +252,6 @@ test('serials that are not in this ward\'s roll are not counted, and the pasted 
 test('a rejected SMS marks nothing', async () => {
   const srv = server();
   const c = phone(srv, 'coord', '2026-10-07T10:00:00.000Z');
-  await c.auth.joinTeam(TEAM, PASS);
   const [other] = encodeTallySms({ teamTag: 'cand-99', workerId: 'w1', serials: [2] });
   await openSms(c);
   await paste(c, other);
@@ -260,7 +262,6 @@ test('a rejected SMS marks nothing', async () => {
 test('with no marks of its own the send panel says how to make one and hides the button', async () => {
   const srv = server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
-  await a.auth.joinTeam(TEAM, PASS);
   await a.marks.markSeen(WARD, 4, 'someone-else');
   await openSms(a);
   await waitFor(() => status(a).textContent === strings['tally.sendEmpty']);
@@ -309,8 +310,8 @@ test('settings that cannot be read show an error with a retry that recovers', as
   fail = false;
   view.retryButton.dispatchEvent({ type: 'click' });
   await waitFor(() => view.wardValue.textContent === '1');
+  await waitFor(() => view.ownValue.textContent === '1');
   assert.equal(view.retryButton.hidden, true);
-  assert.equal(view.ownValue.textContent, '1');
   assert.ok(view.entry);
 });
 

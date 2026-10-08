@@ -139,7 +139,7 @@ export function mountSmsTally(container, strings, opts) {
   // undefined: still reading; false: could not be read; otherwise the list.
   function showSend(serials) {
     const ready = Array.isArray(serials);
-    const teamMissing = settings && !settings.teamTag;
+    const teamMissing = Boolean(settings) && !settings.teamTag;
     retryButton.hidden = serials !== false;
     sendHost.hidden = !ready || teamMissing || serials.length === 0;
     own.line.hidden = !ready || teamMissing || serials.length === 0;
@@ -231,5 +231,12 @@ export function mountSmsTally(container, strings, opts) {
     });
   }
 
-  return { ...view, get send() { return view.send; }, get entry() { return view.entry; }, ready, reload: load, destroy };
+  return {
+    ...view,
+    get send() { return view.send; },
+    get entry() { return view.entry; },
+    ready,
+    reload: load,
+    destroy,
+  };
 }
