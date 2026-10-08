@@ -148,7 +148,14 @@ export function createTeamAuth({
     return { token: record.token, candidateId: record.candidateId, key };
   }
 
-  return { joinTeam, getAuth };
+  /** The id the server gave this device when it joined, or null. */
+  async function getDeviceId() {
+    const record = await readValue(db, META_STORE, TEAM_AUTH_ID);
+    if (!record || record.v !== RECORD_VERSION) return null;
+    return typeof record.deviceId === 'string' && record.deviceId ? record.deviceId : null;
+  }
+
+  return { joinTeam, getAuth, getDeviceId };
 }
 
 let defaultAuth = null;
@@ -156,3 +163,4 @@ const auth = () => (defaultAuth ||= createTeamAuth());
 
 export const joinTeam = (candidateId, teamPassphrase) => auth().joinTeam(candidateId, teamPassphrase);
 export const getAuth = () => auth().getAuth();
+export const getDeviceId = () => auth().getDeviceId();

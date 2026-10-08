@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v14";
+const CACHE_VERSION = "v15";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -46,6 +46,11 @@ const PRECACHE = [
   "src/decoder/sha256.js",
   "src/tally/smsCodec.js",
   "src/ui/smsSendButton.js",
+  // Seen-voting marks and the polling-day count beside the official turnout.
+  "src/tally/seenVotingStore.js",
+  "src/tally/turnoutStore.js",
+  "src/ui/seenVotingMark.js",
+  "src/ui/turnoutScreen.js",
   "src/ui/dom.js",
   "src/strings.hi.json",
   "fonts/noto-sans-devanagari-subset.woff2",

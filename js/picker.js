@@ -1,10 +1,10 @@
 import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
-import { getAuth, joinTeam } from '../src/sync/teamAuth.js';
+import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
 import { startSync } from '../src/sync/syncEngine.js';
 import { createContactSync } from '../src/contacts/contactSync.js';
-import { listenForTeamMarks } from '../src/tally/seenVotingStore.js';
+import * as marks from '../src/tally/seenVotingStore.js';
 
 // Copies of src/strings.hi.json entries, used if the table itself failed to
 // load. repo-ci fails if they drift.
@@ -28,7 +28,19 @@ contacts.listen();
 
 // Seen-voting marks teammates made arrive with every pull too
 // (src/tally/seenVotingStore.js), so the team count covers the whole team.
-listenForTeamMarks();
+marks.listenForTeamMarks();
+
+// Who marks a voter as seen voting: this device's id in its team, once it
+// has joined one.
+function workerId() {
+  return getDeviceId()
+    .then(function (id) {
+      return id || 'device';
+    })
+    .catch(function () {
+      return 'device';
+    });
+}
 
 function loadJson(url) {
   return fetch(url).then(function (r) {
@@ -63,7 +75,9 @@ function startRoll(strings) {
   }
   var roll = createRollFlow(rollContainer, Object.assign({}, FALLBACK_STRINGS, strings || {}), {
     onShow: hideEmptyState,
-    listOptions: { contacts: contacts },
+    // marks: tapping a voter offers "seen voting", and the turnout button
+    // shows the ward's de-duplicated count beside the official turnout.
+    listOptions: { contacts: contacts, marks: marks, workerId: workerId },
   });
   roll.restore();
   return roll;

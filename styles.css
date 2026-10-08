@@ -310,6 +310,15 @@ main {
   display: none;
 }
 
+/* Seen-voting control under a voter's contact panel or card. */
+.seen-voting {
+  margin: 0 0 var(--space-4);
+}
+
+.seen-voting [hidden] {
+  display: none;
+}
+
 .contact-title {
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-lg);

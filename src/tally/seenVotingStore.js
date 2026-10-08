@@ -20,7 +20,11 @@
 //   marking the same voter, or a retried push, still make one entry.
 // - Marks pulled from the team are applied by applyRemote(), which adds the
 //   ones this device lacks. teamCount() is the number of distinct voters this
-//   device holds a mark for, its own and its teammates'.
+//   device holds a mark for, its own and its teammates'; wardCount(wardId)
+//   is the same count for one ward, which is the supporter count the
+//   polling-day turnout screen (src/ui/turnoutScreen.js) shows.
+// - onMarksChanged(callback) is called after a mark is added on this device or
+//   pulled marks add at least one, so an open count can be read again.
 //
 // Every operation on the store works offline; only the sync engine talks to
 // the network.
@@ -89,6 +93,17 @@ export function createSeenVotingStore({
   const encoder = new TextEncoder();
   const db = createDbOpener(indexedDB);
   const deviceKey = createDeviceKeyLoader({ db, crypto });
+  const changeListeners = new Set();
+
+  function changed() {
+    for (const callback of [...changeListeners]) {
+      try {
+        callback();
+      } catch (err) {
+        log('a seen-voting change listener failed', err);
+      }
+    }
+  }
 
   async function encrypt(id, payload) {
     const key = await deviceKey();
@@ -132,20 +147,27 @@ export function createSeenVotingStore({
    * mark, which is returned unchanged and not queued again. A new mark is
    * saved on the device and then queued for the team; a failure to queue it
    * is logged rather than reported, as the mark is already saved.
-   * @returns {Promise<{wardId, serial: number, workerId: string, markedAt: string}>}
+   * @returns {Promise<{mark: {wardId, serial: number, workerId: string, markedAt: string}, added: boolean}>}
+   *   added is false when the voter already had a mark
    */
-  async function markSeen(wardId, serial, workerId) {
+  async function recordSeen(wardId, serial, workerId) {
     const n = voterSerial(wardId, serial);
     if (!validWorkerId(workerId)) throw new TypeError('workerId must be a string of 1-100 characters');
     const { mark, added } = await insert(wardId, n, workerId, now());
     if (added) {
+      changed();
       try {
         await engine.enqueue({ id: markRecordId(wardId, n), updatedAt: mark.markedAt, data: { ...mark } });
       } catch (err) {
         log('seen-voting mark could not be queued for the team', err);
       }
     }
-    return mark;
+    return { mark, added };
+  }
+
+  /** Like recordSeen, returning only the mark now on record. */
+  async function markSeen(wardId, serial, workerId) {
+    return (await recordSeen(wardId, serial, workerId)).mark;
   }
 
   /**
@@ -168,8 +190,8 @@ export function createSeenVotingStore({
     return out.sort((a, b) => (a.wardId < b.wardId ? -1 : a.wardId > b.wardId ? 1 : a.serial - b.serial));
   }
 
-  /** How many distinct voters the team has marked, as far as this device knows. */
-  async function teamCount() {
+  // How many distinct voters with a well-formed record pass keep(record).
+  async function countWhere(keep) {
     const tx = (await db()).transaction(MARKS_STORE, 'readonly');
     const done = complete(tx);
     const store = tx.objectStore(MARKS_STORE);
@@ -178,9 +200,37 @@ export function createSeenVotingStore({
     let count = 0;
     for (let i = 0; i < ids.length; i += 1) {
       const record = records[i];
-      if (record && ids[i] === markKeyFor(record.wardId, record.serial)) count += 1;
+      if (record && ids[i] === markKeyFor(record.wardId, record.serial) && keep(record)) count += 1;
     }
     return count;
+  }
+
+  /** How many distinct voters the team has marked, as far as this device knows. */
+  async function teamCount() {
+    return countWhere(() => true);
+  }
+
+  /** How many distinct voters of one ward the team has marked, as far as this device knows. */
+  async function wardCount(wardId) {
+    if (typeof wardId !== 'string' || !wardId || wardId.includes(':')) {
+      throw new TypeError('wardId must be a non-empty string without ":"');
+    }
+    return countWhere((record) => record.wardId === wardId);
+  }
+
+  /**
+   * The voter's mark (this device's or a teammate's), or null when the voter
+   * is not marked as far as this device knows.
+   * @returns {Promise<{wardId, serial: number, workerId: string, markedAt: string} | null>}
+   */
+  async function getMark(wardId, serial) {
+    const n = voterSerial(wardId, serial);
+    const id = markKeyFor(wardId, n);
+    const tx = (await db()).transaction(MARKS_STORE, 'readonly');
+    const done = complete(tx);
+    const record = await request(tx.objectStore(MARKS_STORE).get(id));
+    await done;
+    return record ? decrypt(id, record) : null;
   }
 
   /** Add the pulled marks this device lacks; other record types are ignored. Returns how many were added. */
@@ -196,6 +246,7 @@ export function createSeenVotingStore({
         log('a synced seen-voting mark could not be stored', err);
       }
     }
+    if (added > 0) changed();
     return added;
   }
 
@@ -204,7 +255,14 @@ export function createSeenVotingStore({
     return engine.onRemoteRecords(applyRemote);
   }
 
-  return { markSeen, listMarks, teamCount, applyRemote, listen };
+  /** Call callback after marks are added (see above); returns an unsubscribe function. */
+  function onMarksChanged(callback) {
+    if (typeof callback !== 'function') throw new TypeError('callback must be a function');
+    changeListeners.add(callback);
+    return () => changeListeners.delete(callback);
+  }
+
+  return { markSeen, recordSeen, getMark, listMarks, teamCount, wardCount, applyRemote, listen, onMarksChanged };
 }
 
 let defaultStore = null;
@@ -212,5 +270,9 @@ const store = () => (defaultStore ||= createSeenVotingStore());
 
 export const markSeen = async (wardId, serial, workerId) => store().markSeen(wardId, serial, workerId);
 export const listMarks = async () => store().listMarks();
+export const recordSeen = async (wardId, serial, workerId) => store().recordSeen(wardId, serial, workerId);
+export const getMark = async (wardId, serial) => store().getMark(wardId, serial);
 export const teamCount = async () => store().teamCount();
+export const wardCount = async (wardId) => store().wardCount(wardId);
+export const onMarksChanged = (callback) => store().onMarksChanged(callback);
 export const listenForTeamMarks = () => store().listen();
