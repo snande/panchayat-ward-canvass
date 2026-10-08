@@ -497,3 +497,70 @@ main {
   color: var(--color-text-muted);
   cursor: not-allowed;
 }
+
+/* Polling-day turnout screen (src/ui/turnoutScreen.js): the official turnout
+   and the team's supporter count as two equal large numerals, then the entry
+   field and save button. */
+.turnout-screen {
+  margin-top: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.turnout-title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-lg);
+  font-weight: 400;
+  line-height: var(--line-height-heading);
+  color: var(--color-text);
+}
+
+.turnout-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.turnout-figure {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.turnout-value {
+  margin: 0;
+  font-size: calc(var(--font-size-xl) * 1.75);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--line-height-heading);
+  color: var(--color-primary-strong);
+  overflow-wrap: anywhere;
+}
+
+.turnout-caption {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+  color: var(--color-text-muted);
+}
+
+.turnout-save {
+  margin-bottom: var(--space-3);
+}
+
+/* Placeholder text (no figure yet) instead of a numeral. */
+.turnout-value-empty {
+  font-size: var(--font-size-lg);
+  font-weight: 400;
+  color: var(--color-text-muted);
+}

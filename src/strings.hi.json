@@ -73,5 +73,16 @@
   "tally.sendNextPart": "अगला भाग भेजें",
   "tally.smsNumberMissing": "टीम का एसएमएस नंबर सेट नहीं है। अपने उम्मीदवार की टीम से पूछें।",
   "tally.nothingToSend": "भेजने के लिए अभी कोई निशान नहीं है।",
-  "tally.smsFailed": "एसएमएस तैयार नहीं हो सका। फिर से कोशिश करें।"
+  "tally.smsFailed": "एसएमएस तैयार नहीं हो सका। फिर से कोशिश करें।",
+  "turnout.title": "मतदान के दिन का हिसाब",
+  "turnout.inputLabel": "आधिकारिक मतदान (कुल वोट पड़े)",
+  "turnout.save": "मतदान सहेजें",
+  "turnout.officialCaption": "आधिकारिक मतदान",
+  "turnout.supporterCaption": "हमारे समर्थक जिन्होंने वोट डाला",
+  "turnout.notEntered": "अभी दर्ज नहीं",
+  "turnout.countLoading": "गिनती हो रही है…",
+  "turnout.countUnavailable": "गिनती उपलब्ध नहीं",
+  "turnout.invalid": "मतदान की संख्या केवल अंकों में डालें, जैसे ४१२।",
+  "turnout.saved": "आधिकारिक मतदान इस फ़ोन पर सहेजा गया।",
+  "turnout.saveFailed": "मतदान सहेजा नहीं जा सका। फिर से कोशिश करें।"
 }
