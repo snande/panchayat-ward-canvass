@@ -85,11 +85,16 @@ if (primaryAction) {
   });
 }
 
-// A failed registration shows an error notice and a retry button.
+// A failed registration shows an error notice and a retry button. Only one
+// attempt runs at a time, so a double tap on retry registers once.
+var registering = null;
 function registerWorker() {
+  if (registering) {
+    return registering;
+  }
   showRetry(false);
   // No explicit scope: it defaults to the directory sw.js is served from.
-  return navigator.serviceWorker
+  registering = navigator.serviceWorker
     .register("sw.js")
     .then(function () {
       return navigator.serviceWorker.ready;
@@ -101,7 +106,11 @@ function registerWorker() {
       setStatus("status_offline_failed", "error");
       showRetry(true);
       console.error("service worker registration failed", err);
+    })
+    .then(function () {
+      registering = null;
     });
+  return registering;
 }
 
 if ("serviceWorker" in navigator) {

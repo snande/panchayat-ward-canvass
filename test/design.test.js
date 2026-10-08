@@ -51,6 +51,14 @@ const deferred = () => {
   return { promise, resolve, reject };
 };
 
+test('src/ui/dom.js declares each shared helper once', () => {
+  const source = read('src/ui/dom.js');
+  for (const name of ['el', 'setNotice', 'panelHeader', 'voterMeta']) {
+    const count = source.split(`export function ${name}(`).length - 1;
+    assert.equal(count, 1, name);
+  }
+});
+
 test('DESIGN.md names every :root token and styles.css defines every one it names', () => {
   const root = css.match(/:root\s*\{([^}]*)\}/)[1];
   const defined = new Set([...root.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
@@ -210,7 +218,7 @@ test('voter card is busy while a save is in flight, and a bad number is an error
 
   let focused = 0;
   card.phoneInput.focus = () => { focused += 1; };
-  type(card.phoneInput, '12345');
+  type(card.phoneInput, '123');
   submitOf(card.saveButton.parentNode);
   assert.equal(card.message.textContent, strings.contact_phone_invalid);
   assert.equal(tone(card.message), 'error');
@@ -261,15 +269,15 @@ test('call list: adding a worker is a success notice; a failed assignment is an 
 
 test('seen-voting control: info while loading, error on a failed read, success once marked, none when unmarked', async () => {
   const doc = createDocument();
-  const read1 = deferred();
+  const firstRead = deferred();
   const view = mountSeenVotingMark(doc.body, strings, {
-    marks: { getMark: () => read1.promise, recordSeen: async () => ({ added: true, mark: { serial: 7 } }) },
+    marks: { getMark: () => firstRead.promise, recordSeen: async () => ({ added: true, mark: { serial: 7 } }) },
     wardId: WARD, entry: ENTRY, log: () => {},
   });
   assert.ok(classes(view.root).includes('panel'));
   assert.equal(view.status.textContent, strings.seen_mark_loading);
   assert.equal(tone(view.status), 'info');
-  read1.resolve(null);
+  firstRead.resolve(null);
   await view.ready;
   // Unmarked: the status line is empty and carries no tone.
   assert.equal(view.status.textContent, '');
@@ -357,10 +365,11 @@ test('home screen shows one state at a time: loading notice, button hidden until
   assert.match(html, /<p class="notice" data-tone="info" data-i18n="picker_loading">/);
   assert.match(html, /<button[^>]*class="btn-secondary status-retry"[^>]*data-i18n="roll_retry"[^>]*hidden/);
   assert.match(ruleFor('.picker:has(> .notice:only-child)'), /border:\s*0/);
+  assert.match(ruleFor('.status-retry'), /margin-top:\s*var\(--space-3\)/);
   assert.match(read('js/picker.js'), /getElementById\('primary-action'\)[\s\S]*action\.hidden = false/);
 });
 
-test('a failed offline set-up is an error notice with a retry that registers again', async () => {
+test('a failed offline set-up is an error notice with a retry that registers again, once per tap burst', async () => {
   const node = () => {
     const attrs = {};
     const listeners = {};
@@ -376,11 +385,11 @@ test('a failed offline set-up is an error notice with a retry that registers aga
   const retry = node();
   const window = node();
   let attempts = 0;
+  const second = deferred();
   const serviceWorker = {
-    register: async () => {
+    register: () => {
       attempts += 1;
-      if (attempts === 1) throw new Error('blocked');
-      return {};
+      return attempts === 1 ? Promise.reject(new Error('blocked')) : second.promise;
     },
     ready: Promise.resolve(),
   };
@@ -397,10 +406,14 @@ test('a failed offline set-up is an error notice with a retry that registers aga
   window.fire('load');
   await waitFor(() => status.textContent === strings.status_offline_failed);
   assert.equal(status.getAttribute('data-tone'), 'error');
-  assert.equal(retry.hidden, false);
+  await waitFor(() => retry.hidden === false);
 
+  // A double tap while the second attempt is in flight registers once.
+  retry.fire('click');
   retry.fire('click');
   assert.equal(retry.hidden, true);
+  assert.equal(attempts, 2);
+  second.resolve({});
   await waitFor(() => status.textContent === strings.status_offline_ready);
   assert.equal(status.getAttribute('data-tone'), 'success');
   assert.equal(attempts, 2);
