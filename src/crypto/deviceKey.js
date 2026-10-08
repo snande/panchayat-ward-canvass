@@ -3,6 +3,10 @@
 // It is a WebCrypto AES-GCM 256-bit key generated on the device with
 // extractable: false and kept in IndexedDB as a CryptoKey object, so its
 // bytes can never be read by script.
+//
+// Its users: the roll store, the contact store, the sync engine's outbox and
+// the seen-voting mark store (src/tally/seenVotingStore.js), whose marks are
+// encrypted at rest with this same key.
 
 import { KEYS_STORE, complete, readValue, request } from '../storage/deviceDb.js';
 
