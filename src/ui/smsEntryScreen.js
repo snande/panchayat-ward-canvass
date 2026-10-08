@@ -10,6 +10,11 @@
 // - A rejected message (not a tally SMS, damaged, or another team's) shows
 //   its Hindi reason; the pasted text stays so it can be checked and fixed.
 // - Without a teamTag the field and button are disabled and say why.
+// - With opts.saveSmsNumber, a field above the paste form holds the team's
+//   SMS number (issue #103), the number workers' tally SMS go to. Saving it
+//   hands it to saveSmsNumber (src/team/teamSmsNumber.js keeps it encrypted
+//   and shares it with the team); a value that is not a phone number is
+//   refused with a Hindi reason. It is disabled without a teamTag too.
 // - Nothing here touches the network.
 // All text comes from the tally.smsEntry* entries of src/strings.hi.json.
 
@@ -35,6 +40,12 @@ export const FALLBACK_TEXT = {
   'tally.smsEntryTeamMissing': 'इस फ़ोन पर टीम सेट नहीं है, इसलिए एसएमएस नहीं जोड़े जा सकते। अपने उम्मीदवार की टीम से पूछें।',
   'tally.smsEntryFailed': 'संदेश इस फ़ोन पर सहेजा नहीं जा सका। फिर से कोशिश करें।',
   'tally.smsEntryOutsideWard': 'इस संदेश के कुछ क्रमांक इस वार्ड की सूची में नहीं हैं, इसलिए वे नहीं गिने गए। देखें कि एसएमएस इसी वार्ड का है।',
+  'tally.smsEntryNumberLabel': 'टीम का एसएमएस नंबर',
+  'tally.smsEntryNumberHelp': 'कार्यकर्ता अपने निशान इसी नंबर पर एसएमएस से भेजते हैं। देश कोड के साथ लिखें, जैसे +91 98765 43210। यह नंबर सिर्फ़ आपकी टीम के फ़ोनों पर रहता है।',
+  'tally.smsEntryNumberSave': 'नंबर सहेजें',
+  'tally.smsEntryNumberSaved': 'नंबर सहेज लिया। इंटरनेट मिलते ही यह टीम के सभी फ़ोनों पर पहुँच जाएगा।',
+  'tally.smsEntryNumberInvalid': 'यह फ़ोन नंबर नहीं लगता। देश कोड के साथ पूरा नंबर लिखें, जैसे +91 98765 43210।',
+  'tally.smsEntryNumberFailed': 'नंबर इस फ़ोन पर सहेजा नहीं जा सका। फिर से कोशिश करें।',
 };
 
 // decodeTallySms reasons and the string that explains each one.
@@ -61,11 +72,17 @@ function figure(doc, className, caption) {
  *   teamTag: string,
  *   strings?: Record<string, string>,
  *   applyTallySms?: typeof applyTallySms,
+ *   smsNumber?: string,
+ *   saveSmsNumber?: (value: string) => Promise<string>,
  *   log?: Function,
  * }} opts strings is the parsed src/strings.hi.json; applyTallySms defaults to
- *   the device inbox (tests pass one over a fake IndexedDB)
+ *   the device inbox (tests pass one over a fake IndexedDB); smsNumber is the
+ *   team's SMS number as stored, and saveSmsNumber stores a new one (throwing
+ *   a TypeError for a value that is not a phone number) and resolves with it
  * @returns {{root, input, button, message, result, newValue, duplicateValue,
- *   submit: () => Promise<void>}}
+ *   numberInput, numberButton, numberMessage, submit: () => Promise<void>,
+ *   saveNumber: () => Promise<void>, showSmsNumber: (number: string) => void}}
+ *   the number* fields are null without saveSmsNumber
  */
 export function renderSmsEntryScreen(container, opts = {}) {
   const { strings } = opts;
@@ -79,6 +96,37 @@ export function renderSmsEntryScreen(container, opts = {}) {
   root.setAttribute('lang', 'hi');
   root.setAttribute('novalidate', '');
   root.appendChild(el(doc, 'h2', 'panel-title sms-entry-title', text('tally.smsEntryTitle')));
+
+  const saveSmsNumber = typeof opts.saveSmsNumber === 'function' ? opts.saveSmsNumber : null;
+  let numberInput = null;
+  let numberButton = null;
+  let numberMessage = null;
+  if (saveSmsNumber) {
+    const numberRow = el(doc, 'div', 'picker-field sms-entry-number');
+    const numberId = 'sms-entry-number';
+    const numberLabel = el(doc, 'label', 'picker-label', text('tally.smsEntryNumberLabel'));
+    numberLabel.setAttribute('for', numberId);
+    const numberHelp = el(doc, 'p', 'sms-entry-help', text('tally.smsEntryNumberHelp'));
+    numberHelp.setAttribute('id', `${numberId}-help`);
+    numberInput = el(doc, 'input', 'picker-select sms-entry-number-input');
+    numberInput.setAttribute('id', numberId);
+    numberInput.setAttribute('type', 'tel');
+    numberInput.setAttribute('inputmode', 'tel');
+    numberInput.setAttribute('autocomplete', 'off');
+    numberInput.setAttribute('aria-describedby', numberHelp.getAttribute('id'));
+    numberInput.value = typeof opts.smsNumber === 'string' ? opts.smsNumber : '';
+    numberButton = el(doc, 'button', 'btn-secondary sms-entry-number-save', text('tally.smsEntryNumberSave'));
+    // Not a submit button: the form's submit adds a pasted SMS.
+    numberButton.setAttribute('type', 'button');
+    numberMessage = el(doc, 'p', 'notice sms-entry-number-message');
+    numberMessage.setAttribute('aria-live', 'polite');
+    numberRow.appendChild(numberLabel);
+    numberRow.appendChild(numberInput);
+    numberRow.appendChild(numberHelp);
+    numberRow.appendChild(numberButton);
+    numberRow.appendChild(numberMessage);
+    root.appendChild(numberRow);
+  }
 
   const row = el(doc, 'div', 'picker-field');
   const id = 'sms-entry-input';
@@ -116,13 +164,62 @@ export function renderSmsEntryScreen(container, opts = {}) {
 
   container.replaceChildren(root);
 
-  const view = { root, input, button, message, result, newValue: added.value, duplicateValue: duplicates.value };
+  const view = {
+    root, input, button, message, result, newValue: added.value, duplicateValue: duplicates.value,
+    numberInput, numberButton, numberMessage,
+  };
+
+  // The number last stored, shown in the field unless it is being edited.
+  let shownNumber = numberInput ? numberInput.value : '';
+  function showSmsNumber(number) {
+    if (!numberInput || typeof number !== 'string') return;
+    if (numberInput.value === shownNumber) numberInput.value = number;
+    shownNumber = number;
+  }
 
   if (!teamTag) {
     input.setAttribute('disabled', '');
     button.setAttribute('disabled', '');
+    if (numberInput) {
+      numberInput.setAttribute('disabled', '');
+      numberButton.setAttribute('disabled', '');
+    }
     setNotice(message, text('tally.smsEntryTeamMissing'), 'error');
-    return { ...view, submit: async () => {} };
+    return { ...view, submit: async () => {}, saveNumber: async () => {}, showSmsNumber };
+  }
+
+  let savingNumber = false;
+  async function saveNumber() {
+    if (!saveSmsNumber || savingNumber) return;
+    savingNumber = true;
+    numberButton.setAttribute('disabled', '');
+    try {
+      const stored = await saveSmsNumber(numberInput.value);
+      shownNumber = stored;
+      numberInput.value = stored;
+      setNotice(numberMessage, text('tally.smsEntryNumberSaved'), 'success');
+    } catch (err) {
+      if (err instanceof TypeError) {
+        setNotice(numberMessage, text('tally.smsEntryNumberInvalid'), 'error');
+      } else {
+        log('team SMS number could not be saved', err);
+        setNotice(numberMessage, text('tally.smsEntryNumberFailed'), 'error');
+      }
+    } finally {
+      savingNumber = false;
+      numberButton.removeAttribute('disabled');
+    }
+  }
+
+  if (numberInput) {
+    numberButton.addEventListener('click', () => { saveNumber(); });
+    // Enter in the number field saves the number rather than submitting the
+    // paste form.
+    numberInput.addEventListener('keydown', (event) => {
+      if (!event || event.key !== 'Enter') return;
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      saveNumber();
+    });
   }
 
   const fail = (key) => {
@@ -174,5 +271,5 @@ export function renderSmsEntryScreen(container, opts = {}) {
     submit();
   });
 
-  return { ...view, submit };
+  return { ...view, submit, saveNumber, showSmsNumber };
 }

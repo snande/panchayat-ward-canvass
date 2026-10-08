@@ -16,10 +16,14 @@
 //   sync, on every teammate's phone. The ward's team count sits under the
 //   form and is read again whenever marks are added.
 //
-// settings() gives {teamSmsNumber, candidateId}: the team number from the
-// constituency config and the candidate code of the team this phone joined
-// ('' before it joins), whose teamTag (teamTagFor in src/tally/smsCodec.js)
-// both panels use. Nothing here touches the network.
+// settings() gives {teamSmsNumber, candidateId}: the team's SMS number as
+// this phone holds it (src/team/teamSmsNumber.js, '' until the coordinator
+// sets it) and the candidate code of the team this phone joined ('' before it
+// joins), whose teamTag (teamTagFor in src/tally/smsCodec.js) both panels use.
+// Until there is a number the send button is disabled and says so. With
+// opts.teamNumber ({save, onChange?}) the paste form also has a field for the
+// number: a number saved there, or one arriving from a teammate, goes to the
+// send button at once. Nothing here touches the network.
 
 import { teamTagFor } from '../tally/smsCodec.js';
 import * as defaultInbox from '../tally/smsInbox.js';
@@ -62,6 +66,7 @@ function countLine(doc, className, label) {
  *   marks: {listMarks: Function, recordSeen: Function, wardCount: Function, onMarksChanged?: Function},
  *   wardId: string,
  *   settings: () => Promise<{teamSmsNumber?: string, candidateId?: string}>,
+ *   teamNumber?: {save: (value: string) => Promise<string>, onChange?: (cb: (number: string) => void) => Function},
  *   workerId?: () => string | Promise<string>,
  *   inRoll?: (serial: number) => boolean,
  *   inbox?: {applyTallySms: Function},
@@ -171,11 +176,25 @@ export function mountSmsTally(container, strings, opts) {
     showSend(serials);
   }
 
-  function mountForms() {
+  function mountSend() {
     const config = { teamSmsNumber: settings.teamSmsNumber, teamTag: settings.teamTag, workerId: worker };
     view.send = renderSmsSendButton(sendHost, {
       getSerials: () => ownSerials, config, strings, location: opts.location, log,
     });
+  }
+
+  // A new team number (saved here or synced in) re-arms the send button.
+  function useNumber(number) {
+    if (!settings || typeof number !== 'string' || number === settings.teamSmsNumber) return;
+    settings.teamSmsNumber = number;
+    mountSend();
+    if (view.entry && typeof view.entry.showSmsNumber === 'function') view.entry.showSmsNumber(number);
+  }
+
+  const teamNumber = opts.teamNumber && typeof opts.teamNumber.save === 'function' ? opts.teamNumber : null;
+
+  function mountForms() {
+    mountSend();
     view.entry = renderSmsEntryScreen(entryHost, {
       teamTag: settings.teamTag,
       strings,
@@ -183,6 +202,14 @@ export function mountSmsTally(container, strings, opts) {
       applyTallySms: (pasted, { teamTag }) => applyTallySmsToMarks(pasted, {
         teamTag, wardId, inRoll: opts.inRoll, inbox, marks,
       }),
+      ...(teamNumber ? {
+        smsNumber: settings.teamSmsNumber,
+        saveSmsNumber: async (value) => {
+          const stored = await teamNumber.save(value);
+          useNumber(stored);
+          return stored;
+        },
+      } : {}),
     });
     view.entry.root.appendChild(ward.line);
   }
@@ -215,9 +242,21 @@ export function mountSmsTally(container, strings, opts) {
   // Marks added while this is open (a pasted SMS, a teammate's sync) update
   // both counts. A view that has left the page stops listening.
   let unsubscribe = null;
+  let unsubscribeNumber = null;
   function destroy() {
     if (unsubscribe) unsubscribe();
     unsubscribe = null;
+    if (unsubscribeNumber) unsubscribeNumber();
+    unsubscribeNumber = null;
+  }
+  if (teamNumber && typeof teamNumber.onChange === 'function') {
+    unsubscribeNumber = teamNumber.onChange((number) => {
+      if (root.parentNode !== container) {
+        destroy();
+        return;
+      }
+      useNumber(number);
+    });
   }
   if (typeof marks.onMarksChanged === 'function') {
     unsubscribe = marks.onMarksChanged(() => {
