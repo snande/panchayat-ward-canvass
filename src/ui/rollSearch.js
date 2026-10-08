@@ -24,7 +24,7 @@
 // arriving with a pull. Whatever is open in the contact host is replaced when
 // another view opens there, and its mark subscriptions end with it.
 //
-// With opts.sms ({settings, inbox?, location?}) as well, an SMS tally button
+// With opts.sms ({settings, teamNumber?, inbox?, location?}) as well, an SMS tally button
 // on top opens src/ui/smsTallyView.js in the same place: the worker's marks
 // in this ward go out by SMS, and a pasted tally SMS becomes marks of this
 // ward in opts.marks, for the serials that are in this ward's roll. That view
@@ -170,6 +170,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
       wardId: wardKey,
       workerId: opts.workerId,
       settings: opts.sms.settings,
+      teamNumber: opts.sms.teamNumber,
       inbox: opts.sms.inbox,
       location: opts.sms.location,
       inRoll: (serial) => rollSerials.has(String(serial)),

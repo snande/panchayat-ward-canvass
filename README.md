@@ -140,9 +140,15 @@ messages of the form `PT1 <teamTag> <workerId> <serials> <checksum>`:
 Chrome hands to the default SMS app. When there are more parts, it shows a
 "next part" button for each one. It makes no network request.
 
-The team number comes from an optional `teamSmsNumber` key in
-`config/constituency.json` (for example `"teamSmsNumber": "+91XXXXXXXXXX"`),
-which the operator provisions. Without that key the button is disabled and
+The team number is a per-team setting, and it is never part of
+`config/constituency.json`, which every visitor can read. The coordinator
+types it into the `टीम का एसएमएस नंबर` field on the SMS entry screen, in
+international form with the country code (a bare 10-digit mobile number gets
+`+91`). `src/team/teamSmsNumber.js` keeps it on the phone encrypted with the
+device key and queues it for the team as the sync record `team:smsNumber`,
+which the sync engine encrypts with the team key like contacts. Every
+teammate's phone picks it up on its next sync while online, and the last save
+on any phone wins. Until this phone holds a number, the button is disabled and
 shows `tally.smsNumberMissing`.
 
 ## SMS tally in the ward roll
@@ -162,6 +168,9 @@ The `बिना इंटरनेट: एसएमएस से गिनत�
   by SMS and by sync, counts once. Serials that are not in the ward's roll are
   not counted, and the form says so. The ward's team count sits under the
   form, and the turnout screen shows the same figure.
+
+Before polling day, the coordinator saves the team's SMS number in that form.
+Workers' phones need one sync while online to receive it.
 
 To check it: mark the same voter on two phones in airplane mode, send each
 phone's marks by SMS and paste both on the coordinator's phone (the count goes

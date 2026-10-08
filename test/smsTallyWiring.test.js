@@ -21,6 +21,7 @@ import { createSmsInbox } from '../src/tally/smsInbox.js';
 import { decodeTallySms, encodeTallySms, teamTagFor } from '../src/tally/smsCodec.js';
 import { applyTallySmsToMarks } from '../src/tally/smsMarks.js';
 import { createTurnoutStore } from '../src/tally/turnoutStore.js';
+import { createTeamSmsNumber } from '../src/team/teamSmsNumber.js';
 import { mountRollWithSearch } from '../src/ui/rollSearch.js';
 import { FALLBACK_TEXT, mountSmsTally } from '../src/ui/smsTallyView.js';
 import { FALLBACK_TEXT as ENTRY_FALLBACK } from '../src/ui/smsEntryScreen.js';
@@ -65,7 +66,7 @@ function server() {
     .filter(([k]) => k.startsWith(`c/${candidateId}/r/`))
     .map(([, v]) => JSON.parse(v))
     .filter((r) => r.id.startsWith('mark:'));
-  return { handle, markEntries };
+  return { handle, markEntries, kv: env.SYNC_KV };
 }
 
 function clock(start) {
@@ -88,6 +89,10 @@ const noContacts = {
 // A phone with the ward roll on screen. state.offline makes every request
 // throw like a phone in airplane mode; location is where the SMS app is sent.
 function phone(srv, name, start, settings = async () => ({ teamSmsNumber: NUMBER, candidateId: TEAM })) {
+  return phoneWith(srv, name, start, { settings });
+}
+
+function phoneWith(srv, name, start, { settings, teamNumber }) {
   const idb = createFakeIndexedDB();
   const state = { offline: false };
   const fetch = async (url, init = {}) => {
@@ -113,7 +118,7 @@ function phone(srv, name, start, settings = async () => ({ teamSmsNumber: NUMBER
     turnout: createTurnoutStore({ indexedDB: idb, crypto: webcrypto }),
     workerId: async () => name,
     viewportHeight: 1200,
-    sms: { settings, inbox, location },
+    sms: { settings, teamNumber, inbox, location },
   });
   return { idb, state, auth, engine, marks, inbox, location, view };
 }
@@ -220,6 +225,70 @@ test('one voter marked on two offline phones and sent by SMS counts once, before
   // The turnout screen's supporter count is the same de-duplicated figure.
   coordinator.view.turnoutButton.dispatchEvent({ type: 'click' });
   await waitFor(() => q(coordinator, 'form.turnout-screen').querySelectorAll('p.turnout-value')[1].textContent === '2');
+});
+
+// A phone whose SMS settings come from the real team SMS number store, synced
+// through its own engine, as js/picker.js wires them.
+function teamPhone(srv, name, start) {
+  let p;
+  const settings = async () => {
+    const auth = await p.auth.getAuth();
+    return { teamSmsNumber: await p.team.getTeamSmsNumber(), candidateId: auth ? auth.candidateId : '' };
+  };
+  const teamNumber = {
+    save: (value) => p.team.setTeamSmsNumber(value),
+    onChange: (cb) => p.team.onChange(cb),
+  };
+  p = phoneWith(srv, name, start, { settings, teamNumber });
+  p.team = createTeamSmsNumber({ indexedDB: p.idb, crypto: webcrypto, engine: p.engine, now: clock(start), log: () => {} });
+  p.team.listen();
+  return p;
+}
+
+test('the coordinator sets the team SMS number on the entry screen and it reaches a worker\'s send button by sync', async () => {
+  const srv = server();
+  const a = teamPhone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
+  const coordinator = teamPhone(srv, 'coord', '2026-10-07T10:00:01.000Z');
+  for (const p of [a, coordinator]) await p.auth.joinTeam(TEAM, PASS);
+  await markByTap(a, 3);
+  await markByTap(a, 5);
+
+  // No number yet: the worker's button is disabled and says so.
+  await openSms(a);
+  await waitFor(() => ownCount(a) === '2');
+  assert.ok(q(a, 'button.sms-send-button').hasAttribute('disabled'));
+  assert.equal(q(a, 'p.sms-send-message').textContent, strings['tally.smsNumberMissing']);
+
+  // The coordinator types the number into the SMS entry screen and saves it.
+  await openSms(coordinator);
+  const field = q(coordinator, 'input.sms-entry-number-input');
+  assert.equal(field.value, '');
+  type(field, '98000 00000');
+  q(coordinator, 'button.sms-entry-number-save').dispatchEvent({ type: 'click' });
+  await waitFor(() => q(coordinator, 'p.sms-entry-number-message').textContent === strings['tally.smsEntryNumberSaved']);
+  assert.equal(field.value, NUMBER);
+  assert.equal(await coordinator.team.getTeamSmsNumber(), NUMBER);
+  assert.ok(!q(coordinator, 'button.sms-send-button').hasAttribute('disabled'));
+
+  // Only ciphertext reaches the server.
+  const stored = [...srv.kv.map.values()].join('\n');
+  assert.doesNotMatch(stored, /9800000000/);
+
+  // One sync each, and the open view on the worker's phone is armed.
+  assert.equal((await coordinator.engine.syncNow()).status, 'ok');
+  assert.equal((await a.engine.syncNow()).status, 'ok');
+  await waitFor(() => !q(a, 'button.sms-send-button').hasAttribute('disabled'));
+  assert.equal(q(a, 'input.sms-entry-number-input').value, NUMBER);
+
+  // Mobile data off: the worker sends, the coordinator pastes it twice.
+  for (const p of [a, coordinator]) p.state.offline = true;
+  const message = sendBySms(a);
+  assert.ok(message.startsWith('PT1'), message);
+  await paste(coordinator, message);
+  await waitFor(() => wardCount(coordinator) === '2');
+  await paste(coordinator, message);
+  assert.equal(entryMessage(coordinator).textContent, strings['tally.smsEntryNothingNew']);
+  assert.equal(wardCount(coordinator), '2');
 });
 
 test('pasting the same SMS again changes nothing', async () => {

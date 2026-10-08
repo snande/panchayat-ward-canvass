@@ -245,3 +245,72 @@ test('the screen and its inbox are precached, so they open offline', () => {
     assert.ok(sw.includes(`"${file}"`), file);
   }
 });
+
+test('with saveSmsNumber a team number field shows the stored number and saves a new one', async () => {
+  const saved = [];
+  const saveSmsNumber = async (value) => {
+    if (!/\d{10}/.test(value.replace(/\D/g, ''))) throw new TypeError('not a phone number');
+    saved.push(value);
+    return '+919876543210';
+  };
+  const view = render({ smsNumber: '+919800000000', saveSmsNumber });
+  assert.equal(view.numberInput.value, '+919800000000');
+  assert.equal(view.numberInput.getAttribute('type'), 'tel');
+  assert.equal(view.numberButton.getAttribute('type'), 'button');
+  assert.equal(view.numberButton.textContent, strings['tally.smsEntryNumberSave']);
+  const label = view.root.querySelector('label.picker-label');
+  assert.equal(label.textContent, strings['tally.smsEntryNumberLabel']);
+  assert.equal(label.getAttribute('for'), view.numberInput.getAttribute('id'));
+
+  type(view.numberInput, 'call me');
+  await view.saveNumber();
+  assert.equal(view.numberMessage.textContent, strings['tally.smsEntryNumberInvalid']);
+  assert.equal(view.numberMessage.getAttribute('data-tone'), 'error');
+  assert.deepEqual(saved, []);
+
+  type(view.numberInput, '98765 43210');
+  view.numberButton.dispatchEvent({ type: 'click' });
+  await waitFor(() => view.numberMessage.textContent === strings['tally.smsEntryNumberSaved']);
+  assert.deepEqual(saved, ['98765 43210']);
+  assert.equal(view.numberInput.value, '+919876543210');
+  // Saving the number never adds a pasted SMS.
+  assert.equal(view.result.hidden, true);
+  assert.equal(view.message.textContent, '');
+});
+
+test('Enter in the number field saves the number instead of submitting the paste form', async () => {
+  let saves = 0;
+  const view = render({ smsNumber: '', saveSmsNumber: async () => { saves += 1; return '+919876543210'; } });
+  type(view.numberInput, '9876543210');
+  let prevented = false;
+  view.numberInput.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault() { prevented = true; } });
+  await waitFor(() => saves === 1);
+  assert.equal(prevented, true);
+  assert.equal(view.message.textContent, '');
+});
+
+test('a number that cannot be stored says so and is logged', async () => {
+  const view = render({ saveSmsNumber: async () => { throw new Error('db closed'); } });
+  type(view.numberInput, '9876543210');
+  await view.saveNumber();
+  assert.equal(view.numberMessage.textContent, strings['tally.smsEntryNumberFailed']);
+  assert.equal(view.logged.length, 1);
+});
+
+test('a number arriving from the team replaces the field unless it is being edited', () => {
+  const view = render({ smsNumber: '', saveSmsNumber: async (v) => v });
+  view.showSmsNumber('+919811111111');
+  assert.equal(view.numberInput.value, '+919811111111');
+  type(view.numberInput, '98');
+  view.showSmsNumber('+919822222222');
+  assert.equal(view.numberInput.value, '98');
+});
+
+test('without saveSmsNumber there is no number field, and without a team it is disabled', () => {
+  const plain = render();
+  assert.equal(plain.numberInput, null);
+  assert.equal(plain.root.querySelector('input.sms-entry-number-input'), null);
+  const noTeam = render({ teamTag: '', saveSmsNumber: async (v) => v });
+  assert.ok(noTeam.numberInput.hasAttribute('disabled'));
+  assert.ok(noTeam.numberButton.hasAttribute('disabled'));
+});

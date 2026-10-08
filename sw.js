@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v18";
+const CACHE_VERSION = "v19";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -52,6 +52,8 @@ const PRECACHE = [
   // SMS tally in the ward roll: pasted SMS become seen-voting marks.
   "src/tally/smsMarks.js",
   "src/ui/smsTallyView.js",
+  // The team's SMS number: an encrypted, synced team record.
+  "src/team/teamSmsNumber.js",
   // Seen-voting marks and the polling-day count beside the official turnout.
   "src/tally/seenVotingStore.js",
   "src/tally/turnoutStore.js",

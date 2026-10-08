@@ -5,6 +5,9 @@ import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
 import { startSync } from '../src/sync/syncEngine.js';
 import { createContactSync } from '../src/contacts/contactSync.js';
 import * as marks from '../src/tally/seenVotingStore.js';
+import {
+  getTeamSmsNumber, listenForTeamSmsNumber, onTeamSmsNumberChange, setTeamSmsNumber,
+} from '../src/team/teamSmsNumber.js';
 
 // Copies of src/strings.hi.json entries, used if the table itself failed to
 // load. repo-ci fails if they drift.
@@ -30,6 +33,10 @@ contacts.listen();
 // (src/tally/seenVotingStore.js), so the team count covers the whole team.
 marks.listenForTeamMarks();
 
+// So does the team's SMS number, set by the coordinator on the SMS entry
+// screen (src/team/teamSmsNumber.js).
+listenForTeamSmsNumber();
+
 // Who marks a voter as seen voting: this device's id in its team, once it
 // has joined one.
 function workerId() {
@@ -42,14 +49,16 @@ function workerId() {
     });
 }
 
-// The SMS tally (src/ui/smsTallyView.js) sends to the team number from
-// config/constituency.json and tags its messages with the joined team.
-var teamSmsNumber = '';
+// The SMS tally (src/ui/smsTallyView.js) sends to the team's SMS number, a
+// team record kept encrypted on the phone and synced (never part of the
+// public config/constituency.json), and tags its messages with the joined team.
 function smsSettings() {
-  return getAuth().then(function (auth) {
-    return { teamSmsNumber: teamSmsNumber, candidateId: auth ? auth.candidateId : '' };
+  return Promise.all([getAuth(), getTeamSmsNumber()]).then(function (read) {
+    var auth = read[0];
+    return { teamSmsNumber: read[1], candidateId: auth ? auth.candidateId : '' };
   });
 }
+var teamNumber = { save: setTeamSmsNumber, onChange: onTeamSmsNumberChange };
 
 function loadJson(url) {
   return fetch(url).then(function (r) {
@@ -89,7 +98,7 @@ function startRoll(strings) {
     // shows the ward's de-duplicated count beside the official turnout.
     // sms: with no mobile data, marks go out and come in by SMS and join the
     // same de-duplicated count.
-    listOptions: { contacts: contacts, marks: marks, workerId: workerId, sms: { settings: smsSettings } },
+    listOptions: { contacts: contacts, marks: marks, workerId: workerId, sms: { settings: smsSettings, teamNumber: teamNumber } },
   });
   roll.restore();
   return roll;
@@ -140,9 +149,6 @@ if (container) {
       return loadJson('config/constituency.json');
     })
     .then(function (config) {
-      if (config && typeof config.teamSmsNumber === 'string') {
-        teamSmsNumber = config.teamSmsNumber.trim();
-      }
       var picker = mountWardPicker(container, config, table, {
         onSelect: function (selection) {
           if (roll) {
