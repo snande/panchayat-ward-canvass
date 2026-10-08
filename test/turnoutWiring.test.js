@@ -117,7 +117,8 @@ function rowFor(p, serial) {
 
 const host = (p) => p.view.contactHost;
 const markButton = (p) => host(p).querySelector('button.seen-voting-mark');
-const markStatus = (p) => host(p).querySelector('p.seen-voting-status').textContent;
+const markBadge = (p) => host(p).querySelector('p.seen-voting-badge');
+const isMarked = (p) => Boolean(markBadge(p)) && !markBadge(p).hidden;
 
 // Tap the voter in the roll, then "seen voting" in the panel that opens.
 async function markByTap(p, serial) {
@@ -125,7 +126,7 @@ async function markByTap(p, serial) {
   await waitFor(() => markButton(p) && !markButton(p).hidden);
   markButton(p).dispatchEvent({ type: 'click' });
   await waitFor(() => host(p).querySelector('p.seen-voting-message').textContent === strings.seen_mark_saved);
-  assert.equal(markStatus(p), strings.seen_marked);
+  assert.equal(isMarked(p), true);
   assert.equal(markButton(p).hidden, true);
 }
 
@@ -189,7 +190,7 @@ test('one voter marked on two offline phones counts once beside the official tur
 
   // A voter a teammate marked shows as marked, with no button to mark again.
   rowFor(b, 5).dispatchEvent({ type: 'click' });
-  await waitFor(() => markStatus(b) === strings.seen_marked);
+  await waitFor(() => isMarked(b));
   assert.equal(markButton(b).hidden, true);
 });
 
@@ -207,7 +208,7 @@ test('a teammate\'s mark arriving while the panel is open replaces the button', 
   await waitFor(() => markButton(a) && !markButton(a).hidden);
   a.state.offline = false;
   await a.engine.syncNow();
-  await waitFor(() => markStatus(a) === strings.seen_marked);
+  await waitFor(() => isMarked(a));
   assert.equal(markButton(a).hidden, true);
 });
 
@@ -265,16 +266,14 @@ test('without a mark store the roll view has no turnout button and no seen-votin
 });
 
 // The control against a scripted mark store.
-function control({ getMark = async () => null, recordSeen, ...rest } = {}) {
+function control({ getMark = async () => null, markSeen, ...rest } = {}) {
   const doc = createDocument();
   const container = doc.createElement('div');
   const logged = [];
   const listeners = new Set();
   const marks = {
     getMark,
-    recordSeen: recordSeen || (async (wardId, serial, workerId) => ({
-      mark: { wardId, serial, workerId, markedAt: 't' }, added: true,
-    })),
+    markSeen: markSeen || (async (wardId, serial, workerId) => ({ wardId, serial, workerId, markedAt: 't' })),
     onMarksChanged: (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
     ...rest,
   };
@@ -286,17 +285,17 @@ function control({ getMark = async () => null, recordSeen, ...rest } = {}) {
 
 test('a voter marked by a teammate before the tap shows as marked, without the saved message', async () => {
   const existing = { wardId: WARD, serial: 4, workerId: 'someone-else', markedAt: 't0' };
-  const c = control({ recordSeen: async () => ({ mark: existing, added: false }) });
+  const c = control({ markSeen: async () => existing });
   await c.ready;
   assert.equal(c.button.hidden, false);
   c.button.dispatchEvent({ type: 'click' });
-  await waitFor(() => c.status.textContent === strings.seen_marked);
+  await waitFor(() => !c.badge.hidden);
   assert.equal(c.message.textContent, '');
   assert.equal(c.button.hidden, true);
 });
 
 test('a failed save shows the failure message and keeps the button', async () => {
-  const c = control({ recordSeen: async () => { throw new Error('disk full'); } });
+  const c = control({ markSeen: async () => { throw new Error('disk full'); } });
   await c.ready;
   c.button.dispatchEvent({ type: 'click' });
   await waitFor(() => c.message.textContent === strings.seen_mark_failed);
@@ -326,11 +325,11 @@ test('a slow initial read does not overwrite the state a later change set', asyn
   assert.equal(c.button.hidden, true);
   assert.equal(c.status.textContent, strings.seen_mark_loading);
   c.notify();
-  await waitFor(() => c.status.textContent === strings.seen_marked);
+  await waitFor(() => !c.badge.hidden);
   release();
   await c.ready;
   await settle();
-  assert.equal(c.status.textContent, strings.seen_marked);
+  assert.equal(c.badge.hidden, false);
   assert.equal(c.button.hidden, true);
 });
 
