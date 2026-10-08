@@ -212,7 +212,7 @@ class PwaShellTest(unittest.TestCase):
 
     def test_status_key_without_fallback_copy_is_caught(self):
         self.edit("js/app.js", lambda s: s.replace(
-            '  status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",\n', ""))
+            '  status_offline_failed: "ऑफ़लाइन सुविधा चालू नहीं हो सकी। इंटरनेट जाँचें और फिर से कोशिश करें।",\n', ""))
         self.assertError("setStatus key status_offline_failed has no Hindi fallback copy")
 
     def test_status_fallback_drift_is_caught(self):
@@ -225,7 +225,7 @@ class PwaShellTest(unittest.TestCase):
 
     def test_inline_english_text_is_caught(self):
         self.edit("index.html", lambda s: s.replace(
-            '<p id="status" class="status" aria-live="polite"></p>', "<p>Welcome</p>"))
+            '<p id="status" class="notice status" aria-live="polite"></p>', "<p>Welcome</p>"))
         self.assertError("inline text 'Welcome'")
 
     def test_english_aria_label_is_caught(self):

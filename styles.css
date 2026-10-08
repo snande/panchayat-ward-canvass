@@ -158,9 +158,25 @@ main {
 
 .status {
   margin: var(--space-4) 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  text-align: center;
+}
+
+/* Buttons set display, which would otherwise override [hidden]. */
+.btn-primary[hidden],
+.btn-secondary[hidden] {
+  display: none;
+}
+
+.status-retry {
+  margin-top: var(--space-3);
+}
+
+/* While the ward picker only holds its loading or failure notice, the notice
+   is the whole surface: no second card around it. */
+.picker:has(> .notice:only-child) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .picker {

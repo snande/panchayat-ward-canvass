@@ -53,7 +53,8 @@ function loadJson(url) {
 
 function showFailure(strings) {
   var p = document.createElement('p');
-  p.setAttribute('class', 'picker-message');
+  p.setAttribute('class', 'notice');
+  p.setAttribute('data-tone', 'error');
   p.setAttribute('role', 'alert');
   p.textContent = (strings && strings.picker_load_failed) || FALLBACK_STRINGS.picker_load_failed;
   container.replaceChildren(p);
@@ -136,6 +137,12 @@ if (container) {
         },
       });
       window.wardSelection = picker.wardSelection;
+      // The empty card's button points at the picker, so it shows only once
+      // the picker is there: one state at a time (DESIGN.md).
+      var action = document.getElementById('primary-action');
+      if (action) {
+        action.hidden = false;
+      }
     })
     .catch(function (err) {
       console.error('ward picker failed to load', err);

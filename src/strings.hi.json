@@ -7,7 +7,7 @@
   "primary_action": "वार्ड सूची लोड करें",
   "action_pending": "नीचे अपना वार्ड चुनें।",
   "status_offline_ready": "ऑफ़लाइन उपयोग के लिए तैयार।",
-  "status_offline_failed": "ऑफ़लाइन सुविधा चालू नहीं हो सकी।",
+  "status_offline_failed": "ऑफ़लाइन सुविधा चालू नहीं हो सकी। इंटरनेट जाँचें और फिर से कोशिश करें।",
   "offline_title": "ऑफ़लाइन",
   "offline_body": "इंटरनेट उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।",
   "picker_district": "ज़िला",
