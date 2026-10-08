@@ -7,6 +7,7 @@
 // user does not have to retype it.
 
 import { CANDIDATE_ID_PATTERN } from '../sync/teamAuth.js';
+import { setNotice } from './dom.js';
 
 const MESSAGE_FOR_CODE = {
   'invalid-code': 'team_join_bad_code',
@@ -58,7 +59,7 @@ export function mountTeamJoin(container, strings, opts) {
   const button = el(doc, 'button', 'btn-primary', text('team_join_action'));
   button.setAttribute('type', 'submit');
   form.appendChild(button);
-  const message = el(doc, 'p', 'picker-message');
+  const message = el(doc, 'p', 'notice');
   message.setAttribute('aria-live', 'polite');
   form.appendChild(message);
   container.replaceChildren(form);
@@ -70,27 +71,27 @@ export function mountTeamJoin(container, strings, opts) {
     const candidateId = String(candidate.input.value || '').trim();
     const secret = String(passphrase.input.value || '');
     if (!candidateId || !secret.trim()) {
-      message.textContent = text('team_join_invalid');
+      setNotice(message, text('team_join_invalid'), 'error');
       return;
     }
     // Caught here, before any work, with a message that says what a code
     // may contain; the typed passphrase stays in its field.
     if (!CANDIDATE_ID_PATTERN.test(candidateId)) {
-      message.textContent = text('team_join_bad_code');
+      setNotice(message, text('team_join_bad_code'), 'error');
       return;
     }
     busy = true;
     button.setAttribute('disabled', '');
-    message.textContent = text('team_join_pending');
+    setNotice(message, text('team_join_pending'));
     try {
       const auth = await opts.joinTeam(candidateId, secret);
       passphrase.input.value = '';
-      message.textContent = '';
+      setNotice(message, '');
       if (typeof opts.onJoined === 'function') opts.onJoined(auth);
     } catch (err) {
       const code = err && err.code;
       if (code === 'unauthorized') passphrase.input.value = '';
-      message.textContent = text(MESSAGE_FOR_CODE[code] || 'team_join_failed');
+      setNotice(message, text(MESSAGE_FOR_CODE[code] || 'team_join_failed'), 'error');
     } finally {
       busy = false;
       button.removeAttribute('disabled');

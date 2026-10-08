@@ -10,11 +10,12 @@
 // - Workers come from the device's roster (src/calls/workerRoster.js), plus
 //   anyone already assigned who is not on it.
 // Everything is read from and written to the device, so it works offline.
-// All text comes from the strings table.
+// All text comes from the strings table; the layout is the shared panel of
+// DESIGN.md.
 
 import { buildCallList } from '../calls/callList.js';
 import { renderCallList } from './callListScreen.js';
-import { el } from './dom.js';
+import { el, panelHeader, setNotice } from './dom.js';
 
 /**
  * @param {Element} container replaced with the screen
@@ -36,9 +37,12 @@ export function mountCallListFlow(container, strings, opts) {
   const log = opts.log || ((...args) => console.error(...args));
   const names = new Map(entries.map((entry) => [entry.serial, entry.name]));
 
-  const root = el(doc, 'section', 'contact-panel call-list-screen');
+  const root = el(doc, 'section', 'panel call-list-screen');
   root.setAttribute('lang', 'hi');
-  root.appendChild(el(doc, 'h2', 'contact-title', text('call_list_title')));
+  const { header, closeButton } = panelHeader(doc, {
+    title: text('call_list_title'), closeText: text('contact_close'), closeClass: 'call-list-close',
+  });
+  root.appendChild(header);
 
   // Add a worker by name; they then appear in every row's select.
   const form = el(doc, 'form', 'call-worker-form');
@@ -55,47 +59,44 @@ export function mountCallListFlow(container, strings, opts) {
   addButton.setAttribute('type', 'submit');
   form.appendChild(addButton);
 
-  const message = el(doc, 'p', 'picker-message contact-message');
+  const message = el(doc, 'p', 'notice contact-message');
   message.setAttribute('aria-live', 'polite');
   const retryButton = el(doc, 'button', 'btn-secondary call-list-retry', text('roll_retry'));
   retryButton.setAttribute('type', 'button');
   retryButton.hidden = true;
   const listHost = el(doc, 'div', 'call-list-host');
-  const closeButton = el(doc, 'button', 'btn-secondary call-list-close', text('contact_close'));
-  closeButton.setAttribute('type', 'button');
 
   root.appendChild(form);
   root.appendChild(message);
   root.appendChild(retryButton);
   root.appendChild(listHost);
-  root.appendChild(closeButton);
   container.replaceChildren(root);
 
   function onAssign(serial, worker) {
-    message.textContent = '';
+    setNotice(message, '');
     Promise.resolve()
       .then(() => assignments.assignVoter(serial, worker))
       .then(() => {
-        message.textContent = text('call_assigned');
+        setNotice(message, text('call_assigned'), 'success');
       }, (err) => {
         log('assignment could not be saved', err);
         // Show what is really stored.
         return reload().then(() => {
-          message.textContent = text('call_assign_failed');
+          setNotice(message, text('call_assign_failed'), 'error');
         });
       });
   }
 
   function show(rows, workers) {
     renderCallList(listHost, rows, { workers, onAssign, strings });
-    message.textContent = rows.length ? '' : text('call_list_empty');
+    setNotice(message, rows.length ? '' : text('call_list_empty'));
   }
 
   let generation = 0;
   function reload() {
     const mine = ++generation;
     retryButton.hidden = true;
-    message.textContent = text('call_list_loading');
+    setNotice(message, text('call_list_loading'));
     return Promise.resolve()
       .then(() => Promise.all([contacts.listConsented(wardId), assignments.loadAssignments(), roster.listWorkers()]))
       .then(([consented, assigned, listed]) => {
@@ -113,7 +114,7 @@ export function mountCallListFlow(container, strings, opts) {
         if (mine !== generation) return;
         log('call list could not be read', err);
         listHost.replaceChildren();
-        message.textContent = text('call_list_failed');
+        setNotice(message, text('call_list_failed'), 'error');
         retryButton.hidden = false;
       });
   }
@@ -131,11 +132,11 @@ export function mountCallListFlow(container, strings, opts) {
         nameInput.value = '';
         return reload().then(() => {
           // Keep the empty-list or failure message if one is showing.
-          if (!message.textContent) message.textContent = text('call_worker_added');
+          if (!message.textContent) setNotice(message, text('call_worker_added'), 'success');
         });
       }, (err) => {
         log('worker could not be added', err);
-        message.textContent = text('contact_failed');
+        setNotice(message, text('contact_failed'), 'error');
       })
       .finally(() => {
         adding = false;

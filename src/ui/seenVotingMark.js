@@ -13,7 +13,7 @@
 // shows and the button stays (marking is safe to repeat). All text comes from
 // the strings table.
 
-import { el } from './dom.js';
+import { el, setNotice } from './dom.js';
 
 /**
  * Append the control to container (its other content stays).
@@ -34,13 +34,13 @@ export function mountSeenVotingMark(container, strings, opts) {
   const workerId = typeof opts.workerId === 'function' ? opts.workerId : () => 'device';
   const log = opts.log || ((...args) => console.error(...args));
 
-  const root = el(doc, 'section', 'seen-voting');
+  const root = el(doc, 'section', 'panel seen-voting');
   root.setAttribute('lang', 'hi');
-  const status = el(doc, 'p', 'contact-body seen-voting-status');
+  const status = el(doc, 'p', 'notice seen-voting-status');
   status.setAttribute('aria-live', 'polite');
   const button = el(doc, 'button', 'btn-primary seen-voting-mark', text('seen_mark_action'));
   button.setAttribute('type', 'button');
-  const message = el(doc, 'p', 'picker-message seen-voting-message');
+  const message = el(doc, 'p', 'notice seen-voting-message');
   message.setAttribute('aria-live', 'polite');
   root.appendChild(status);
   root.appendChild(button);
@@ -51,9 +51,9 @@ export function mountSeenVotingMark(container, strings, opts) {
   // otherwise the mark.
   function showState(state) {
     button.hidden = state === undefined || Boolean(state);
-    if (state === undefined) status.textContent = text('seen_mark_loading');
-    else if (state === false) status.textContent = text('seen_mark_read_failed');
-    else status.textContent = state ? text('seen_marked') : '';
+    if (state === undefined) setNotice(status, text('seen_mark_loading'));
+    else if (state === false) setNotice(status, text('seen_mark_read_failed'), 'error');
+    else setNotice(status, state ? text('seen_marked') : '', 'success');
   }
 
   // Later reads win over slower earlier ones.
@@ -75,15 +75,15 @@ export function mountSeenVotingMark(container, strings, opts) {
     if (busy) return;
     busy = true;
     button.setAttribute('disabled', '');
-    message.textContent = '';
+    setNotice(message, '');
     try {
       const result = await marks.recordSeen(wardId, entry.serial, await workerId());
       readRequest += 1;
       showState(result.mark);
-      if (result.added) message.textContent = text('seen_mark_saved');
+      if (result.added) setNotice(message, text('seen_mark_saved'), 'success');
     } catch (err) {
       log('seen-voting mark could not be saved', err);
-      message.textContent = text('seen_mark_failed');
+      setNotice(message, text('seen_mark_failed'), 'error');
     } finally {
       busy = false;
       button.removeAttribute('disabled');

@@ -9,9 +9,11 @@
 // Saving a number, recording or revoking consent go through
 // src/contacts/contactSync.js, which writes the encrypted contact store on the
 // device and queues the change for the team, so every step works offline.
-// All text comes from the strings table.
+// All text comes from the strings table. The layout is the shared panel of
+// DESIGN.md: header with close, consent badge, phone field, one primary
+// action, a quiet destructive action and a toned notice line.
 
-import { el } from './dom.js';
+import { el, panelHeader, setNotice, voterMeta } from './dom.js';
 
 /**
  * @param {Element} container replaced with the panel
@@ -21,7 +23,7 @@ import { el } from './dom.js';
  *   wardId: string, entry: {serial: number, name: string},
  *   onClose?: () => void, log?: Function,
  * }} opts
- * @returns {{root, ready: Promise<void>, consentButton, phoneInput, saveButton, revokeButton,
+ * @returns {{root, ready: Promise<void>, badge, consentButton, phoneInput, saveButton, revokeButton,
  *   confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, message}}
  */
 export function mountContactPanel(container, strings, opts) {
@@ -30,10 +32,16 @@ export function mountContactPanel(container, strings, opts) {
   const { contacts, wardId, entry } = opts;
   const log = opts.log || ((...args) => console.error(...args));
 
-  const root = el(doc, 'section', 'contact-panel');
+  const root = el(doc, 'section', 'panel contact-panel');
   root.setAttribute('lang', 'hi');
-  root.appendChild(el(doc, 'h2', 'contact-title', `${entry.serial}. ${entry.name}`));
+  const { header, closeButton } = panelHeader(doc, {
+    title: `${entry.serial}. ${entry.name}`, titleClass: 'contact-title',
+    subtitle: voterMeta(entry, text), closeText: text('contact_close'), closeClass: 'contact-close',
+  });
+  root.appendChild(header);
 
+  const badge = el(doc, 'p', 'badge contact-consent-badge', text('contact_consent_on_record'));
+  badge.setAttribute('data-tone', 'success');
   const ask = el(doc, 'p', 'contact-body', text('contact_consent_ask'));
   const consentButton = el(doc, 'button', 'btn-primary contact-consent', text('contact_consent_action'));
   consentButton.setAttribute('type', 'button');
@@ -43,7 +51,7 @@ export function mountContactPanel(container, strings, opts) {
   const row = el(doc, 'div', 'picker-field');
   const label = el(doc, 'label', 'picker-label', text('contact_phone'));
   label.setAttribute('for', 'contact-phone');
-  const phoneInput = el(doc, 'input', 'picker-select');
+  const phoneInput = el(doc, 'input', 'picker-select field-phone');
   phoneInput.setAttribute('id', 'contact-phone');
   phoneInput.setAttribute('type', 'tel');
   phoneInput.setAttribute('inputmode', 'tel');
@@ -55,17 +63,18 @@ export function mountContactPanel(container, strings, opts) {
   const saveButton = el(doc, 'button', 'btn-primary contact-save', text('contact_save'));
   saveButton.setAttribute('type', 'submit');
   form.appendChild(saveButton);
-  const revokeButton = el(doc, 'button', 'btn-secondary contact-revoke', text('contact_revoke'));
+  const revokeButton = el(doc, 'button', 'btn-quiet-danger contact-revoke', text('contact_revoke'));
   revokeButton.setAttribute('type', 'button');
   form.appendChild(revokeButton);
 
   // The second step of revoking: nothing is deleted until "yes" is tapped.
-  const confirmBox = el(doc, 'div', 'contact-confirm');
+  const confirmBox = el(doc, 'div', 'alert contact-confirm');
+  confirmBox.setAttribute('data-tone', 'error');
   confirmBox.setAttribute('role', 'alertdialog');
   const confirmText = el(doc, 'p', 'contact-body', text('contact_revoke_confirm'));
   confirmText.setAttribute('id', 'contact-revoke-confirm');
   confirmBox.setAttribute('aria-describedby', 'contact-revoke-confirm');
-  const confirmRevokeButton = el(doc, 'button', 'btn-primary contact-revoke-yes', text('contact_revoke_yes'));
+  const confirmRevokeButton = el(doc, 'button', 'btn-danger contact-revoke-yes', text('contact_revoke_yes'));
   confirmRevokeButton.setAttribute('type', 'button');
   const cancelRevokeButton = el(doc, 'button', 'btn-secondary contact-revoke-no', text('contact_revoke_no'));
   cancelRevokeButton.setAttribute('type', 'button');
@@ -73,17 +82,15 @@ export function mountContactPanel(container, strings, opts) {
   confirmBox.appendChild(confirmRevokeButton);
   confirmBox.appendChild(cancelRevokeButton);
 
-  const message = el(doc, 'p', 'picker-message contact-message');
+  const message = el(doc, 'p', 'notice contact-message');
   message.setAttribute('aria-live', 'polite');
-  const closeButton = el(doc, 'button', 'btn-secondary contact-close', text('contact_close'));
-  closeButton.setAttribute('type', 'button');
 
+  root.appendChild(badge);
   root.appendChild(ask);
   root.appendChild(consentButton);
   root.appendChild(form);
   root.appendChild(confirmBox);
   root.appendChild(message);
-  root.appendChild(closeButton);
   container.replaceChildren(root);
 
   function focus(node) {
@@ -94,6 +101,7 @@ export function mountContactPanel(container, strings, opts) {
   // Consent on record shows the number form; null shows only the consent ask.
   function showState(contact) {
     const loading = contact === undefined;
+    badge.hidden = loading || !contact;
     ask.hidden = loading || Boolean(contact);
     consentButton.hidden = loading || Boolean(contact);
     form.hidden = loading || !contact;
@@ -105,15 +113,17 @@ export function mountContactPanel(container, strings, opts) {
   async function run(action, doneKey) {
     if (busy) return;
     busy = true;
-    message.textContent = '';
+    root.setAttribute('aria-busy', 'true');
+    setNotice(message, '');
     try {
       showState(await action());
-      message.textContent = text(doneKey);
+      setNotice(message, text(doneKey), 'success');
     } catch (err) {
       log('contact could not be saved', err);
-      message.textContent = text('contact_failed');
+      setNotice(message, text('contact_failed'), 'error');
     } finally {
       busy = false;
+      root.removeAttribute('aria-busy');
     }
   }
 
@@ -126,7 +136,8 @@ export function mountContactPanel(container, strings, opts) {
     const phone = String(phoneInput.value || '');
     // A number is checked here first so a typo keeps what was typed.
     if (!/^(\+91|0)?\d{10}$/.test(phone.replace(/ /g, ''))) {
-      message.textContent = text('contact_phone_invalid');
+      setNotice(message, text('contact_phone_invalid'), 'error');
+      focus(phoneInput);
       return;
     }
     run(() => contacts.saveNumber(wardId, entry.serial, phone), 'contact_saved');
@@ -134,7 +145,7 @@ export function mountContactPanel(container, strings, opts) {
 
   revokeButton.addEventListener('click', () => {
     if (busy) return;
-    message.textContent = '';
+    setNotice(message, '');
     form.hidden = true;
     confirmBox.hidden = false;
     focus(cancelRevokeButton);
@@ -159,19 +170,19 @@ export function mountContactPanel(container, strings, opts) {
   });
 
   showState(undefined);
-  message.textContent = text('contact_loading');
+  setNotice(message, text('contact_loading'));
   const ready = Promise.resolve()
     .then(() => contacts.getContact(wardId, entry.serial))
     .then((contact) => {
       showState(contact || null);
-      message.textContent = '';
+      setNotice(message, '');
     }, (err) => {
       log('contact could not be read', err);
-      message.textContent = text('contact_failed');
+      setNotice(message, text('contact_failed'), 'error');
     });
 
   return {
-    root, ready, consentButton, phoneInput, saveButton, revokeButton,
+    root, ready, badge, consentButton, phoneInput, saveButton, revokeButton,
     confirmBox, confirmRevokeButton, cancelRevokeButton, closeButton, message,
   };
 }

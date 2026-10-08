@@ -8,10 +8,11 @@
 // deletes the number), then calls revokeConsent, clears the number and locks
 // the field again. Everything goes through the contact store on the device,
 // so the card never touches the network. All text comes from the strings
-// table.
+// table. The layout is the shared panel of DESIGN.md, the same as the contact
+// panel (src/ui/contactPanel.js).
 
 import { normalisePhone } from '../contacts/contactStore.js';
-import { el } from './dom.js';
+import { el, panelHeader, setNotice, voterMeta } from './dom.js';
 
 /**
  * @param {Element} container replaced with the card
@@ -30,18 +31,17 @@ export function mountVoterCard(container, strings, opts) {
   const { contacts, wardId, entry } = opts;
   const log = opts.log || ((...args) => console.error(...args));
 
-  const root = el(doc, 'section', 'voter-card');
+  const root = el(doc, 'section', 'panel voter-card');
   root.setAttribute('lang', 'hi');
-  root.appendChild(el(doc, 'h2', 'voter-card-name', entry.name));
-  const meta = [];
-  if (entry.relative) meta.push(entry.relative);
-  if (entry.age != null) meta.push(`${text('roll_age')} ${entry.age}`);
-  if (entry.house) meta.push(`${text('roll_house')} ${entry.house}`);
-  root.appendChild(el(doc, 'p', 'voter-card-meta', meta.join(' · ')));
+  const { header, closeButton } = panelHeader(doc, {
+    title: entry.name, titleClass: 'voter-card-name',
+    subtitle: voterMeta(entry, text), closeText: text('contact_close'), closeClass: 'contact-close',
+  });
+  root.appendChild(header);
 
   // Inputs sit inside their labels, so no element ids are needed.
-  const consentRow = el(doc, 'label', 'voter-card-consent');
-  const consentInput = el(doc, 'input', 'voter-card-consent-input');
+  const consentRow = el(doc, 'label', 'choice voter-card-consent');
+  const consentInput = el(doc, 'input', 'choice-input voter-card-consent-input');
   consentInput.setAttribute('type', 'checkbox');
   consentInput.checked = false;
   consentRow.appendChild(consentInput);
@@ -51,7 +51,7 @@ export function mountVoterCard(container, strings, opts) {
   form.setAttribute('novalidate', '');
   const field = el(doc, 'label', 'picker-field');
   field.appendChild(el(doc, 'span', 'picker-label', text('contact_phone')));
-  const phoneInput = el(doc, 'input', 'picker-select voter-card-phone');
+  const phoneInput = el(doc, 'input', 'picker-select field-phone voter-card-phone');
   phoneInput.setAttribute('type', 'tel');
   phoneInput.setAttribute('inputmode', 'tel');
   phoneInput.setAttribute('autocomplete', 'off');
@@ -63,10 +63,11 @@ export function mountVoterCard(container, strings, opts) {
   form.appendChild(saveButton);
 
   // The second step of unmarking: nothing is deleted until "yes" is tapped.
-  const confirmBox = el(doc, 'div', 'contact-confirm');
+  const confirmBox = el(doc, 'div', 'alert contact-confirm');
+  confirmBox.setAttribute('data-tone', 'error');
   confirmBox.setAttribute('role', 'alertdialog');
   confirmBox.appendChild(el(doc, 'p', 'contact-body', text('contact_revoke_confirm')));
-  const confirmRevokeButton = el(doc, 'button', 'btn-primary contact-revoke-yes', text('contact_revoke_yes'));
+  const confirmRevokeButton = el(doc, 'button', 'btn-danger contact-revoke-yes', text('contact_revoke_yes'));
   confirmRevokeButton.setAttribute('type', 'button');
   const cancelRevokeButton = el(doc, 'button', 'btn-secondary contact-revoke-no', text('contact_revoke_no'));
   cancelRevokeButton.setAttribute('type', 'button');
@@ -74,20 +75,17 @@ export function mountVoterCard(container, strings, opts) {
   confirmBox.appendChild(cancelRevokeButton);
   confirmBox.hidden = true;
 
-  const message = el(doc, 'p', 'picker-message contact-message');
+  const message = el(doc, 'p', 'notice contact-message');
   message.setAttribute('aria-live', 'polite');
   const retryButton = el(doc, 'button', 'btn-secondary voter-card-retry', text('roll_retry'));
   retryButton.setAttribute('type', 'button');
   retryButton.hidden = true;
-  const closeButton = el(doc, 'button', 'btn-secondary contact-close', text('contact_close'));
-  closeButton.setAttribute('type', 'button');
 
   root.appendChild(consentRow);
   root.appendChild(form);
   root.appendChild(confirmBox);
   root.appendChild(message);
   root.appendChild(retryButton);
-  root.appendChild(closeButton);
   container.replaceChildren(root);
 
   function setLocked(locked) {
@@ -112,10 +110,11 @@ export function mountVoterCard(container, strings, opts) {
   async function run(action, doneKey) {
     if (busy) return;
     busy = true;
-    message.textContent = '';
+    root.setAttribute('aria-busy', 'true');
+    setNotice(message, '');
     try {
       showState(await action());
-      message.textContent = text(doneKey);
+      setNotice(message, text(doneKey), 'success');
     } catch (err) {
       log('contact could not be saved', err);
       // Put the card back to what is really stored.
@@ -127,9 +126,10 @@ export function mountVoterCard(container, strings, opts) {
         consentInput.setAttribute('disabled', '');
         retryButton.hidden = false;
       }
-      message.textContent = text('contact_failed');
+      setNotice(message, text('contact_failed'), 'error');
     } finally {
       busy = false;
+      root.removeAttribute('aria-busy');
     }
   }
 
@@ -144,7 +144,7 @@ export function mountVoterCard(container, strings, opts) {
     } else {
       // Keep the consent and the number until the explicit yes.
       consentInput.checked = true;
-      message.textContent = '';
+      setNotice(message, '');
       confirmBox.hidden = false;
     }
   });
@@ -166,7 +166,7 @@ export function mountVoterCard(container, strings, opts) {
     const phone = String(phoneInput.value || '');
     // The store's own rule, so a typo keeps what was typed and saves nothing.
     if (normalisePhone(phone) === null) {
-      message.textContent = text('contact_phone_invalid');
+      setNotice(message, text('contact_phone_invalid'), 'error');
       return;
     }
     run(() => contacts.saveNumber(wardId, entry.serial, phone), 'contact_saved');
@@ -181,16 +181,16 @@ export function mountVoterCard(container, strings, opts) {
   // consent box off, and offers a retry.
   function reload() {
     retryButton.hidden = true;
-    message.textContent = text('contact_loading');
+    setNotice(message, text('contact_loading'));
     return Promise.resolve()
       .then(() => contacts.getContact(wardId, entry.serial))
       .then((contact) => {
         showState(contact || null);
         consentInput.removeAttribute('disabled');
-        message.textContent = '';
+        setNotice(message, '');
       }, (err) => {
         log('contact could not be read', err);
-        message.textContent = text('contact_failed');
+        setNotice(message, text('contact_failed'), 'error');
         retryButton.hidden = false;
       });
   }
