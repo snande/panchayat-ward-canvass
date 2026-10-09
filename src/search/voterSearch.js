@@ -1,16 +1,7 @@
-// Voter search engine over a constituency's whole roll (every ward).
-//
-// A Hindi (Devanagari) or Latin query matches the name, relative, house,
-// serial and EPIC fields. Each result says which field matched and the
-// character ranges in that field's original text, so the UI can highlight
-// them. A query shaped like "3/145" jumps to ward 3, serial 145; a partial
-// shape such as "3/" is not a jump. Caller filters and sort orders are
-// applied on top of the match.
-//
-// Pure and offline: no DOM, no network and no storage access. The index is
-// built once per roll load and held in memory only, so it adds no stored
-// record. Tag, visit, phone-number and call lookups are supplied by the
-// caller; this module reads no store itself.
+// Voter search engine over every ward's roll: a Hindi or Latin query matches
+// name, relative, house, serial and EPIC, with the matched field and ranges
+// for highlighting; "3/145" jumps to ward 3, serial 145. Pure, in memory, no
+// store reads; lookups come from the caller.
 //
 // Matching works on a Latin "skeleton" of each field:
 //   - Devanagari is transliterated one character at a time, with the nukta
@@ -259,13 +250,7 @@ function addGrams(postings, kind, key, id) {
   }
 }
 
-/**
- * Build the in-memory index over roll entries
- * ({ ward, booth, serial, name, relative, age, gender, house, epic? }) from
- * all of the constituency's wards. Build it once per roll load and reuse it
- * for every keystroke. Entries are referenced, never copied or changed; a
- * missing or empty field (such as epic) is simply not indexed.
- */
+/** Build the index once per roll load; entries are referenced, never changed. */
 export function buildSearchIndex(entries) {
   const records = [];
   const byKey = new Map();
@@ -529,32 +514,12 @@ function toResult({ rec, field, ranges, tier }) {
 }
 
 /**
- * Search the index. Returns up to options.limit (default 50) results
- * { entry, key, field, ranges, tier, exact, jump }:
- *   - field names the field that matched (name, relative, house, serial or
- *     epic), and ranges lists the { start, end } character offsets of each
- *     match in that field's original text, for highlighting.
- *   - tier is -1 for a ward/serial jump, then 0 exact, 1 prefix, 2 word
- *     prefix and 3 substring.
- *
- * A "ward/serial" query (see parseWardSerial) puts that voter first as an
- * exact jump result, ahead of any other match and whatever the sort.
- *
- * options.filters narrows the results (a jump result included):
- *   - ward, booth and gender take a value or an array of values.
- *   - ageMin and ageMax are inclusive; entries without an age are dropped
- *     when either is set.
- *   - tag, visit and hasNumber take a lookup keyed by voterKey(entry)
- *     ("ward:serial"): a function (key, entry), a Map, a Set or a plain
- *     object. They keep voters the lookup reports a value for. The form
- *     { lookup, value } keeps voters whose value is, or includes, value.
- *   - notCalled takes the same kind of lookup reporting voters already
- *     called, and keeps only the voters it does not report.
- *
- * options.sort is 'relevance' (the default: exact, then prefix, then
- * substring, with name before other fields), 'serial' (ward then serial),
- * 'name' or 'age'. An empty query lists every entry that passes the filters,
- * in the sort order ('relevance' then means ward and serial order).
+ * Up to options.limit (50) results { entry, key, field, ranges, tier, exact,
+ * jump }; tier -1 is a ward/serial jump (always first), then 0 exact, 1
+ * prefix, 2 word prefix, 3 substring. options.filters: ward, booth, gender
+ * (value or list), ageMin/ageMax (inclusive), tag/visit/hasNumber (lookups
+ * keyed by voterKey, or { lookup, value }), notCalled (drops who it reports).
+ * options.sort: relevance, serial, name or age. An empty query lists all.
  */
 export function searchVoters(index, query, options = {}) {
   if (!index || !index.records) return [];

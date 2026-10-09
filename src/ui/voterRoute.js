@@ -1,20 +1,8 @@
 // The voter route (issue #139): `#/voter/<ward>/<serial>` shows one voter's
-// card, the same card wherever the voter is opened from. js/app.js starts it;
-// it is the only caller of renderVoterCard() (src/card/voterCard.js), and the
-// only voter card in the app.
-//
-// The route names a ward of the loaded panchayat, the one this phone holds a
-// roll for: the ward key of the last stored roll ("district/samiti/panchayat/
-// ward", src/roll/rollStore.js) with the route's ward swapped in. A ward of
-// another panchayat is not looked up; it reads as not stored (the empty
-// state). Entries come from the encrypted store on the phone, so the route
-// works offline with no network request, and it writes nothing.
-//
-// One `state` at a time (DESIGN.md): loading (progress bar, info notice),
-// empty (not stored, or a malformed voter address: go back to search, call
-// the coordinator), error (read or decryption failed: what to do, whom to
-// call, retry) or card. Every state has a back button and the seat line; the
-// seat header and SEC footer sit outside #app and stay.
+// card, the only voter card in the app, from the encrypted store (offline,
+// read-only). The ward is looked up in the panchayat of the last stored ward
+// key. One `state` at a time (DESIGN.md): loading, empty, error or card, each
+// with a back button and the seat line.
 
 import { el, textFrom } from './dom.js';
 import { renderVoterCard } from '../card/voterCard.js';
@@ -23,7 +11,7 @@ import { loadSeat, seatLabel } from './seatHeader.js';
 
 export const VOTER_ROUTE_STATES = Object.freeze(['loading', 'empty', 'error', 'card']);
 
-// Copies of src/strings.hi.json entries, for when no table is passed.
+// Copies of src/strings.hi.json entries.
 export const FALLBACK_TEXT = {
   voter_route_loading: 'मतदाता की जानकारी खोली जा रही है…',
   voter_route_empty: 'यह मतदाता इस फ़ोन पर लोड सूची में नहीं है। खोज पर वापस जाएँ और वार्ड व क्रम संख्या जाँचें।',
@@ -47,10 +35,7 @@ export function isVoterHash(hash) {
   return String(hash || '').startsWith(PREFIX);
 }
 
-/**
- * Parse a location hash: "#/voter/3/145" gives { ward: '3', serial: 145 }.
- * Anything else (another route, a missing or non-numeric serial) gives null.
- */
+/** "#/voter/3/145" gives { ward: '3', serial: 145 }; anything else null. */
 export function parseVoterRoute(hash) {
   const m = ROUTE.exec(String(hash || ''));
   if (!m) return null;
@@ -69,10 +54,7 @@ export function voterRouteHash(ward, serial) {
   return `${PREFIX}${encodeURIComponent(wardPart(String(ward).trim()))}/${Number(serial)}`;
 }
 
-/**
- * The ward key of `ward` in the panchayat of the last stored ward key, or null
- * when no roll is stored.
- */
+/** The ward key of `ward` in lastKey's panchayat, or null. */
 export function resolveWardKey(lastKey, ward) {
   if (typeof lastKey !== 'string') return null;
   const parts = lastKey.split('/');
@@ -87,11 +69,7 @@ export function findEntry(entries, serial) {
   return entries.find((entry) => entry && Number(entry.serial) === serial) || null;
 }
 
-/**
- * Read one voter from the store: { entry, lastKey } with entry null when the
- * ward or serial is not stored. A failed read or decryption rejects.
- * @param {{loadStored: Function, lastWardKey: Function}} store
- */
+/** { entry, lastKey }, entry null when not stored; a failed read rejects. */
 export async function lookupVoter(store, route) {
   const lastKey = await store.lastWardKey();
   const wardKey = resolveWardKey(lastKey, route.ward);
@@ -99,15 +77,7 @@ export async function lookupVoter(store, route) {
   return { entry: findEntry(await store.loadStored(wardKey), route.serial), lastKey };
 }
 
-/**
- * The voter screen, rendered into container.
- * @param {Element} container the #voter-route section
- * @param {Record<string,string>|null} strings the Hindi string table
- * @param {{store?: {loadStored, lastWardKey}, seat?: () => object|null,
- *   onBack?: () => void, support?: string, log?: Function}} [opts]
- * @returns {{state: string|null, root: Element, open: (route: {ward: string, serial: number}|null) => Promise<string>,
- *   setSupport: (text: string) => void}}
- */
+/** The voter screen. opts: store, seat, onBack, support, log. */
 export function createVoterRouteScreen(container, strings, opts = {}) {
   const doc = container.ownerDocument;
   const text = textFrom(strings, FALLBACK_TEXT);
@@ -146,12 +116,8 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
     return el(doc, 'p', 'voter-route-contact', support || text(key));
   }
 
-  // The seat header's own line (seatLabel), "पंचायत: बडली · वार्ड: 3", for the
-  // loaded panchayat and the route's ward; blank for a malformed address.
-  // The stored seat names the panchayat only when it is the seat of the roll
-  // the lookup searched (the last stored ward key), so the line never names
-  // another panchayat; otherwise, and until that key is read, it names the
-  // ward alone.
+  // The seat line (seatLabel) names the panchayat only when the stored seat
+  // is the searched roll's; otherwise the ward alone.
   function seatLine(route, lastKey) {
     if (!route) return '';
     let panchayat = '';
@@ -222,11 +188,7 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
     return state;
   }
 
-  /**
-   * Show the voter `route` names (null: a malformed voter address, shown as
-   * empty): loading, then card, empty or error. Resolves to the final state;
-   * a call overtaken by a newer one resolves to the newer one's.
-   */
+  /** Show `route` (null: empty). Resolves to the newest call's final state. */
   function open(route) {
     const token = ++current;
     latest = run(route, token);
@@ -248,23 +210,9 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
 }
 
 /**
- * Follow the location hash: while it is a voter address, show the screen in
- * container and mark opts.main (#app) with data-route="voter" so styles.css
- * hides the other screens; any other hash hides it again and leaves the other
- * screens as they were. The first sync reads the hash as it is when this
- * starts, so an app opened at (or moved to) a voter address before the module
- * loaded still opens it.
- *
- * Back goes to the screen the voter was opened from with history.back(), but
- * only when this app moved to the voter address (a hashchange from another
- * screen of the app). Opened straight at a voter address, the previous
- * history entry may be another site, so back drops the hash in place
- * (history.replaceState) and the app's own screens show.
- * @param {Element} container the #voter-route section
- * @param {Record<string,string>|null} strings
- * @param {{window: Window, main?: Element, store?: object, seat?: Function, log?: Function}} opts
- * @returns {{screen: object, sync: () => Promise<string|null>, settled: Promise<string|null>}}
- *   settled resolves to the state the latest hash ended in (null off the route)
+ * Follow the hash: on a voter address show the screen and set
+ * data-route="voter" on opts.main. Back uses history.back() only when the app
+ * itself moved to the address; else it drops the hash with replaceState.
  */
 export function startVoterRoute(container, strings, opts) {
   const win = opts.window;

@@ -1472,10 +1472,24 @@ select.picker-select,
   text-decoration: underline;
 }
 
-/* Voter route (src/ui/voterRoute.js): one voter's card at #/voter/<ward>/<serial>.
-   While it shows, #app has data-route="voter" and the other screens step
-   aside; the seat header and SEC footer stay. The back button sits on top,
-   then the panchayat and ward line, then one state (DESIGN.md). */
+.search-households,
+.search-household {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.search-households[hidden],
+.search-households:empty {
+  display: none;
+}
+
+.search-household-ward {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+/* Voter route (src/ui/voterRoute.js): the other screens step aside. */
 #app[data-route="voter"] > :not(#voter-route) {
   display: none;
 }
@@ -1518,8 +1532,7 @@ select.picker-select,
   gap: var(--space-3);
 }
 
-/* Household card (src/households/householdCard.js): rows reuse the search
-   row lines; badges sit inline. */
+/* Household card (src/households/householdCard.js) */
 .household-card {
   color: var(--color-text);
 }

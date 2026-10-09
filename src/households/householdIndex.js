@@ -1,17 +1,7 @@
-// Household index: a ward's roll entries grouped by normalised house number.
-//
-// Pure and offline: no DOM, no network and no storage access. The index is
-// built in memory from the entries src/roll/rollStore.js keeps
-// ({serial, name, relative, age, gender, house}), so it adds no stored record.
-//
-// House numbers are compared after normaliseHouse(): Devanagari digits become
-// ASCII, surrounding whitespace is trimmed, whitespace around "/" and "-" is
-// removed and Latin letters are lowercased. Any other difference keeps two
-// houses separate ("12 A" and "12A" are different houses).
-//
-// Entries whose house is empty, whitespace-only or missing are EXCLUDED from
-// the index: they belong to no household and are never merged with each
-// other.
+// Household index: a ward's roll entries grouped by normaliseHouse() key
+// (Devanagari digits to ASCII, trimmed, no space around "/" or "-",
+// lowercase; "12 A" and "12A" stay apart). Entries with no house are left
+// out. Pure, in memory, no stored record.
 
 import { toAsciiDigits } from '../search/voterSearch.js';
 
@@ -33,14 +23,7 @@ function bySerial(a, b) {
 }
 
 /**
- * Group a ward's entries into households.
- *
- * @param {object[]} entries {serial, name, relative, age, gender, house}
- * @param {*} ward the ward the entries belong to, carried on each household
- * @returns {Map<string, {ward: *, key: string, house: string, members: object[]}>}
- *   keyed by normalised house number; `house` is the first spelling seen and
- *   `members` are the original entries in ascending serial order. Entries
- *   with an empty or missing house are left out.
+ * Map of key -> {ward, key, house (first spelling), members (by serial)}.
  */
 export function buildHouseholdIndex(entries, ward) {
   if (!Array.isArray(entries)) throw new TypeError('entries must be an array');
