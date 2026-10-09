@@ -145,7 +145,10 @@ test('parseWardSerial', () => {
   assert.deepEqual(parseWardSerial('3/145'), { ward: 3, serial: 145 });
   assert.deepEqual(parseWardSerial(' 3 / 145 '), { ward: 3, serial: 145 });
   assert.deepEqual(parseWardSerial('३/१४५'), { ward: 3, serial: 145 });
-  for (const bad of ['3/', 'abc', '145', '/145', '3/145/2', '', null, undefined]) {
+  assert.equal(parseWardSerial('3/'), null);
+  assert.equal(parseWardSerial('abc'), null);
+  assert.equal(parseWardSerial('145'), null);
+  for (const bad of ['/145', '3/145/2', '3/abc', '', null, undefined]) {
     assert.equal(parseWardSerial(bad), null, String(bad));
   }
 });
@@ -163,6 +166,8 @@ test('a ward/serial query puts the matching entry first as an exact jump', () =>
   assert.equal(searchVoters(index, ' 3 / 145 ', { sort: 'age' })[0].entry.name, 'अभिषेक यादव');
   assert.equal(searchVoters(buildSearchIndex([{ ...ROLL[4], ward: '03', serial: '145' }]), '3/145')[0].jump, true);
   assert.ok(searchVoters(index, '9/999').every((r) => !r.jump));
+  // A half-typed "3/" is not a jump and never throws.
+  assert.ok(searchVoters(index, '3/').every((r) => !r.jump));
 });
 
 test('voterKey normalises ward and serial', () => {
@@ -175,7 +180,7 @@ test('filters: ward, booth, gender and age', () => {
   const all = (filters) => names(searchVoters(index, '', { filters, sort: 'serial' }));
   assert.deepEqual(all({ ward: 2 }), ['रमेश चंद्र', 'कमला']);
   assert.deepEqual(all({ ward: '2' }), ['रमेश चंद्र', 'कमला']);
-  assert.deepEqual(all({ ward: [1, 3] }).length, 4);
+  assert.equal(all({ ward: [1, 3] }).length, 4);
   assert.deepEqual(all({ booth: 3 }), ['अभिषेक यादव', 'पूजा']);
   assert.deepEqual(all({ gender: 'f' }), ['सीता देवी', 'कमला', 'पूजा']);
   assert.deepEqual(all({ ageMin: 30, ageMax: 45 }), ['रमेश', 'सीता देवी']);
@@ -263,7 +268,7 @@ test('10,000 entries: build once, each query is synchronous and fast', () => {
   const buildMs = performance.now() - t0;
   assert.ok(buildMs < 5000, `build took ${buildMs}ms`);
 
-  for (const q of ['r', 'ra', 'ram', 'ramesh', 'रमे', 'sita devi', '145', 'abc000', '7/145']) {
+  for (const q of ['r', 'ra', 'ram', 'ramesh', 'रमे', 'sita devi', '145', 'abc000', '7/145', '3/']) {
     const start = performance.now();
     const res = searchVoters(index, q, { filters: { ageMin: 20 } });
     const ms = performance.now() - start;

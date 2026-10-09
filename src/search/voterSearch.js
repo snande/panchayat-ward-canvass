@@ -3,8 +3,9 @@
 // A Hindi (Devanagari) or Latin query matches the name, relative, house,
 // serial and EPIC fields. Each result says which field matched and the
 // character ranges in that field's original text, so the UI can highlight
-// them. A query shaped like "3/145" jumps to ward 3, serial 145. Caller
-// filters and sort orders are applied on top of the match.
+// them. A query shaped like "3/145" jumps to ward 3, serial 145; a partial
+// shape such as "3/" is not a jump. Caller filters and sort orders are
+// applied on top of the match.
 //
 // Pure and offline: no DOM, no network and no storage access. The index is
 // built once per roll load and held in memory only, so it adds no stored
@@ -171,7 +172,7 @@ function fold(tokens) {
 
   // Long vowels spelt double (ee -> i, oo -> u); "h" after a stop or
   // sibilant (bh -> b, sh -> s).
-  let res = [];
+  const res = [];
   for (const t of out) {
     const prev = res[res.length - 1];
     if (prev && prev.c === t.c && (t.c === 'e' || t.c === 'o')) {
@@ -298,8 +299,8 @@ export function buildSearchIndex(entries) {
 
 /**
  * Parse a "ward/serial" jump query: "3/145" and " 3 / 145 " give
- * { ward: 3, serial: 145 }. Anything else ("3/", "abc", "145") gives null.
- * Devanagari digits are accepted too.
+ * { ward: 3, serial: 145 }. Anything else gives null: "3/" (no serial yet),
+ * "abc" and a bare "145". Devanagari digits are accepted too.
  */
 export function parseWardSerial(query) {
   if (query == null) return null;
