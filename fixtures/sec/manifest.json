@@ -1,0 +1,1301 @@
+{
+ "generated_at": "2026-10-09T12:20:58+00:00",
+ "source_page": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
+ "notes": [
+  "Ward roll PDFs of the State Election Commission of Rajasthan's 2026 panchayat roll (PRI tier), stored byte for byte as served.",
+  "search_columns and search_ward_rows are the grid the roll page's Search listed for the panchayat. Each PDF column's link was clicked for ward 1 only (pdf_columns.*.ward_1_link_resolved_to); the other wards were fetched from url_template by number, from 001 upward, and first_missing_ward is the first number that answered a redirect instead of a PDF.",
+  "File names: <PANCHAYAT>-ward-<NNN>.pdf is the Final PDF column; a -supp-<n> suffix marks the 'Final With Supp-<n> PDF' column."
+ ],
+ "total_files": 77,
+ "total_bytes": 24744894,
+ "panchayats": [
+  {
+   "district": {
+    "id": "7",
+    "name": "BHILWARA"
+   },
+   "samiti": {
+    "id": "60",
+    "name": "MANDAL PANCHAYAT SAMITI"
+   },
+   "panchayat": {
+    "id": "2610",
+    "name": "Almas"
+   },
+   "search_columns": [
+    "Grampanchayat",
+    "Ward No.",
+    "Final PDF",
+    "Final With Supp-2 PDF"
+   ],
+   "search_ward_rows": [
+    [
+     "आलमास",
+     "1",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "2",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "3",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "4",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "5",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "6",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "7",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "8",
+     "",
+     ""
+    ],
+    [
+     "आलमास",
+     "9",
+     "",
+     ""
+    ]
+   ],
+   "pdf_columns": {
+    "Final PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 10,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:17:51+00:00"
+     },
+     "ward_count": 9
+    },
+    "Final With Supp-2 PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 10,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:18:07+00:00"
+     },
+     "ward_count": 9
+    }
+   },
+   "files": [
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-001.pdf",
+     "column": "Final PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-001.pdf",
+     "bytes": 207394,
+     "sha256": "71655d089facc096e7c0de332b8a7cb525c06bbbfda7fdf667be1d8a5a8b08ee",
+     "fetched_at": "2026-10-09T12:17:37+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:00 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-002.pdf",
+     "column": "Final PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-002.pdf",
+     "bytes": 211303,
+     "sha256": "e27d707e0bd2a3d28419cab404d5b0176e3d42b63b2a49413f9de2afcfe1b4f5",
+     "fetched_at": "2026-10-09T12:17:37+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:01 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-003.pdf",
+     "column": "Final PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-003.pdf",
+     "bytes": 194752,
+     "sha256": "f6f823f6237f078dec0a11ed3e749c7f8175ce968d04148f57e9056f79cc3391",
+     "fetched_at": "2026-10-09T12:17:39+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:01 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-004.pdf",
+     "column": "Final PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-004.pdf",
+     "bytes": 184139,
+     "sha256": "4a991778fb8c2385f3b91f306d3718b55f408201bb2b3be21793f9bb43a53e4d",
+     "fetched_at": "2026-10-09T12:17:41+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:01 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-005.pdf",
+     "column": "Final PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-005.pdf",
+     "bytes": 221265,
+     "sha256": "eca7e01130923bd13364573b7a0b1c7bfcda8c333e690d73aa933fbd4ad2efe4",
+     "fetched_at": "2026-10-09T12:17:43+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:01 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-006.pdf",
+     "column": "Final PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-006.pdf",
+     "bytes": 218857,
+     "sha256": "8312c95b62488746d9589546236b663c9a9ddc1226fdc5c1176240f6247e560f",
+     "fetched_at": "2026-10-09T12:17:44+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:02 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-007.pdf",
+     "column": "Final PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-007.pdf",
+     "bytes": 200158,
+     "sha256": "beccdc983f48cfd0b85f3f70ad52ffc91192795c889d131d24640538a9f2d8f2",
+     "fetched_at": "2026-10-09T12:17:46+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:02 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-008.pdf",
+     "column": "Final PDF",
+     "ward": 8,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-008.pdf",
+     "bytes": 200535,
+     "sha256": "205205c2714e99d3ef6a1f19e326d011efe30070b85a78c3aa72bc2219c1e3dd",
+     "fetched_at": "2026-10-09T12:17:48+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:02 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-009.pdf",
+     "column": "Final PDF",
+     "ward": 9,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/60/ALMAS-Ward%20No-009.pdf",
+     "bytes": 195533,
+     "sha256": "31d43af5393fddec62424fd6378d109a083e81bfb16db65c90d10eeb00e2a56e",
+     "fetched_at": "2026-10-09T12:17:49+00:00",
+     "last_modified": "Tue, 24 Feb 2026 05:23:02 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-001-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-001.pdf",
+     "bytes": 284953,
+     "sha256": "dfbce6b2e8784fc7ecdeebbdc5c75864b4e58281d11e41e7aa8d55941873762f",
+     "fetched_at": "2026-10-09T12:17:52+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:15:52 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-002-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-002.pdf",
+     "bytes": 285984,
+     "sha256": "c4cc31fbe7f7eaa6e48ef09409d8e3be3ee5e61e07f092a45960e6b158c603ff",
+     "fetched_at": "2026-10-09T12:17:54+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:15:54 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-003-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-003.pdf",
+     "bytes": 270067,
+     "sha256": "7f402901ba037fa991e2f695be6790f11d96d42fa31d19c9ab53d8a88d1a075f",
+     "fetched_at": "2026-10-09T12:17:55+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:15:55 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-004-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-004.pdf",
+     "bytes": 262956,
+     "sha256": "023f13eb015886376bff67da7162006d9917254d4791409912dc010473b205d2",
+     "fetched_at": "2026-10-09T12:17:57+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:15:57 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-005-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-005.pdf",
+     "bytes": 302958,
+     "sha256": "2d74ecf67726bbdb97d20fd221363d125c07f42741538c477c421998c2b138db",
+     "fetched_at": "2026-10-09T12:17:59+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:15:58 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-006-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-006.pdf",
+     "bytes": 301451,
+     "sha256": "bb929236c97a1f8fe1d922c70e9f7de26981c485d66455e84de3ff922bb8c158",
+     "fetched_at": "2026-10-09T12:18:00+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:15:59 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-007-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-007.pdf",
+     "bytes": 278556,
+     "sha256": "c89df2a893e5c47e9c894152921b010f42bf19ebb6d3d0aeadcd139ae87760e6",
+     "fetched_at": "2026-10-09T12:18:02+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:16:01 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-008-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 8,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-008.pdf",
+     "bytes": 279289,
+     "sha256": "8f3e1fad2b8c27ab4a1ad4e5b95313036c062e5f5b73a8cd4e7787ff6746378d",
+     "fetched_at": "2026-10-09T12:18:03+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:16:02 GMT"
+    },
+    {
+     "path": "fixtures/sec/bhilwara/ALMAS-ward-009-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 9,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-009.pdf",
+     "bytes": 271879,
+     "sha256": "d32a2e26144628984870a8a78a33568366ad92700ac6bae1f21cc780524cf330",
+     "fetched_at": "2026-10-09T12:18:06+00:00",
+     "last_modified": "Thu, 08 Oct 2026 11:16:03 GMT"
+    }
+   ],
+   "ward_count": 9,
+   "bytes": 4372029
+  },
+  {
+   "district": {
+    "id": "33",
+    "name": "UDAIPUR"
+   },
+   "samiti": {
+    "id": "240",
+    "name": "GIRWA PANCHAYAT SAMITI"
+   },
+   "panchayat": {
+    "id": "11913",
+    "name": "Amarpura"
+   },
+   "search_columns": [
+    "Grampanchayat",
+    "Ward No.",
+    "Final PDF",
+    "Final With Supp-2 PDF"
+   ],
+   "search_ward_rows": [
+    [
+     "अमरपुरा",
+     "1",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "2",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "3",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "4",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "5",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "6",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "7",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "8",
+     "",
+     ""
+    ],
+    [
+     "अमरपुरा",
+     "9",
+     "",
+     ""
+    ]
+   ],
+   "pdf_columns": {
+    "Final PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 10,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:19:12+00:00"
+     },
+     "ward_count": 9
+    },
+    "Final With Supp-2 PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 10,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:19:29+00:00"
+     },
+     "ward_count": 9
+    }
+   },
+   "files": [
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-001.pdf",
+     "column": "Final PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-001.pdf",
+     "bytes": 359479,
+     "sha256": "5b4e8c3f7af7e8b4564d54dd9c1b564fbf068bba8fefb653f6c54ce0008a5e64",
+     "fetched_at": "2026-10-09T12:18:58+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:13 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-002.pdf",
+     "column": "Final PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-002.pdf",
+     "bytes": 329014,
+     "sha256": "81680ff52e90569357d6dcd6cfa7367bd8b3c5da02d99cf21e8e48f46fa5a766",
+     "fetched_at": "2026-10-09T12:18:59+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:13 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-003.pdf",
+     "column": "Final PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-003.pdf",
+     "bytes": 338101,
+     "sha256": "30f5ef224d518f49a6275974441ccc9e0b49b684a50153b12523acbd5aca8db1",
+     "fetched_at": "2026-10-09T12:19:00+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:14 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-004.pdf",
+     "column": "Final PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-004.pdf",
+     "bytes": 314638,
+     "sha256": "75d9c55138c846866e262fe36897db067ee16abf675c43f2b57f95f295f5fead",
+     "fetched_at": "2026-10-09T12:19:02+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:14 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-005.pdf",
+     "column": "Final PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-005.pdf",
+     "bytes": 310160,
+     "sha256": "d9873bf203c63dfceb793ae2880bdab6fa1aeae34903a17c51fc358d0a35bba5",
+     "fetched_at": "2026-10-09T12:19:03+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:14 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-006.pdf",
+     "column": "Final PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-006.pdf",
+     "bytes": 310141,
+     "sha256": "a168021560a4d42d3f0b5fbd06894ebc5c62d2b6bef6950a0f57a336d2762395",
+     "fetched_at": "2026-10-09T12:19:05+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:15 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-007.pdf",
+     "column": "Final PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-007.pdf",
+     "bytes": 314451,
+     "sha256": "5b5d7a6a63ef8359df11e98a4f77470c37fc40b4bc09cbc0a1e4ae84b8e02dba",
+     "fetched_at": "2026-10-09T12:19:06+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:15 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-008.pdf",
+     "column": "Final PDF",
+     "ward": 8,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-008.pdf",
+     "bytes": 298172,
+     "sha256": "4b8cba632c1accc341215f83436d9425d464a7f1e3d1f435e5ba7fd653f989ed",
+     "fetched_at": "2026-10-09T12:19:08+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:15 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-009.pdf",
+     "column": "Final PDF",
+     "ward": 9,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-009.pdf",
+     "bytes": 304163,
+     "sha256": "0b3380dcdef59f3bd488de7f884bbc584cea311681fba7e3f65ef0010ab84cdc",
+     "fetched_at": "2026-10-09T12:19:10+00:00",
+     "last_modified": "Tue, 24 Feb 2026 06:37:15 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-001-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-001.pdf",
+     "bytes": 439801,
+     "sha256": "f5c7fe716421390f0e418cdfecceefc6ca1feb2f33fe972ec63f4ae69edb4762",
+     "fetched_at": "2026-10-09T12:19:14+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:11 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-002-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-002.pdf",
+     "bytes": 406154,
+     "sha256": "8d6cfb28a983713c666330958099d81ccd540c7a3b612c44e4195fbf1800a7c5",
+     "fetched_at": "2026-10-09T12:19:15+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:11 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-003-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-003.pdf",
+     "bytes": 400310,
+     "sha256": "ea71f459d07c21fddb7941355311f0e7bbb27efc66d89fc1c5ccb5c824472f34",
+     "fetched_at": "2026-10-09T12:19:16+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:11 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-004-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-004.pdf",
+     "bytes": 390575,
+     "sha256": "a989faf0af60838ef760ad6ec05305ebb58451ef0dec32ff2bcc06571f5a0e1a",
+     "fetched_at": "2026-10-09T12:19:18+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:12 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-005-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-005.pdf",
+     "bytes": 372272,
+     "sha256": "6130a0d0abce2bee49352e268d36591bf36fb74d260f6ef01aeb4fe50219421c",
+     "fetched_at": "2026-10-09T12:19:21+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:12 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-006-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-006.pdf",
+     "bytes": 371919,
+     "sha256": "ae8a1eb6fae4bb21aa7c614bd1e0c2d18e585e080989936e4d16c7b26d0a7796",
+     "fetched_at": "2026-10-09T12:19:22+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:12 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-007-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-007.pdf",
+     "bytes": 376520,
+     "sha256": "e309f2e9d4f37446c29c24ceb9f722b7ade3b6809f8751c20069ffbbda09b86a",
+     "fetched_at": "2026-10-09T12:19:24+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:13 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-008-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 8,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-008.pdf",
+     "bytes": 360443,
+     "sha256": "1e46bb55ae60c1240c05f55e58bc68d14149bf644008319fd8b4b5d51af8b31f",
+     "fetched_at": "2026-10-09T12:19:26+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:13 GMT"
+    },
+    {
+     "path": "fixtures/sec/udaipur/AMARPURA-ward-009-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 9,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-009.pdf",
+     "bytes": 379651,
+     "sha256": "89988a86afd4e254b0ad72e194d0a05b9c0bc7a71fde0379e10829d686367b63",
+     "fetched_at": "2026-10-09T12:19:27+00:00",
+     "last_modified": "Wed, 07 Oct 2026 09:14:13 GMT"
+    }
+   ],
+   "ward_count": 9,
+   "bytes": 6375964
+  },
+  {
+   "district": {
+    "id": "22",
+    "name": "JODHPUR"
+   },
+   "samiti": {
+    "id": "168",
+    "name": "OSIAN PANCHAYAT SAMITI"
+   },
+   "panchayat": {
+    "id": "8425",
+    "name": "Ashapura"
+   },
+   "search_columns": [
+    "Grampanchayat",
+    "Ward No.",
+    "Final PDF",
+    "Final With Supp-2 PDF"
+   ],
+   "search_ward_rows": [
+    [
+     "आशापुरा",
+     "1",
+     "",
+     ""
+    ],
+    [
+     "आशापुरा",
+     "2",
+     "",
+     ""
+    ],
+    [
+     "आशापुरा",
+     "3",
+     "",
+     ""
+    ],
+    [
+     "आशापुरा",
+     "4",
+     "",
+     ""
+    ],
+    [
+     "आशापुरा",
+     "5",
+     "",
+     ""
+    ],
+    [
+     "आशापुरा",
+     "6",
+     "",
+     ""
+    ],
+    [
+     "आशापुरा",
+     "7",
+     "",
+     ""
+    ]
+   ],
+   "pdf_columns": {
+    "Final PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 8,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:19:46+00:00"
+     },
+     "ward_count": 7
+    },
+    "Final With Supp-2 PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 8,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:19:58+00:00"
+     },
+     "ward_count": 7
+    }
+   },
+   "files": [
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-001.pdf",
+     "column": "Final PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-001.pdf",
+     "bytes": 334810,
+     "sha256": "ff9518673291e94533a4e7430ebd82ea03972bd05274dc88c7c9289efd852984",
+     "fetched_at": "2026-10-09T12:19:35+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:28:26 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-002.pdf",
+     "column": "Final PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-002.pdf",
+     "bytes": 336156,
+     "sha256": "0362386f5d883dec5a51e54f89a95a014a2f0d8c056f6d451d0a7f1cf8c3ed78",
+     "fetched_at": "2026-10-09T12:19:35+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:28:27 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-003.pdf",
+     "column": "Final PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-003.pdf",
+     "bytes": 325156,
+     "sha256": "2695f7dda249cad25043c17daf6c6360d86081d04f3849d95158456e20a57b13",
+     "fetched_at": "2026-10-09T12:19:37+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:28:28 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-004.pdf",
+     "column": "Final PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-004.pdf",
+     "bytes": 317248,
+     "sha256": "9c1f30db451fbd335d51b3ce90d6bec72139aa2ea31d64613e04279d5e28c9d6",
+     "fetched_at": "2026-10-09T12:19:38+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:28:28 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-005.pdf",
+     "column": "Final PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-005.pdf",
+     "bytes": 316806,
+     "sha256": "a4ad7bc8282606b65bd17f9cbe04e2107bc9eda477ed1b50cba97ec58e1c2434",
+     "fetched_at": "2026-10-09T12:19:40+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:28:29 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-006.pdf",
+     "column": "Final PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-006.pdf",
+     "bytes": 308629,
+     "sha256": "292b42478721c8aa90b38546f0bd872f672c724fd1bfc0b76f60356d9d853876",
+     "fetched_at": "2026-10-09T12:19:43+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:28:30 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-007.pdf",
+     "column": "Final PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/168/ASHAPURA-Ward%20No-007.pdf",
+     "bytes": 327348,
+     "sha256": "4f7ce92a55636effa42f72e1526999215e013e2281f7781039e5422fb1370dcc",
+     "fetched_at": "2026-10-09T12:19:45+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:28:31 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-001-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-001.pdf",
+     "bytes": 415052,
+     "sha256": "5bd5a7304135e31b2f0af0dad9ee1cabc7cf1935caecfe08263d2462f7f59f88",
+     "fetched_at": "2026-10-09T12:19:48+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:49:36 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-002-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-002.pdf",
+     "bytes": 414778,
+     "sha256": "55ee87a4a548b2b9874ad225b26de94035f0ade7c974c6354edb78dcab5f97e7",
+     "fetched_at": "2026-10-09T12:19:49+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:49:36 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-003-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-003.pdf",
+     "bytes": 403574,
+     "sha256": "cfd9d18915c4c620efc518b702ef685331ee18d868a212490e80bda11f2bd3fe",
+     "fetched_at": "2026-10-09T12:19:51+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:49:37 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-004-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-004.pdf",
+     "bytes": 392800,
+     "sha256": "6b1c51e1997e4dba6c9689e65a12d6a95a0fec42f98daab2a047368e12c124cb",
+     "fetched_at": "2026-10-09T12:19:52+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:49:37 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-005-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-005.pdf",
+     "bytes": 395105,
+     "sha256": "743422f2fe46d1253c529aad4d6bf48fe634214460c696de500503404fccb42c",
+     "fetched_at": "2026-10-09T12:19:54+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:49:37 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-006-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-006.pdf",
+     "bytes": 370743,
+     "sha256": "dd375502af40c6a00f3951850d6bff5e4860284e95bcf4bf19cd6ee274e17f2d",
+     "fetched_at": "2026-10-09T12:19:55+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:49:37 GMT"
+    },
+    {
+     "path": "fixtures/sec/jodhpur/ASHAPURA-ward-007-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/168/ASHAPURA-Ward%20No-007.pdf",
+     "bytes": 410492,
+     "sha256": "c13e97efe82a48384d5bd486dc6854aebc650d129defdc6168b3e0d01c5abbe7",
+     "fetched_at": "2026-10-09T12:19:57+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:49:38 GMT"
+    }
+   ],
+   "ward_count": 7,
+   "bytes": 5068697
+  },
+  {
+   "district": {
+    "id": "8",
+    "name": "BIKANER"
+   },
+   "samiti": {
+    "id": "69",
+    "name": "KOLAYAT PANCHAYAT SAMITI"
+   },
+   "panchayat": {
+    "id": "3044",
+    "name": "BHOLASAR"
+   },
+   "search_columns": [
+    "Grampanchayat",
+    "Ward No.",
+    "Final PDF",
+    "Final With Supp-2 PDF"
+   ],
+   "search_ward_rows": [
+    [
+     "भोलासर",
+     "1",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "2",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "3",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "4",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "5",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "6",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "7",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "8",
+     "",
+     ""
+    ],
+    [
+     "भोलासर",
+     "9",
+     "",
+     ""
+    ]
+   ],
+   "pdf_columns": {
+    "Final PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 10,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:20:18+00:00"
+     },
+     "ward_count": 9
+    },
+    "Final With Supp-2 PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 10,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:20:34+00:00"
+     },
+     "ward_count": 9
+    }
+   },
+   "files": [
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-001.pdf",
+     "column": "Final PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-001.pdf",
+     "bytes": 328417,
+     "sha256": "56c8df2a0c9014bd876ad33e789e5611e7e7edc0470caffef2c676749d03f6e1",
+     "fetched_at": "2026-10-09T12:20:05+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:30 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-002.pdf",
+     "column": "Final PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-002.pdf",
+     "bytes": 294487,
+     "sha256": "5b9eb8c4d74c792a89757094f94e129f688bf93db469f4163dbc299bef358f44",
+     "fetched_at": "2026-10-09T12:20:06+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:31 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-003.pdf",
+     "column": "Final PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-003.pdf",
+     "bytes": 299135,
+     "sha256": "3e869707b975f8324410ade8667266abf5c541ec7e8b1210670fe7fc7767bb0b",
+     "fetched_at": "2026-10-09T12:20:07+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:31 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-004.pdf",
+     "column": "Final PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-004.pdf",
+     "bytes": 294842,
+     "sha256": "df61ff035b408da203936575f48ebd73e4f8e576be6667d53c782b86b3ba636f",
+     "fetched_at": "2026-10-09T12:20:09+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:31 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-005.pdf",
+     "column": "Final PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-005.pdf",
+     "bytes": 290775,
+     "sha256": "9ed1240d6bc7809fbeac50e262c17d7981f96d417e54675104f625e551af5fdb",
+     "fetched_at": "2026-10-09T12:20:10+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:31 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-006.pdf",
+     "column": "Final PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-006.pdf",
+     "bytes": 310483,
+     "sha256": "d49e04307ed9feeb09c4d2e666db882a725d291e20a9ad35d855bd46c82dc636",
+     "fetched_at": "2026-10-09T12:20:12+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:31 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-007.pdf",
+     "column": "Final PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-007.pdf",
+     "bytes": 312716,
+     "sha256": "449b63e8d29a4bbc8462310c704aa798767c3e8f8ff2019f863e4edbc86a3790",
+     "fetched_at": "2026-10-09T12:20:13+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:32 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-008.pdf",
+     "column": "Final PDF",
+     "ward": 8,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-008.pdf",
+     "bytes": 305641,
+     "sha256": "57108053d7a68b3ff05ce448df0c901a0385e1457cabfc1b151303ac317dddff",
+     "fetched_at": "2026-10-09T12:20:15+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:32 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-009.pdf",
+     "column": "Final PDF",
+     "ward": 9,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/69/BHOLASAR-Ward%20No-009.pdf",
+     "bytes": 304520,
+     "sha256": "57e1086a732b34c569c82f2ea5ec62d4ad07cbbf5304e6e5f7ae5cc5736044bb",
+     "fetched_at": "2026-10-09T12:20:17+00:00",
+     "last_modified": "Tue, 24 Feb 2026 09:33:32 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-001-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-001.pdf",
+     "bytes": 399893,
+     "sha256": "d6766c98feee533e94143be480938a6a88a4ea6b1e9034e6f4cb623e08ffcd52",
+     "fetched_at": "2026-10-09T12:20:20+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:48 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-002-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-002.pdf",
+     "bytes": 364317,
+     "sha256": "b9947192046a8630a505f3b3f49c8f1c7c6a613d92b5430753bbcca8eca2b7a8",
+     "fetched_at": "2026-10-09T12:20:21+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:49 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-003-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-003.pdf",
+     "bytes": 354609,
+     "sha256": "0d714605a7dd65481d16132ccad4055b077f11a79fe09833deec25d87be2994d",
+     "fetched_at": "2026-10-09T12:20:22+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:50 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-004-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-004.pdf",
+     "bytes": 364247,
+     "sha256": "baead2cef151b5e6043ce9300cdbc001a2ed637c4f2aa0edd33fddb1552cb991",
+     "fetched_at": "2026-10-09T12:20:24+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:52 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-005-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-005.pdf",
+     "bytes": 345616,
+     "sha256": "48c9a2f0647bc2e8223b79ee9589ba2da496d9049ad92e89e770fced4ccc1fb4",
+     "fetched_at": "2026-10-09T12:20:25+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:53 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-006-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-006.pdf",
+     "bytes": 366214,
+     "sha256": "46b0af8841fef45261756ffdc52624617f4e5a9eca06f9d7e55d373d6ce5fd0e",
+     "fetched_at": "2026-10-09T12:20:27+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:55 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-007-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-007.pdf",
+     "bytes": 383449,
+     "sha256": "30b5f9a8cc0619d15297ef7b521e545aa3899cbb894f946aedbbc0d66594a1ee",
+     "fetched_at": "2026-10-09T12:20:29+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:56 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-008-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 8,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-008.pdf",
+     "bytes": 375791,
+     "sha256": "b4de8052893db51fbb05ec1a6de4da943ddeea2c13bb4dcb773ec451a939fd99",
+     "fetched_at": "2026-10-09T12:20:31+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:58 GMT"
+    },
+    {
+     "path": "fixtures/sec/bikaner/BHOLASAR-ward-009-supp-2.pdf",
+     "column": "Final With Supp-2 PDF",
+     "ward": 9,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/69/BHOLASAR-Ward%20No-009.pdf",
+     "bytes": 374168,
+     "sha256": "47da3fc0c497903bdaffc4bc1f5c2be4f7d84c44404d23790641b7aa4f522055",
+     "fetched_at": "2026-10-09T12:20:32+00:00",
+     "last_modified": "Thu, 08 Oct 2026 05:25:59 GMT"
+    }
+   ],
+   "ward_count": 9,
+   "bytes": 6069320
+  },
+  {
+   "district": {
+    "id": "6",
+    "name": "BHARATPUR"
+   },
+   "samiti": {
+    "id": "50",
+    "name": "NADBAI PANCHAYAT SAMITI"
+   },
+   "panchayat": {
+    "id": "2240",
+    "name": "arauda"
+   },
+   "search_columns": [
+    "Grampanchayat",
+    "Ward No.",
+    "Final PDF",
+    "Final With Supp-2 PDF"
+   ],
+   "search_ward_rows": [
+    [
+     "अरौदा",
+     "1",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "2",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "3",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "4",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "5",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "6",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "7",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "8",
+     "",
+     ""
+    ],
+    [
+     "अरौदा",
+     "9",
+     "",
+     ""
+    ]
+   ],
+   "pdf_columns": {
+    "Final PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 10,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:20:56+00:00"
+     },
+     "ward_count": 9
+    },
+    "Final With Supp-2 PDF": {
+     "ward_1_link_resolved_to": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/50/ARAUDA-Ward%20No-001.pdf",
+     "resolved_by": "url in page",
+     "url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/50/ARAUDA-Ward%20No-{NNN}.pdf",
+     "first_missing_ward": {
+      "ward": 1,
+      "status": 302,
+      "location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx",
+      "fetched_at": "2026-10-09T12:20:58+00:00"
+     },
+     "ward_count": 0
+    }
+   },
+   "files": [
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-001.pdf",
+     "column": "Final PDF",
+     "ward": 1,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-001.pdf",
+     "bytes": 314321,
+     "sha256": "8fda4b667969da47558f1a1bf2321253e2e3b1e052201d70b1f544fcb8531a2b",
+     "fetched_at": "2026-10-09T12:20:42+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:52 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-002.pdf",
+     "column": "Final PDF",
+     "ward": 2,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-002.pdf",
+     "bytes": 325740,
+     "sha256": "4700095e2c566f18b740370e68e24723f8b052e54c8fb1234e64b50f7e11565c",
+     "fetched_at": "2026-10-09T12:20:43+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:52 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-003.pdf",
+     "column": "Final PDF",
+     "ward": 3,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-003.pdf",
+     "bytes": 326639,
+     "sha256": "03a0793d5d484189bc66f92cc8a6ae3fbf3b196b6a6a61ddd82568aeb47261ee",
+     "fetched_at": "2026-10-09T12:20:44+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:52 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-004.pdf",
+     "column": "Final PDF",
+     "ward": 4,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-004.pdf",
+     "bytes": 316842,
+     "sha256": "241ed5f2593e9ab409ad27837e5ef2c45178e7013a2a138223819da35412d5a0",
+     "fetched_at": "2026-10-09T12:20:46+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:52 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-005.pdf",
+     "column": "Final PDF",
+     "ward": 5,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-005.pdf",
+     "bytes": 326757,
+     "sha256": "aa48c4f9ae44c02cb331c8c1fba49b4ab0f82dc99cb508dd2f86b8b16387ce31",
+     "fetched_at": "2026-10-09T12:20:48+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:53 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-006.pdf",
+     "column": "Final PDF",
+     "ward": 6,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-006.pdf",
+     "bytes": 309767,
+     "sha256": "5ede77a43e25fc29eecf81063e446a8b47728146d135179a86e89b2ed923f93c",
+     "fetched_at": "2026-10-09T12:20:49+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:53 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-007.pdf",
+     "column": "Final PDF",
+     "ward": 7,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-007.pdf",
+     "bytes": 311743,
+     "sha256": "b1246b887f887db4e226f88df81c94fc1146ade8ee51fbfebef22fa131e4ec64",
+     "fetched_at": "2026-10-09T12:20:51+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:53 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-008.pdf",
+     "column": "Final PDF",
+     "ward": 8,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-008.pdf",
+     "bytes": 319028,
+     "sha256": "3305e96f9b1d4995f22420288751eb3783bc9fd31110bfde9981bc453f61627e",
+     "fetched_at": "2026-10-09T12:20:53+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:53 GMT"
+    },
+    {
+     "path": "fixtures/sec/bharatpur/ARAUDA-ward-009.pdf",
+     "column": "Final PDF",
+     "ward": 9,
+     "url": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/50/ARAUDA-Ward%20No-009.pdf",
+     "bytes": 308047,
+     "sha256": "2b8ae81a30c6b9d88645d02499a066cb0225eadad9f25ca1acb2e94158f93482",
+     "fetched_at": "2026-10-09T12:20:54+00:00",
+     "last_modified": "Wed, 25 Feb 2026 08:06:53 GMT"
+    }
+   ],
+   "ward_count": 9,
+   "bytes": 2858884
+  }
+ ]
+}
