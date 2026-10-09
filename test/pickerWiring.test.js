@@ -35,7 +35,9 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false, c
   const seat = doc.createElement('div');
   seat.setAttribute('data-state', 'pending');
   const nav = doc.createElement('nav');
-  const byId = { 'ward-picker': picker, roll, 'seat-header': seat, 'nav-bar': nav };
+  const search = doc.createElement('section');
+  search.setAttribute('hidden', '');
+  const byId = { 'ward-picker': picker, roll, 'seat-header': seat, 'nav-bar': nav, 'voter-search': search };
   if (syncEnv) byId['team-join'] = team;
   const fakeDocument = {
     getElementById: (id) => byId[id] || null,
@@ -74,7 +76,7 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false, c
   const navItem = (id) => nav.querySelectorAll('button.nav-item').find((b) => b.getAttribute('data-screen') === id);
   const currentNav = () => nav.querySelectorAll('button.nav-item')
     .filter((b) => b.getAttribute('aria-current') === 'page').map((b) => b.getAttribute('data-screen'));
-  return { picker, roll, empty, team, seat, nav, navItem, currentNav, restore };
+  return { picker, roll, empty, team, seat, nav, search, navItem, currentNav, restore };
 }
 
 function choose(select, value) {
@@ -191,7 +193,7 @@ test('the nav bar opens the polling-day count and the SMS tally over a loaded ro
   try {
     await import('../js/picker.js?wiring=5');
     await waitFor(() => page.picker.querySelector('select') !== null);
-    assert.equal(page.nav.querySelectorAll('button.nav-item').length, 4);
+    assert.equal(page.nav.querySelectorAll('button.nav-item').length, 5);
     // No roll yet: each entry leads to the ward picker and the roll stays current.
     for (const id of ['turnout', 'sms', 'calls']) {
       page.navItem(id).dispatchEvent({ type: 'click' });
@@ -241,6 +243,39 @@ test("a failed download names the catalogue's support contact as whom to call", 
     assert.equal(page.roll.querySelector('p.roll-contact').textContent, config.supportContact);
     assert.ok(page.roll.querySelector('button.roll-retry'));
     assert.equal(page.empty.hidden, true, 'one state at a time');
+  } finally {
+    page.restore();
+  }
+});
+
+test('the nav bar opens the search screen, which searches the roll once it has loaded, ward/serial jump included', async () => {
+  const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage() });
+  try {
+    await import('../js/picker.js?wiring=7');
+    await waitFor(() => page.picker.querySelector('select') !== null);
+    page.navItem('search').dispatchEvent({ type: 'click' });
+    assert.deepEqual(page.currentNav(), ['search']);
+    assert.equal(page.search.hidden, false);
+    const screen = page.search.querySelector('section.search-screen');
+    assert.equal(screen.getAttribute('data-state'), 'empty');
+
+    const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
+    choose(district, '17');
+    choose(samiti, '125');
+    choose(panchayat, '6313');
+    choose(ward, '1');
+    await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
+    assert.equal(page.search.hidden, true, 'the loaded roll is on screen');
+
+    page.navItem('search').dispatchEvent({ type: 'click' });
+    assert.equal(page.search.hidden, false);
+    const input = screen.querySelector('input.search-input');
+    input.value = '1/1';
+    input.dispatchEvent({ type: 'input' });
+    await waitFor(() => screen.querySelector('li.search-row')?.getAttribute('aria-selected') === 'true');
+    assert.equal(screen.getAttribute('data-state'), 'filled');
+    const first = screen.querySelector('li.search-row');
+    assert.equal(first.getAttribute('data-key'), '1:1');
   } finally {
     page.restore();
   }

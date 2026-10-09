@@ -1391,3 +1391,73 @@ select.picker-select,
 .sms-tally-retry {
   margin-top: var(--space-3);
 }
+
+/* Search screen (src/ui/voterSearchScreen.js): the query box, the filter and
+   sort grid, the two choice rows, then one state: result rows, a notice, or
+   the progress bar. Matched text is a <mark>; the jumped-to row is selected. */
+.search-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.search-field {
+  margin-bottom: 0;
+}
+
+.search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.search-choice {
+  margin-bottom: var(--space-2);
+}
+
+.search-contact,
+.search-count {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-row {
+  gap: var(--space-1);
+  cursor: default;
+}
+
+.search-row[aria-selected="true"] {
+  border-left: var(--space-1) solid var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+.search-row-head,
+.search-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.search-serial {
+  color: var(--color-primary-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-row-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.search-row mark {
+  background: var(--color-success-bg);
+  color: var(--color-text);
+  text-decoration: underline;
+}

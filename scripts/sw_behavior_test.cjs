@@ -5,9 +5,12 @@ const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const os = require("os");
+const { pathToFileURL } = require("url");
 
 const swPath = path.resolve(process.argv[2] || path.join(__dirname, "..", "sw.js"));
 const ORIGIN = "https://shell.test";
+const REPO = path.join(__dirname, "..");
 
 class FakeResponse {
   constructor(body, init) {
@@ -32,8 +35,8 @@ function makeSandbox() {
   const handlers = {};
   // prettyUrls mimics Cloudflare Pages: /index.html is a 308 to "/", so the
   // fetched copy is the root page with redirected set. body overrides the
-  // response body.
-  const net = { mode: "online", status: 200, prettyUrls: true, body: null };
+  // response body. files serves the repo's real files instead of placeholders.
+  const net = { mode: "online", status: 200, prettyUrls: true, body: null, files: false };
   const abs = (r) => new URL(typeof r === "string" ? r : r.url, ORIGIN + "/").href;
 
   const caches = {
@@ -69,7 +72,12 @@ function makeSandbox() {
     let url = abs(r);
     const redirected = net.prettyUrls && url === ORIGIN + "/index.html";
     if (redirected) url = ORIGIN + "/";
-    const response = new FakeResponse(net.body || "body:" + url, { status: net.status });
+    let body = net.body || "body:" + url;
+    if (net.files) {
+      const rel = new URL(url).pathname.slice(1) || "index.html";
+      body = fs.readFileSync(path.join(REPO, rel), "utf8");
+    }
+    const response = new FakeResponse(body, { status: net.status });
     response.redirected = redirected;
     return response;
   };
@@ -200,6 +208,57 @@ const tests = {
     sb.net.mode = "offline";
     const miss = await dispatch(sb, "fetch", { request: req("/missing.js") });
     assert.strictEqual(miss.status, 503);
+  },
+
+  async "offline after a roll is loaded, the precached search screen still returns results"() {
+    // Install against the real files, cut the network, then load the search
+    // screen and every module it imports through the worker only: a module
+    // missing from PRECACHE comes back 503 and fails here.
+    const sb = makeSandbox();
+    sb.net.files = true;
+    sb.net.prettyUrls = false;
+    await dispatch(sb, "install");
+    sb.net.mode = "offline";
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sw-offline-search-"));
+    try {
+      fs.writeFileSync(path.join(dir, "package.json"), '{"type":"module"}');
+      const queue = ["src/ui/voterSearchScreen.js"];
+      const seen = new Set();
+      while (queue.length) {
+        const rel = queue.shift();
+        if (seen.has(rel)) continue;
+        seen.add(rel);
+        const res = await dispatch(sb, "fetch", { request: req("/" + rel) });
+        assert.strictEqual(res.status, 200, "offline copy of " + rel);
+        fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+        fs.writeFileSync(path.join(dir, rel), res.body);
+        for (const m of String(res.body).matchAll(/^import[^;]*?from\s+['"]([^'"]+)['"]/gm)) {
+          queue.push(path.posix.normalize(path.posix.join(path.posix.dirname(rel), m[1])));
+        }
+      }
+      for (const need of ["src/search/voterSearch.js", "src/search/hindiSearch.js"]) {
+        assert.ok(seen.has(need), "search screen loads " + need);
+      }
+      const { createVoterSearchScreen, DEBOUNCE_MS } = await import(pathToFileURL(path.join(dir, "src/ui/voterSearchScreen.js")).href);
+      const { createDocument, type } = await import(pathToFileURL(path.join(REPO, "test/helpers/fakeDom.js")).href);
+      const doc = createDocument();
+      const host = doc.createElement("section");
+      const screen = createVoterSearchScreen(host, null, { log: () => {} });
+      await screen.setRolls(new Map([["17/125/6313/3", [
+        { serial: 145, name: "रमेश कुमार", relative: "सुरेश", age: 42, gender: "पुरुष", house: "12" },
+        { serial: 146, name: "सीता देवी", relative: "मोहन", age: 38, gender: "स्त्री", house: "12" },
+      ]]]));
+      type(screen.input, "रमेश");
+      await new Promise((resolve) => setTimeout(resolve, DEBOUNCE_MS + 20));
+      assert.strictEqual(screen.state, "filled");
+      assert.deepStrictEqual(screen.results.map((r) => r.key), ["3:145"]);
+      assert.ok(screen.list.querySelector("mark"), "match highlighted offline");
+      type(screen.input, "3/146");
+      await new Promise((resolve) => setTimeout(resolve, DEBOUNCE_MS + 20));
+      assert.strictEqual(screen.results[0].key, "3:146");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   },
 
   async "cross-origin and non-GET requests are not intercepted"() {
