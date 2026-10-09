@@ -86,7 +86,7 @@ export function mountRollList(container, entries, strings, opts = {}) {
   }
 
   function newRow() {
-    const row = el(doc, 'div', 'roll-row');
+    const row = el(doc, 'div', 'list-row roll-row');
     row.setAttribute('role', 'listitem');
     row.setAttribute('aria-setsize', String(count));
     row.appendChild(el(doc, 'span', 'roll-name'));

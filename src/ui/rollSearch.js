@@ -30,6 +30,11 @@
 // ward in opts.marks, for the serials that are in this ward's roll. That view
 // is imported when first opened, as its SMS checksum comes from
 // src/decoder/sha256.js and nothing under src/decoder loads at startup.
+//
+// opts.onHostChange(view), if given, is told whenever the place above the
+// search box changes: 'contact', 'card', 'calls', 'turnout' or 'sms' when that
+// view opens there, null when the call list is closed. The navigation bar
+// (src/ui/appFrame.js) follows it, so its current entry is what is open.
 
 import * as defaultAssignments from '../calls/assignmentStore.js';
 import * as defaultRoster from '../calls/workerRoster.js';
@@ -105,6 +110,9 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
   // Ends the mark subscriptions of whatever the contact host shows; each
   // opener's mount then replaces the host's content.
   let endHostView = null;
+  const hostChanged = (view) => {
+    if (typeof opts.onHostChange === 'function') opts.onHostChange(view);
+  };
   // Counts leaveHost() calls, so a view that loads late can tell that
   // another one opened (or the roll view went away) meanwhile.
   let hostTurn = 0;
@@ -126,6 +134,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (!canCapture || !entry) return null;
     leaveHost();
     const panel = addSeenVoting(mountContactPanel(contactHost, strings, { contacts, wardId: wardKey, entry }), entry);
+    hostChanged('contact');
     if (typeof panel.root.scrollIntoView === 'function') panel.root.scrollIntoView();
     return panel;
   }
@@ -133,6 +142,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (!canCapture || !entry) return null;
     leaveHost();
     const card = addSeenVoting(mountVoterCard(contactHost, strings, { contacts, wardId: wardKey, entry }), entry);
+    hostChanged('card');
     if (typeof card.root.scrollIntoView === 'function') card.root.scrollIntoView();
     return card;
   }
@@ -148,6 +158,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (typeof marks.onMarksChanged === 'function') {
       endHostView = marks.onMarksChanged(() => { screen.refreshCount(); });
     }
+    hostChanged('turnout');
     if (typeof screen.root.scrollIntoView === 'function') screen.root.scrollIntoView();
     return screen;
   }
@@ -176,6 +187,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
       inRoll: (serial) => rollSerials.has(String(serial)),
     });
     endHostView = view.destroy;
+    hostChanged('sms');
     if (typeof view.root.scrollIntoView === 'function') view.root.scrollIntoView();
     return view;
   }
@@ -188,7 +200,9 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
       entries,
       assignments: opts.assignments || defaultAssignments,
       roster: opts.roster || defaultRoster,
+      onClose: () => hostChanged(null),
     });
+    hostChanged('calls');
     if (typeof screen.root.scrollIntoView === 'function') screen.root.scrollIntoView();
     return screen;
   }

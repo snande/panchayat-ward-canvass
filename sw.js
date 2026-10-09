@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v21";
+const CACHE_VERSION = "v22";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -17,6 +17,9 @@ const PRECACHE = [
   "config/constituency.json",
   "src/picker/wardPicker.js",
   "src/ui/wardPickerScreen.js",
+  // The navigation frame and its default screen, the ward roll.
+  "src/ui/appFrame.js",
+  "src/ui/wardRollScreen.js",
   // The seat header above every screen: the loaded panchayat and ward.
   "src/ui/seatHeader.js",
   // The SEC disclaimer footer below every screen: static, so it shows offline.

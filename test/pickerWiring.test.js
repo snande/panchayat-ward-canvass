@@ -24,7 +24,7 @@ async function waitFor(cond, ms = 8000) {
   }
 }
 
-function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false } = {}) {
+function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false, config } = {}) {
   const doc = createDocument();
   const picker = doc.createElement('section');
   const roll = doc.createElement('section');
@@ -34,7 +34,8 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false } 
   team.setAttribute('hidden', '');
   const seat = doc.createElement('div');
   seat.setAttribute('data-state', 'pending');
-  const byId = { 'ward-picker': picker, roll, 'seat-header': seat };
+  const nav = doc.createElement('nav');
+  const byId = { 'ward-picker': picker, roll, 'seat-header': seat, 'nav-bar': nav };
   if (syncEnv) byId['team-join'] = team;
   const fakeDocument = {
     getElementById: (id) => byId[id] || null,
@@ -48,7 +49,7 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false } 
     requests.push(url);
     if (url.startsWith('file:')) return new Response(readFileSync(fileURLToPath(url)));
     if (url === 'src/strings.hi.json') return new Response(read('src/strings.hi.json'));
-    if (url === 'config/constituency.json') return new Response(read('config/constituency.json'));
+    if (url === 'config/constituency.json') return new Response(config ? JSON.stringify(config) : read('config/constituency.json'));
     if (url === '/sync/join' && syncEnv) {
       return syncOnRequest({ request: new Request(new URL(url, 'https://canvass.takshavid.com'), init), env: syncEnv });
     }
@@ -70,7 +71,10 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false } 
       else delete globalThis[k];
     }
   };
-  return { picker, roll, empty, team, seat, restore };
+  const navItem = (id) => nav.querySelectorAll('button.nav-item').find((b) => b.getAttribute('data-screen') === id);
+  const currentNav = () => nav.querySelectorAll('button.nav-item')
+    .filter((b) => b.getAttribute('aria-current') === 'page').map((b) => b.getAttribute('data-screen'));
+  return { picker, roll, empty, team, seat, nav, navItem, currentNav, restore };
 }
 
 function choose(select, value) {
@@ -98,9 +102,24 @@ test('picking a ward opens its roll and hides the empty state; a reload restores
     choose(samiti, '125');
     choose(panchayat, '6313');
     assert.equal(first.roll.querySelectorAll('div.roll-row').length, 0);
+    // The empty ward-roll screen says to pick a ward; the call list entry in
+    // the nav bar leads there too, as it needs a loaded ward.
+    assert.equal(first.empty.hidden, false);
+    assert.ok(first.roll.querySelector('p.roll-empty'));
+    first.navItem('calls').dispatchEvent({ type: 'click' });
+    assert.deepEqual(first.currentNav(), ['roll']);
+    assert.equal(first.roll.querySelector('section.call-list-screen'), null);
     choose(ward, '1');
 
     await waitFor(() => first.roll.querySelectorAll('div.roll-row').length > 0);
+    // With a roll on screen the nav bar opens its call list; closing the call
+    // list makes the roll the current entry again.
+    first.navItem('calls').dispatchEvent({ type: 'click' });
+    assert.ok(first.roll.querySelector('section.call-list-screen'), 'the call list opens from the nav bar');
+    assert.deepEqual(first.currentNav(), ['calls']);
+    first.roll.querySelector('button.call-list-close').dispatchEvent({ type: 'click' });
+    assert.equal(first.roll.querySelector('section.call-list-screen'), null);
+    assert.deepEqual(first.currentNav(), ['roll']);
     assert.ok(requests.includes(`/roll?url=${encodeURIComponent(WARD1)}`), requests.join('\n'));
     assert.equal(first.empty.hidden, true);
     assert.equal(first.roll.hidden, false);
@@ -164,5 +183,65 @@ test('with no team credentials the join screen shows; after joining a reload ski
     assert.equal(second.team.querySelector('form'), null);
   } finally {
     second.restore();
+  }
+});
+
+test('the nav bar opens the polling-day count and the SMS tally over a loaded roll, and only then', async () => {
+  const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage() });
+  try {
+    await import('../js/picker.js?wiring=5');
+    await waitFor(() => page.picker.querySelector('select') !== null);
+    assert.equal(page.nav.querySelectorAll('button.nav-item').length, 4);
+    // No roll yet: each entry leads to the ward picker and the roll stays current.
+    for (const id of ['turnout', 'sms', 'calls']) {
+      page.navItem(id).dispatchEvent({ type: 'click' });
+      assert.deepEqual(page.currentNav(), ['roll'], id);
+    }
+    assert.equal(page.roll.querySelector('form.turnout-screen'), null);
+
+    const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
+    choose(district, '17');
+    choose(samiti, '125');
+    choose(panchayat, '6313');
+    choose(ward, '1');
+    await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
+    assert.deepEqual(page.currentNav(), ['roll']);
+
+    page.navItem('turnout').dispatchEvent({ type: 'click' });
+    assert.ok(page.roll.querySelector('form.turnout-screen'), 'the polling-day count opens from the nav bar');
+    assert.deepEqual(page.currentNav(), ['turnout']);
+
+    page.navItem('sms').dispatchEvent({ type: 'click' });
+    await waitFor(() => page.roll.querySelector('div.sms-tally') !== null);
+    assert.equal(page.roll.querySelector('form.turnout-screen'), null, 'one view at a time');
+    assert.deepEqual(page.currentNav(), ['sms']);
+
+    // Tapping a voter opens the contact panel there instead: the roll is current.
+    page.roll.querySelector('div.roll-row').dispatchEvent({ type: 'click' });
+    assert.equal(page.roll.querySelector('div.sms-tally'), null);
+    assert.deepEqual(page.currentNav(), ['roll']);
+  } finally {
+    page.restore();
+  }
+});
+
+test("a failed download names the catalogue's support contact as whom to call", async () => {
+  const config = JSON.parse(read('config/constituency.json').toString('utf8'));
+  config.supportContact = 'ब्लॉक समन्वयक से संपर्क करें।';
+  const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage(), rollFails: () => true, config });
+  try {
+    await import('../js/picker.js?wiring=6');
+    await waitFor(() => page.picker.querySelector('select') !== null);
+    const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
+    choose(district, '17');
+    choose(samiti, '125');
+    choose(panchayat, '6313');
+    choose(ward, '1');
+    await waitFor(() => page.roll.querySelector('.roll-error') !== null);
+    assert.equal(page.roll.querySelector('p.roll-contact').textContent, config.supportContact);
+    assert.ok(page.roll.querySelector('button.roll-retry'));
+    assert.equal(page.empty.hidden, true, 'one state at a time');
+  } finally {
+    page.restore();
   }
 });

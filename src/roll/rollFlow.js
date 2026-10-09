@@ -6,13 +6,18 @@
 // them. Any failure shows a Hindi message with a retry button; nothing throws
 // to the caller.
 //
+// What shows is the ward-roll screen's state (src/ui/wardRollScreen.js):
+// loading while the stored copy is opened, downloaded or decoded, filled once
+// a list shows, error on a failure. deps.screen passes the screen; by default
+// the flow makes its own over the container.
+//
 // restore(): at startup, show the last stored ward with no network request,
 // so the app opens offline once a roll has been fetched.
 
 import { fetchRoll as defaultFetchRoll, RollFetchError } from './fetchRoll.js';
 import { createRollStore, minimiseEntries, wardKeyFor } from './rollStore.js';
-import { el } from '../ui/dom.js';
 import { mountRollWithSearch } from '../ui/rollSearch.js';
+import { createWardRollScreen } from '../ui/wardRollScreen.js';
 
 /** decodeRoll with the master glyph table, loaded only when a PDF needs it. */
 export async function decodeWithTable(pdfBytes) {
@@ -28,60 +33,39 @@ export async function decodeWithTable(pdfBytes) {
  * @param {Element} container where the loading line, error or list goes
  * @param {Record<string,string>} strings the Hindi string table
  * @param {object} [deps] fetchRoll, decode, store ({encryptAndStore,
- *   loadStored, lastWardKey}), mountList, onShow (called with the entries and
- *   the ward key when a list shows),
+ *   loadStored, lastWardKey}), mountList, screen (a ward-roll screen over
+ *   container), onShow (called with the entries and the ward key when a list
+ *   shows),
  *   listOptions (passed to mountList, with the ward key added as wardKey), log
  */
 export function createRollFlow(container, strings, deps = {}) {
-  const doc = container.ownerDocument;
-  const text = (key) => (strings && Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : '');
   const fetchRoll = deps.fetchRoll || defaultFetchRoll;
   const decode = deps.decode || decodeWithTable;
   const mountList = deps.mountList || mountRollWithSearch;
   const log = deps.log || ((...args) => console.error(...args));
+  const screen = deps.screen || createWardRollScreen(container, strings);
   let store = deps.store || null;
   let generation = 0;
-  let list = null;
 
   function getStore() {
     if (!store) store = createRollStore();
     return store;
   }
 
-  function unmountList() {
-    if (list && typeof list.destroy === 'function') list.destroy();
-    list = null;
-  }
-
-  function show(...nodes) {
-    unmountList();
-    container.replaceChildren(...nodes);
-    container.removeAttribute('hidden');
-  }
-
-  function showMessage(key, role) {
-    const p = el(doc, 'p', 'roll-message', text(key));
-    p.setAttribute('role', role);
-    return p;
-  }
-
   // The ward key goes to the list so a voter's consent is stored per ward.
   function showList(entries, wardKey) {
-    unmountList();
-    list = mountList(container, entries, strings, { ...deps.listOptions, wardKey });
-    container.removeAttribute('hidden');
+    const list = screen.setState('filled', {
+      render: (target) => mountList(target, entries, strings, { ...deps.listOptions, wardKey }),
+    });
     if (typeof deps.onShow === 'function') deps.onShow(entries, wardKey);
     return list;
   }
 
   function showError(err, selection) {
-    const box = el(doc, 'div', 'roll-error');
-    box.appendChild(showMessage(err instanceof RollFetchError ? 'roll_fetch_failed' : 'roll_failed', 'alert'));
-    const retry = el(doc, 'button', 'btn-primary roll-retry', text('roll_retry'));
-    retry.setAttribute('type', 'button');
-    retry.addEventListener('click', () => open(selection));
-    box.appendChild(retry);
-    show(box);
+    screen.setState('error', {
+      fetchFailed: err instanceof RollFetchError,
+      retry: () => open(selection),
+    });
   }
 
   async function storedEntries(wardKey) {
@@ -99,13 +83,15 @@ export function createRollFlow(container, strings, deps = {}) {
     const current = () => mine === generation;
     try {
       const wardKey = wardKeyFor(selection);
-      show(showMessage('roll_loading', 'status'));
+      screen.setState('loading', { phase: 'open' });
       const stored = await storedEntries(wardKey);
       if (!current()) return null;
       if (stored) return showList(stored, wardKey);
 
+      screen.setState('loading', { phase: 'download' });
       const bytes = await fetchRoll(selection);
       if (!current()) return null;
+      screen.setState('loading', { phase: 'decode' });
       const decoded = await decode(bytes);
       if (!current()) return null;
       // A PDF that decodes to nothing is not a roll: fail so the user can retry.
@@ -142,5 +128,5 @@ export function createRollFlow(container, strings, deps = {}) {
     }
   }
 
-  return { open, restore };
+  return { open, restore, screen };
 }

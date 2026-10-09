@@ -9,6 +9,18 @@ export function el(doc, tag, className, text) {
 }
 
 /**
+ * A lookup into a string table that falls back to a module's own copies of
+ * its strings (used when the table failed to load).
+ * @param {Record<string,string>|null} strings
+ * @param {Record<string,string>} fallback
+ * @returns {(key: string) => string}
+ */
+export function textFrom(strings, fallback) {
+  return (key) => (strings && Object.prototype.hasOwnProperty.call(strings, key) && strings[key])
+    || (fallback && fallback[key]) || '';
+}
+
+/**
  * Show a one-line notice (DESIGN.md "Notice"): the text plus its tone, which
  * styles.css colours. Empty text hides the notice.
  * @param {Element} node

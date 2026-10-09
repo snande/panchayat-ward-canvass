@@ -38,9 +38,10 @@
     <section id="ward-picker" class="picker">
       <p class="notice" data-tone="info" data-i18n="picker_loading">वार्ड सूची लोड हो रही है…</p>
     </section>
-    <!-- The picked ward's roll: loading line, Hindi error with retry, or the
-         virtualised voter list under its name search box (src/roll/rollFlow.js,
-         src/ui/rollSearch.js, src/ui/rollList.js). -->
+    <!-- The ward-roll screen, the frame's default (src/ui/wardRollScreen.js):
+         pick-a-ward notice, progress bar and loading line, Hindi error with
+         whom to call and retry, or the virtualised voter list under its name
+         search box (src/roll/rollFlow.js, src/ui/rollSearch.js, src/ui/rollList.js). -->
     <section id="roll" class="roll-section" aria-live="polite" hidden></section>
     <p id="status" class="notice status" aria-live="polite"></p>
     <button type="button" class="btn-secondary status-retry" id="status-retry" data-i18n="roll_retry" hidden>फिर से कोशिश करें</button>
@@ -49,6 +50,18 @@
        official SEC app, the printed roll prevails (src/ui/secFooter.js,
        rendered by js/app.js; static text, so it shows offline). -->
   <footer id="sec-footer" class="sec-footer"></footer>
+  <!-- The navigation frame (src/ui/appFrame.js): header slot #seat-header,
+       main region #app, footer slot #sec-footer and this bottom navigation
+       bar, one entry per screen. The entries are here so the bar shows before
+       the modules load; js/picker.js renders them again, wired. -->
+  <nav id="nav-bar" class="nav-bar" aria-label="मुख्य मेनू">
+    <div class="nav-bar-items">
+      <button type="button" class="nav-item" data-screen="roll" aria-current="page" data-i18n="nav_roll">मतदाता सूची</button>
+      <button type="button" class="nav-item" data-screen="calls" data-i18n="nav_calls">कॉल सूची</button>
+      <button type="button" class="nav-item" data-screen="turnout" data-i18n="nav_turnout">मतदान दिवस</button>
+      <button type="button" class="nav-item" data-screen="sms" data-i18n="nav_sms">एसएमएस गिनती</button>
+    </div>
+  </nav>
   <script src="js/app.js"></script>
   <script type="module" src="js/picker.js"></script>
 </body>
