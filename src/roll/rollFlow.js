@@ -9,11 +9,28 @@
 //
 // restore(): show the last stored ward with no network request, so the app
 // opens offline once a roll has been fetched.
+//
+// Supplementary rolls (selection.supplementPdfUrls) are downloaded through the
+// same relay GET (fetchSupplements), decoded by the same decoder and merged
+// onto the roll (src/roll/applySupplements.js) before it is stored. One that
+// fails leaves the roll showing, with the deletions toggle's error state and
+// its retry; a stored roll whose supplements failed fetches them again on
+// open. The deletions toggle (src/ui/deletionsToggle.js) sits above the list:
+// supplementary deletions are hidden until it is on, and its state is kept in
+// the roll settings (src/roll/rollSettings.js). It only hides and shows rows.
 
-import { fetchRoll as defaultFetchRoll, RollFetchError } from './fetchRoll.js';
+import {
+  fetchRoll as defaultFetchRoll, fetchSupplements as defaultFetchSupplements, RollFetchError, supplementUrls,
+} from './fetchRoll.js';
+import { loadRollSettings, saveRollSettings } from './rollSettings.js';
 import { createRollStore, minimiseEntries, wardKeyFor } from './rollStore.js';
+import { mountDeletionsToggle } from '../ui/deletionsToggle.js';
+import { el } from '../ui/dom.js';
 import { mountRollWithSearch } from '../ui/rollSearch.js';
 import { createWardRollScreen } from '../ui/wardRollScreen.js';
+
+const TOGGLE_STATE = { none: 'empty', merged: 'filled', failed: 'error' };
+const isSupplementDeletion = (entry) => Boolean(entry) && entry.supplement === 'deletion';
 
 /** decodeRoll with the master glyph table, loaded only when a PDF needs it. */
 export async function decodeWithTable(pdfBytes) {
@@ -28,14 +45,19 @@ export async function decodeWithTable(pdfBytes) {
 /**
  * @param {Element} container where the loading line, error or list goes
  * @param {Record<string,string>} strings the Hindi string table
- * @param {object} [deps] fetchRoll, decode, store ({encryptAndStore,
- *   loadStored, lastWardKey}), mountList, screen (a ward-roll screen over
- *   container), onShow (called with the entries and the ward key when a list
- *   shows),
- *   listOptions (passed to mountList, with the ward key added as wardKey), log
+ * @param {object} [deps] fetchRoll, fetchSupplements, decode, store
+ *   ({encryptAndStore, loadStored, supplementState?, lastWardKey}), mountList,
+ *   screen (a ward-roll screen over container), onShow (called with the
+ *   entries, supplementary deletions included, and the ward key when a list
+ *   shows), settings ({load, save}: the roll settings, localStorage by
+ *   default), selectionFor (wardKey => the ward's selection or null, so the
+ *   supplement retry works on a restored roll), listOptions (passed to
+ *   mountList, with the ward key added as wardKey), log
  */
 export function createRollFlow(container, strings, deps = {}) {
   const fetchRoll = deps.fetchRoll || defaultFetchRoll;
+  const fetchSupplements = deps.fetchSupplements || defaultFetchSupplements;
+  const settings = deps.settings || { load: () => loadRollSettings().settings, save: saveRollSettings };
   const decode = deps.decode || decodeWithTable;
   const mountList = deps.mountList || mountRollWithSearch;
   const log = deps.log || ((...args) => console.error(...args));
@@ -48,13 +70,125 @@ export function createRollFlow(container, strings, deps = {}) {
     return store;
   }
 
+  function showDeletionsSetting() {
+    try {
+      return Boolean(settings.load().showDeletions);
+    } catch (err) {
+      log('roll settings could not be read', err);
+      return false;
+    }
+  }
+
+  // The deletions toggle over the list. Flipping it mounts the list again
+  // with or without the supplementary deletions; the returned handle stands
+  // for whichever list is mounted, so screen.list keeps working.
+  function renderRoll(target, entries, wardKey, supplementState, selection) {
+    const doc = target.ownerDocument;
+    const toggleHost = el(doc, 'div', 'roll-supplement-host');
+    const listHost = el(doc, 'div', 'roll-list-host');
+    target.replaceChildren(toggleHost, listHost);
+    let showDeletions = showDeletionsSetting();
+    let inner = null;
+    const deletions = entries.filter(isSupplementDeletion).length;
+
+    function mountInner() {
+      if (inner && typeof inner.destroy === 'function') inner.destroy();
+      const shown = showDeletions ? entries : entries.filter((e) => !isSupplementDeletion(e));
+      inner = mountList(listHost, shown, strings, { ...deps.listOptions, wardKey }) || null;
+    }
+
+    const state = supplementState === 'none' && deletions > 0 ? 'merged' : supplementState;
+    mountDeletionsToggle(toggleHost, strings, {
+      state: TOGGLE_STATE[state] || 'empty',
+      deletions,
+      checked: showDeletions,
+      support: screen.support,
+      onChange: (checked) => {
+        showDeletions = checked;
+        if (!settings.save({ showDeletions })) log('roll settings could not be stored');
+        mountInner();
+      },
+      onRetry: () => {
+        const again = selection || (typeof deps.selectionFor === 'function' ? deps.selectionFor(wardKey) : null);
+        if (again) open(again);
+        else log('no ward selection to retry the supplementary roll with', wardKey);
+      },
+    });
+    mountInner();
+
+    return new Proxy({}, {
+      get(_, key) {
+        if (key === 'destroy') return () => { if (inner && typeof inner.destroy === 'function') inner.destroy(); };
+        if (key === 'deletionsToggle') return toggleHost.firstChild;
+        const value = inner ? inner[key] : undefined;
+        return typeof value === 'function' ? value.bind(inner) : value;
+      },
+      has: (_, key) => Boolean(inner) && key in inner,
+    });
+  }
+
   // The ward key goes to the list so a voter's consent is stored per ward.
-  function showList(entries, wardKey) {
+  function showList(entries, wardKey, supplementState = 'none', selection = null) {
     const list = screen.setState('filled', {
-      render: (target) => mountList(target, entries, strings, { ...deps.listOptions, wardKey }),
+      render: (target) => renderRoll(target, entries, wardKey, supplementState, selection),
     });
     if (typeof deps.onShow === 'function') deps.onShow(entries, wardKey);
     return list;
+  }
+
+  /**
+   * Download and decode a selection's supplementary rolls.
+   * @returns {Promise<{state: 'none'|'merged'|'failed', lists: object[][]}>}
+   */
+  async function loadSupplements(selection) {
+    if (supplementUrls(selection).length === 0) return { state: 'none', lists: [] };
+    const lists = [];
+    let failed = false;
+    for (const result of await fetchSupplements(selection)) {
+      if (!result.ok) {
+        log('supplementary roll could not be downloaded', result.url, result.error);
+        failed = true;
+        continue;
+      }
+      try {
+        const decoded = await decode(result.buffer);
+        if (!Array.isArray(decoded) || decoded.length === 0) throw new Error('decoder returned no entries');
+        lists.push(decoded);
+      } catch (err) {
+        log('supplementary roll could not be decoded', result.url, err);
+        failed = true;
+      }
+    }
+    return { state: failed ? 'failed' : 'merged', lists };
+  }
+
+  async function storedSupplementState(wardKey) {
+    if (typeof getStore().supplementState !== 'function') return 'none';
+    try {
+      return (await getStore().supplementState(wardKey)) || 'none';
+    } catch (err) {
+      log('stored supplement state could not be read', err);
+      return 'failed';
+    }
+  }
+
+  /**
+   * Merge, store encrypted and show; the roll shows even if storing fails.
+   * The merge is loaded only here, after a download, like the decoder.
+   */
+  async function mergeStoreAndShow(base, supplements, wardKey, selection, current) {
+    const { applySupplements } = await import('./applySupplements.js');
+    const merged = applySupplements(base, supplements.lists);
+    let entries;
+    try {
+      entries = await getStore().encryptAndStore(wardKey, merged, { supplement: supplements.state });
+    } catch (err) {
+      // Still show the roll; it just will not be there offline next time.
+      log('roll could not be stored on the device', err);
+      entries = minimiseEntries(merged);
+    }
+    if (!current()) return null;
+    return showList(entries, wardKey, supplements.state, selection);
   }
 
   function showError(err, selection) {
@@ -82,7 +216,17 @@ export function createRollFlow(container, strings, deps = {}) {
       screen.setState('loading', { phase: 'open' });
       const stored = await storedEntries(wardKey);
       if (!current()) return null;
-      if (stored) return showList(stored, wardKey);
+      if (stored) {
+        const state = await storedSupplementState(wardKey);
+        if (!current()) return null;
+        const listed = supplementUrls(selection).length > 0;
+        // Supplements that failed, or were published since, are fetched again.
+        if (!listed || state === 'merged') return showList(stored, wardKey, listed ? state : 'none', selection);
+        screen.setState('loading', { phase: 'download' });
+        const supplements = await loadSupplements(selection);
+        if (!current()) return null;
+        return mergeStoreAndShow(stored, supplements, wardKey, selection, current);
+      }
 
       screen.setState('loading', { phase: 'download' });
       const bytes = await fetchRoll(selection);
@@ -92,16 +236,10 @@ export function createRollFlow(container, strings, deps = {}) {
       if (!current()) return null;
       // A PDF that decodes to nothing is not a roll: fail so the user can retry.
       if (minimiseEntries(decoded).length === 0) throw new Error('decoder returned no entries');
-      let entries;
-      try {
-        entries = await getStore().encryptAndStore(wardKey, decoded);
-      } catch (err) {
-        // Still show the roll; it just will not be there offline next time.
-        log('roll could not be stored on the device', err);
-        entries = minimiseEntries(decoded);
-      }
+      // A supplement that fails leaves the roll itself showing.
+      const supplements = await loadSupplements(selection);
       if (!current()) return null;
-      return showList(entries, wardKey);
+      return mergeStoreAndShow(decoded, supplements, wardKey, selection, current);
     } catch (err) {
       log('roll could not be loaded', err);
       if (current()) showError(err, selection);
@@ -117,7 +255,10 @@ export function createRollFlow(container, strings, deps = {}) {
       const stored = await storedEntries(wardKey);
       // A ward picked meanwhile wins over the restored one.
       if (!stored || mine !== generation) return null;
-      return showList(stored, wardKey);
+      const state = await storedSupplementState(wardKey);
+      if (mine !== generation) return null;
+      // No selection here: a failed supplement is retried when the ward is picked.
+      return showList(stored, wardKey, state);
     } catch (err) {
       log('stored roll could not be restored', err);
       return null;

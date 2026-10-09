@@ -42,8 +42,8 @@ const PHASE_TEXT = { open: 'roll_opening', download: 'roll_loading', decode: 'ro
  * @param {Element} container the roll section the states render into
  * @param {Record<string,string>|null} strings the Hindi string table
  * @param {{emptyCard?: Element, support?: string, onState?: (state: string) => void}} [opts]
- * @returns {{state: string|null, list: object|null, setState: (state: string, detail?: object) => object|null,
- *   setSupport: (text: string) => void}}
+ * @returns {{state: string|null, list: object|null, support: string,
+ *   setState: (state: string, detail?: object) => object|null, setSupport: (text: string) => void}}
  */
 export function createWardRollScreen(container, strings, opts = {}) {
   const doc = container.ownerDocument;
@@ -120,6 +120,8 @@ export function createWardRollScreen(container, strings, opts = {}) {
   return {
     get state() { return state; },
     get list() { return list; },
+    /** The whom-to-call line set with setSupport, '' for the neutral one. */
+    get support() { return support; },
     setState,
     setSupport,
   };

@@ -48,15 +48,31 @@ export function resolveWard(config, sel) {
   return hit && typeof hit.ward.pdfUrl === 'string' ? hit.ward.pdfUrl : null;
 }
 
-/** { district, samiti, panchayat, ward, pdfUrl } (ids) or null. */
+/**
+ * { district, samiti, panchayat, ward, pdfUrl, supplementPdfUrls? } (ids) or
+ * null; supplementPdfUrls, present when the ward's catalogue entry lists any,
+ * are the ward's supplementary roll PDFs.
+ */
 export function selectionFor(config, sel) {
   const pdfUrl = resolveWard(config, sel);
   if (pdfUrl === null) return null;
-  return {
+  const selection = {
     district: sel.district,
     samiti: sel.samiti,
     panchayat: sel.panchayat,
     ward: sel.ward,
     pdfUrl,
   };
+  const listed = path(config, sel).ward.supplementPdfUrls;
+  if (Array.isArray(listed)) selection.supplementPdfUrls = listed.filter((u) => typeof u === 'string' && u);
+  return selection;
+}
+
+/** The selection for a ward key ("district/samiti/panchayat/ward"), or null. */
+export function selectionForWardKey(config, wardKey) {
+  if (typeof wardKey !== 'string') return null;
+  const parts = wardKey.split('/');
+  if (parts.length !== 4) return null;
+  const [district, samiti, panchayat, ward] = parts;
+  return selectionFor(config, { district, samiti, panchayat, ward });
 }

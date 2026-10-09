@@ -142,6 +142,16 @@ serial: its serial and name sit in a `<del>` (`.roll-struck`), struck through
 in `--color-danger` over `--color-text-muted` text, and its last line starts
 with "हटाया गया"; a tap opens it like any row.
 
+Above the filled rows sits the supplementary-deletions toggle
+(`src/ui/deletionsToggle.js`), with its own state: filled (a `.choice` row,
+"show names struck off in the supplementary roll", off by default and kept
+across reloads; while off, entries a supplementary roll struck off are not
+listed, and when on they show struck through with "हटाया गया (पूरक सूची)"),
+empty (info notice: no supplementary roll is published for the ward) and
+error (error notice: the supplementary roll could not be downloaded, the roll
+itself is showing, retry; a line saying whom to call; a secondary retry). It
+only hides and shows rows; nothing is deleted.
+
 The voter route (`src/ui/voterRoute.js`) carries the same field: loading
 (progress bar and info notice while the stored roll is read), empty (info
 notice: the voter is not in the roll on this phone, go back to search, and a

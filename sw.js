@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v25";
+const CACHE_VERSION = "v26";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -32,6 +32,11 @@ const PRECACHE = [
   "src/roll/fetchRoll.js",
   "src/roll/rollStore.js",
   "src/roll/rollFlow.js",
+  // The supplementary-deletions toggle and its setting. The merge
+  // (src/roll/applySupplements.js) is fetched, like the decoder, only after a
+  // supplementary roll is downloaded.
+  "src/roll/rollSettings.js",
+  "src/ui/deletionsToggle.js",
   // The device database and key shared by the roll, contact and assignment stores.
   "src/storage/deviceDb.js",
   "src/crypto/deviceKey.js",

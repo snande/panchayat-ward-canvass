@@ -42,6 +42,17 @@ test('the allowlist is exactly the ward pdfUrls of the config', () => {
     { pdfUrl: 'http://insecure.example/x.pdf' }, { pdfUrl: 'not a url' }] }] }] }] }).size, 0);
 });
 
+test('a ward\'s supplementary roll URLs are allowed too; nothing else is', async () => {
+  const SUPP = 'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-001.pdf';
+  const withSupp = { districts: [{ samitis: [{ panchayats: [{ wards: [
+    { pdfUrl: WARD1, supplementPdfUrls: [SUPP, 'http://insecure.example/s.pdf', 7] }] }] }] }] };
+  assert.deepEqual([...allowedRollUrls(withSupp)].sort(), [WARD1, SUPP].sort());
+  const up = upstream();
+  const relay = createRollRelay({ allowedUrls: allowedRollUrls(withSupp), fetch: up.fetch });
+  assert.equal((await relay(new Request(rollUrl(SUPP)))).status, 200);
+  assert.equal((await relay(new Request(rollUrl(SUPP), { method: 'POST', body: 'x' }))).status, 405);
+});
+
 test('a configured ward URL is relayed as a PDF', async () => {
   const up = upstream();
   const res = await relayWith(up)(new Request(rollUrl(WARD1)));

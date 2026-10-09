@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  fetchRoll, rollRequestUrl, RollFetchError, ROLL_TRANSPORT, TRANSPORTS, RELAY_PATH,
+  fetchRoll, fetchSupplements, supplementUrls, rollRequestUrl, RollFetchError, ROLL_TRANSPORT, TRANSPORTS, RELAY_PATH,
 } from '../src/roll/fetchRoll.js';
 
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url));
@@ -82,5 +82,43 @@ test('no selection or a selection without a URL never touches the network', asyn
   for (const sel of [null, undefined, {}, { pdfUrl: '' }, { pdfUrl: 5 }]) {
     await assert.rejects(fetchRoll(sel, { fetch }), RollFetchError);
   }
+  assert.equal(calls.length, 0);
+});
+
+// --- supplementary rolls (issue #127) ----------------------------------------------
+
+const SUPP = 'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/125/BADLI-Ward%20No-001.pdf';
+
+test('each supplementary roll is a same-origin GET to the relay, the same as the roll', async () => {
+  const { calls, fetch } = recorder(() => pdfResponse());
+  const results = await fetchSupplements({ ...SELECTION, supplementPdfUrls: [SUPP, `${SUPP}?n=3`] }, { fetch });
+  assert.deepEqual(calls.map((c) => c.url), [
+    `${RELAY_PATH}?url=${encodeURIComponent(SUPP)}`,
+    `${RELAY_PATH}?url=${encodeURIComponent(`${SUPP}?n=3`)}`,
+  ]);
+  for (const c of calls) {
+    assert.equal(c.init.method, undefined, 'a GET: no method, no body');
+    assert.equal(c.init.body, undefined);
+    assert.equal(c.init.credentials, 'same-origin');
+  }
+  assert.deepEqual(results.map((r) => [r.url, r.ok, r.buffer.byteLength]), [[SUPP, true, PDF.byteLength], [`${SUPP}?n=3`, true, PDF.byteLength]]);
+});
+
+test('a supplementary roll that fails is reported, not thrown, and the others still download', async () => {
+  const { calls, fetch } = recorder((url) => (url.includes('n%3D2') ? new Response('no', { status: 502 }) : pdfResponse()));
+  const results = await fetchSupplements({ ...SELECTION, supplementPdfUrls: [`${SUPP}?n=2`, SUPP] }, { fetch });
+  assert.equal(calls.length, 2);
+  assert.equal(results[0].ok, false);
+  assert.ok(results[0].error instanceof RollFetchError);
+  assert.equal(results[0].error.status, 502);
+  assert.equal(results[1].ok, true);
+});
+
+test('a selection without supplementary rolls sends no request', async () => {
+  const { calls, fetch } = recorder(() => pdfResponse());
+  for (const sel of [SELECTION, null, { ...SELECTION, supplementPdfUrls: 'x' }, { ...SELECTION, supplementPdfUrls: ['', 5] }]) {
+    assert.deepEqual(await fetchSupplements(sel, { fetch }), []);
+  }
+  assert.deepEqual(supplementUrls({ supplementPdfUrls: [SUPP, null] }), [SUPP]);
   assert.equal(calls.length, 0);
 });
