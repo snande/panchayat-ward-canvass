@@ -1,4 +1,5 @@
 import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
+import { selectionFor } from '../src/picker/wardPicker.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
@@ -86,14 +87,33 @@ function hideEmptyState() {
   }
 }
 
+// The constituency config, once loaded (null if it failed): restore() needs
+// it to turn a stored ward key back into a selection with its pdfUrl.
+var resolveConfig;
+var configReady = new Promise(function (resolve) {
+  resolveConfig = resolve;
+});
+
+function resolveSelection(wardKey) {
+  return configReady.then(function (config) {
+    if (!config) {
+      return null;
+    }
+    var ids = String(wardKey).split('/');
+    return selectionFor(config, { district: ids[0], samiti: ids[1], panchayat: ids[2], ward: ids[3] });
+  });
+}
+
 // Picking a ward downloads, decodes and stores its roll (src/roll/rollFlow.js);
-// at startup the last stored roll is shown again with no network request.
+// at startup the last stored roll is shown again with no network request. A
+// stored copy of an older record version is downloaded and decoded again.
 function startRoll(strings) {
   if (!rollContainer) {
     return null;
   }
   var roll = createRollFlow(rollContainer, Object.assign({}, FALLBACK_STRINGS, strings || {}), {
     onShow: hideEmptyState,
+    resolveSelection: resolveSelection,
     // marks: tapping a voter offers "seen voting", and the turnout button
     // shows the ward's de-duplicated count beside the official turnout.
     // sms: with no mobile data, marks go out and come in by SMS and join the
@@ -149,6 +169,7 @@ if (container) {
       return loadJson('config/constituency.json');
     })
     .then(function (config) {
+      resolveConfig(config);
       var picker = mountWardPicker(container, config, table, {
         onSelect: function (selection) {
           if (roll) {
@@ -165,6 +186,7 @@ if (container) {
       }
     })
     .catch(function (err) {
+      resolveConfig(null);
       console.error('ward picker failed to load', err);
       showFailure(table);
     });

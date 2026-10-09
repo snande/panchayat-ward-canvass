@@ -117,13 +117,22 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
     return minimiseEntries(JSON.parse(new TextDecoder().decode(plain)));
   }
 
+  /**
+   * True when the ward's stored copy is of an older record version, which
+   * loadStored does not read: the roll has to be fetched and decoded again.
+   */
+  async function isStale(wardKey) {
+    const record = await readValue(db, ROLLS_STORE, wardKey);
+    return Boolean(record) && OLD_RECORD_VERSIONS.has(record.v);
+  }
+
   /** Key of the ward stored most recently, or null. */
   async function lastWardKey() {
     const value = await readValue(db, META_STORE, LAST_WARD);
     return typeof value === 'string' ? value : null;
   }
 
-  return { encryptAndStore, loadStored, lastWardKey };
+  return { encryptAndStore, loadStored, isStale, lastWardKey };
 }
 
 let defaultStore = null;
@@ -132,3 +141,4 @@ const store = () => (defaultStore ||= createRollStore());
 export const encryptAndStore = (wardKey, entries) => store().encryptAndStore(wardKey, entries);
 export const loadStored = (wardKey) => store().loadStored(wardKey);
 export const lastWardKey = () => store().lastWardKey();
+export const isStale = (wardKey) => store().isStale(wardKey);

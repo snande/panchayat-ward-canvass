@@ -4,7 +4,8 @@
 // Opened from the roll view's call-list button (src/ui/rollSearch.js wires it).
 //
 // - Voters come from the contact store (only consented voters are there);
-//   their names come from the ward's roll entries.
+//   their names come from the ward's roll entries. A voter whose roll entry
+//   is struck off is no longer on the roll and is left out of the list.
 // - Choosing a worker saves the assignment (src/calls/assignmentStore.js);
 //   a failed save shows a Hindi message and the stored state again.
 // - Workers come from the device's roster (src/calls/workerRoster.js), plus
@@ -22,7 +23,7 @@ import { el, panelHeader, setNotice } from './dom.js';
  * @param {Record<string, string>} strings the Hindi string table
  * @param {{
  *   contacts: {listConsented}, wardId: string,
- *   entries: {serial: number, name: string}[],
+ *   entries: {serial: number, name: string, struck?: boolean}[],
  *   assignments: {assignVoter, loadAssignments},
  *   roster: {listWorkers, addWorker},
  *   onClose?: () => void, log?: Function,
@@ -36,6 +37,7 @@ export function mountCallListFlow(container, strings, opts) {
   const { contacts, wardId, entries = [], assignments, roster } = opts;
   const log = opts.log || ((...args) => console.error(...args));
   const names = new Map(entries.map((entry) => [entry.serial, entry.name]));
+  const struck = new Set(entries.filter((entry) => entry.struck === true).map((entry) => Number(entry.serial)));
 
   const root = el(doc, 'section', 'panel call-list-screen');
   root.setAttribute('lang', 'hi');
@@ -101,7 +103,9 @@ export function mountCallListFlow(container, strings, opts) {
       .then(() => Promise.all([contacts.listConsented(wardId), assignments.loadAssignments(), roster.listWorkers()]))
       .then(([consented, assigned, listed]) => {
         if (mine !== generation) return;
-        const voters = consented.map(({ serial, phone }) => ({ serial, name: names.get(serial) || '', phone }));
+        const voters = consented
+          .filter(({ serial }) => !struck.has(Number(serial)))
+          .map(({ serial, phone }) => ({ serial, name: names.get(serial) || '', phone }));
         const rows = buildCallList(voters, assigned);
         const workers = [...listed];
         for (const row of rows) {

@@ -50,6 +50,7 @@ export function toVoter(entry) {
     name: entry.name,
     relativeName: entry.relative,
     houseNo: entry.house,
+    struck: entry.struck === true,
   };
 }
 

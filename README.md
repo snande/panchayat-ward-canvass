@@ -28,14 +28,15 @@ one.
    generated on the device as a non-extractable `CryptoKey` and kept in the
    same database. Each stored record carries a schema version (now 2). A
    version-1 copy, which left struck-off entries out, is fetched and decoded
-   again instead of being read. A version the loader does not know is
+   again instead of being read, also when it is the ward restored at startup. A version the loader does not know is
    reported as an error (`RollRecordVersionError`) and never read.
 4. `src/ui/rollList.js` renders the entries as a virtualised list: fixed
    100 px rows, with only the rows in view (plus 6 above and below) in the
    DOM. Text uses the page's Noto Sans Devanagari font. A struck-off entry
    stays in the list and is shown struck off: its serial and name are struck
    through (`.roll-row--struck` in `styles.css`), and its detail line starts
-   with "सूची से हटाया गया".
+   with "सूची से हटाया गया". Search results mark a struck-off voter the
+   same way; the call list leaves struck-off voters out.
 
 `src/roll/rollFlow.js` ties these together. Picking a ward that is already
 stored shows the encrypted copy without a request. At startup the last stored

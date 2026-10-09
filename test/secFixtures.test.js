@@ -42,10 +42,11 @@ for (const roll of ROLLS) {
     for (const e of entries) assert.equal(typeof e.struck, 'boolean', `serial ${e.serial}`);
   });
 
+  // A missing expected file fails: the comparison is the acceptance check.
   const expectedFile = fixture(`${roll}-expected.json`);
-  const missing = !existsSync(expectedFile)
-    && `fixtures/sec/${roll}-expected.json not generated yet: run tools/reference-decoder/decode.py, then expected.py`;
-  test(`${roll}: decodeRoll matches the reference decoder line for line`, { skip: missing }, () => {
+  test(`${roll}: decodeRoll matches the reference decoder line for line`, () => {
+    assert.ok(existsSync(expectedFile),
+      `fixtures/sec/${roll}-expected.json is missing: generate it with tools/reference-decoder/decode.py, then expected.py, and commit it`);
     const expected = JSON.parse(readFileSync(expectedFile, 'utf8'));
     const got = decode(roll).map(project);
     assert.equal(got.length, expected.length, 'entry count');

@@ -154,6 +154,15 @@ test('a struck-off entry stays in the list with its serial and name struck throu
   flush();
   assert.equal(rowFor(2500).getAttribute('class'), 'roll-row roll-row--struck');
   assert.equal(rowFor(2501).getAttribute('class'), 'roll-row');
+
+  // The node that showed serial 2 is reused for a live entry: no struck class
+  // and no roll_struck text left behind on its detail line.
+  const reused = rows(view).find((r) => r === struck);
+  assert.ok(reused, 'the struck row node was recycled');
+  const serial = Number(reused.querySelector('span.roll-name').textContent.split('.')[0]);
+  assert.notEqual(serial, 2500);
+  assert.equal(reused.getAttribute('class'), 'roll-row');
+  assert.ok(!reused.querySelector('span.roll-meta').textContent.includes(strings.roll_struck));
 });
 
 test('styles.css strikes through the serial and name of a struck-off row with a DESIGN.md token', () => {

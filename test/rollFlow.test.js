@@ -24,7 +24,7 @@ const SELECTION = { district: '17', samiti: '125', panchayat: '6313', ward: '1',
 
 const pdfBuffer = () => PDF.buffer.slice(PDF.byteOffset, PDF.byteOffset + PDF.byteLength);
 
-function setup({ fetchRoll, idb = createFakeIndexedDB(), decode = decodeWithTable } = {}) {
+function setup({ fetchRoll, idb = createFakeIndexedDB(), decode = decodeWithTable, resolveSelection } = {}) {
   const doc = createDocument();
   const container = doc.createElement('section');
   container.setAttribute('hidden', '');
@@ -43,6 +43,7 @@ function setup({ fetchRoll, idb = createFakeIndexedDB(), decode = decodeWithTabl
     onShow: (entries) => shown.push(entries),
     listOptions: { viewportHeight: 600, requestFrame: () => {} },
     log: (...args) => errors.push(args),
+    resolveSelection,
   });
   return { doc, container, flow, calls, shown, errors, idb, store };
 }
@@ -119,6 +120,74 @@ test('a stored roll of the older record version is decoded again, not misread', 
   assert.deepEqual(s.shown[0], first.shown[0]);
   assert.equal(idb.databases.get('ward-canvass').stores.get('rolls').get('17/125/6313/1').v, 2);
   assert.deepEqual(s.errors, []);
+});
+
+test('restore() decodes again the last ward when its stored copy is of the older record version', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  rolls.get('17/125/6313/1').v = 1;
+
+  const keys = [];
+  const s = setup({
+    idb,
+    fetchRoll: async () => pdfBuffer(),
+    resolveSelection: async (wardKey) => { keys.push(wardKey); return SELECTION; },
+  });
+  assert.ok(await s.flow.restore());
+  assert.deepEqual(keys, ['17/125/6313/1']);
+  assert.equal(s.calls.length, 1);
+  assert.equal(s.calls[0].pdfUrl, WARD1);
+  assert.deepEqual(s.shown, [first.shown[0]]);
+  assert.equal(rolls.get('17/125/6313/1').v, 2);
+  assert.deepEqual(s.errors, []);
+
+  // The re-decoded copy is current: the next startup reads it offline.
+  const offline = setup({ idb, fetchRoll: async () => { throw new RollFetchError('offline'); }, resolveSelection: async () => SELECTION });
+  await offline.flow.restore();
+  assert.equal(offline.calls.length, 0);
+  assert.deepEqual(offline.shown, [first.shown[0]]);
+});
+
+test('restore() of an older-version copy with no way to resolve the ward shows nothing and sends no request', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  idb.databases.get('ward-canvass').stores.get('rolls').get('17/125/6313/1').v = 1;
+
+  const none = setup({ idb, fetchRoll: async () => pdfBuffer(), resolveSelection: async () => null });
+  assert.equal(await none.flow.restore(), null);
+  const noResolver = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  assert.equal(await noResolver.flow.restore(), null);
+  assert.equal(none.calls.length + noResolver.calls.length, 0);
+  assert.equal(none.container.hidden, true);
+});
+
+test('restore() of a current copy never asks to resolve the ward', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  const s = setup({ idb, fetchRoll: async () => pdfBuffer(), resolveSelection: async () => { throw new Error('asked'); } });
+  await s.flow.restore();
+  assert.equal(s.calls.length, 0);
+  assert.deepEqual(s.shown, [first.shown[0]]);
+  assert.deepEqual(s.errors, []);
+});
+
+test('a roll whose entries are all struck off is shown, struck through, and stored', async () => {
+  const allStruck = [
+    { serial: 1, page: 3, name: 'क', relative: 'ख', age: 30, gender: 'स्त्री', house: '1', epic: 'UPY1', struck: true },
+    { serial: 2, page: 3, name: 'ग', relative: 'घ', age: 40, gender: 'पुरूष', house: '2', epic: 'UPY2', struck: true },
+  ];
+  const s = setup({ fetchRoll: async () => pdfBuffer(), decode: async () => allStruck });
+  await s.flow.open(SELECTION);
+  assert.equal(s.shown.length, 1);
+  assert.deepEqual(s.shown[0], minimiseEntries(allStruck));
+  assert.ok(s.shown[0].every((e) => e.struck));
+  assert.equal(s.container.querySelector('button.roll-retry'), null);
+  assert.equal(s.container.querySelectorAll('div.roll-row--struck').length, 2);
+  assert.deepEqual(await s.store.loadStored('17/125/6313/1'), s.shown[0]);
 });
 
 test('a stored roll of an unknown record version is reported, not read, and decoded again', async () => {

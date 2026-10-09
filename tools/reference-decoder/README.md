@@ -49,8 +49,8 @@ struck):
 ../../venv/bin/python expected.py /tmp/out/entries.json ../../fixtures/sec/bharatpur/ARAUDA-ward-003-expected.json
 ```
 
-Do this for each roll listed in `ROLLS` in that test; a roll whose expected
-file is missing is reported there as skipped.
+Do this for each roll listed in `ROLLS` in that test and commit the files;
+the test fails for any roll whose expected file is missing.
 
 Rebuilding the glyph table needs Arial Unicode MS, which macOS ships at
 `/Library/Fonts/Arial Unicode.ttf` and which is not committed:

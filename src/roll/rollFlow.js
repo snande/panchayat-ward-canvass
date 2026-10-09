@@ -7,7 +7,10 @@
 // to the caller.
 //
 // restore(): at startup, show the last stored ward with no network request,
-// so the app opens offline once a roll has been fetched.
+// so the app opens offline once a roll has been fetched. A stored copy of an
+// older record version is not read: restore() opens that ward again (fetch,
+// decode, store), using deps.resolveSelection to turn its ward key back into
+// a selection with its pdfUrl.
 
 import { fetchRoll as defaultFetchRoll, RollFetchError } from './fetchRoll.js';
 import { createRollStore, minimiseEntries, RollRecordVersionError, wardKeyFor } from './rollStore.js';
@@ -29,7 +32,9 @@ export async function decodeWithTable(pdfBytes) {
  * @param {Record<string,string>} strings the Hindi string table
  * @param {object} [deps] fetchRoll, decode, store ({encryptAndStore,
  *   loadStored, lastWardKey}), mountList, onShow (called when a list shows),
- *   listOptions (passed to mountList, with the ward key added as wardKey), log
+ *   listOptions (passed to mountList, with the ward key added as wardKey), log,
+ *   resolveSelection (ward key -> selection or null, may be async; lets
+ *   restore() decode again a ward whose stored copy is of an older version)
  */
 export function createRollFlow(container, strings, deps = {}) {
   const doc = container.ownerDocument;
@@ -112,6 +117,8 @@ export function createRollFlow(container, strings, deps = {}) {
       const decoded = await decode(bytes);
       if (!current()) return null;
       // A PDF that decodes to nothing is not a roll: fail so the user can retry.
+      // A roll whose entries are all struck off still prints them, so it is
+      // shown (every row struck through) and stored like any other roll.
       if (minimiseEntries(decoded).length === 0) throw new Error('decoder returned no entries');
       let entries;
       try {
@@ -130,6 +137,17 @@ export function createRollFlow(container, strings, deps = {}) {
     }
   }
 
+  async function isStale(wardKey) {
+    const s = getStore();
+    if (typeof s.isStale !== 'function') return false;
+    try {
+      return await s.isStale(wardKey);
+    } catch (err) {
+      log('stored roll version could not be read', err);
+      return false;
+    }
+  }
+
   async function restore() {
     const mine = generation;
     try {
@@ -137,8 +155,13 @@ export function createRollFlow(container, strings, deps = {}) {
       if (!wardKey) return null;
       const stored = await storedEntries(wardKey);
       // A ward picked meanwhile wins over the restored one.
-      if (!stored || mine !== generation) return null;
-      return showList(stored, wardKey);
+      if (mine !== generation) return null;
+      if (stored) return showList(stored, wardKey);
+      // A copy of an older record version: decode the ward again.
+      if (typeof deps.resolveSelection !== 'function' || !(await isStale(wardKey))) return null;
+      const selection = await deps.resolveSelection(wardKey);
+      if (!selection || mine !== generation) return null;
+      return open(selection);
     } catch (err) {
       log('stored roll could not be restored', err);
       return null;

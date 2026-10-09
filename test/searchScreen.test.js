@@ -15,6 +15,7 @@ import {
   DEBOUNCE_MS,
   PLACEHOLDER,
   NO_RESULTS_MESSAGE,
+  STRUCK_LABEL,
 } from '../src/ui/searchScreen.js';
 import { buildIndex, search } from '../src/search/hindiSearch.js';
 import { createDocument, type } from './helpers/fakeDom.js';
@@ -355,4 +356,24 @@ test('destroy cancels a pending search and removes the screen', async () => {
   await wait(DEBOUNCE_MS + 30);
   assert.equal(renders.length, 0);
   assert.equal(doc.body.children.length, 0);
+});
+
+test('a struck-off voter stays findable, its name struck through and labelled', async () => {
+  const voters = [
+    { id: 1, serial: 1, name: 'राम प्रसाद', relativeName: 'गोपाल', houseNo: '1', struck: true },
+    { id: 2, serial: 2, name: 'राम कुमार', relativeName: 'गोपाल', houseNo: '2', struck: false },
+  ];
+  const { screen, nextRender, rows } = mount(voters);
+  const rendered = nextRender();
+  type(screen.input, 'राम');
+  await rendered;
+  const bySerial = (n) => rows().find((r) => r.querySelector('span.pwc-search__serial').textContent.endsWith(` ${n}`));
+  assert.equal(rows().length, 2);
+  assert.equal(bySerial(1).getAttribute('class'), 'pwc-search__row pwc-search__row--struck');
+  assert.equal(bySerial(1).querySelector('span.pwc-search__struck').textContent, STRUCK_LABEL);
+  assert.equal(bySerial(2).getAttribute('class'), 'pwc-search__row');
+  assert.equal(bySerial(2).querySelector('span.pwc-search__struck'), null);
+  const strings = JSON.parse(readFileSync(new URL('../src/strings.hi.json', import.meta.url), 'utf8'));
+  assert.equal(STRUCK_LABEL, strings.roll_struck);
+  assert.match(readFileSync(MODULE_PATH, 'utf8'), /\.pwc-search__row--struck \.pwc-search__name \{ text-decoration: line-through; color: var\(--color-text-muted/);
 });
