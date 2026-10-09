@@ -838,7 +838,7 @@ select.picker-select,
 }
 
 /* Voter card (src/card/voterCard.js): the full roll line as label / value
-   rows. Read-only, so it holds no control. */
+   rows. Its one control is the share button below the rows. */
 .voter-roll-card .badge {
   margin: var(--space-2) 0 0;
 }
@@ -869,6 +869,18 @@ select.picker-select,
   line-height: var(--line-height-heading);
   color: var(--color-text);
   overflow-wrap: anywhere;
+}
+
+/* A .btn-secondary, full width under the rows: its 48 px tap target and focus
+   ring come from there. */
+.voter-share {
+  min-height: var(--touch-target);
+  margin-top: var(--space-4);
+}
+
+/* "Copied" (success) or what to do and whom to call (error); empty otherwise. */
+.voter-share-message {
+  margin-top: var(--space-3);
 }
 
 /* Notice: the one feedback line of a surface (DESIGN.md "Status banner"),

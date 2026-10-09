@@ -8,8 +8,16 @@
 // any field that is missing reads "—". An entry flagged `deleted` (struck off
 // the roll) carries the error badge and a struck-through name, never the look
 // of a live voter.
+//
+// The card's one control is the share button (issue #140): it hands this one
+// voter's labelled fields, plus the SEC footer lines, to the phone's share
+// sheet (navigator.share) or, without one, to the clipboard. It makes no
+// server call, so it works offline, and the text carries no candidate, party,
+// symbol or slogan. A cancelled share or a refused clipboard shows an error
+// notice saying what to do and whom to call; it never throws.
 
-import { el } from '../ui/dom.js';
+import { el, setNotice } from '../ui/dom.js';
+import { SEC_FOOTER_LINES } from '../ui/secFooter.js';
 
 /** Hindi label of each card field, in card order. #140 reuses it for share text. */
 export const VOTER_CARD_LABELS = Object.freeze({
@@ -27,6 +35,15 @@ export const VOTER_CARD_LABELS = Object.freeze({
 
 /** The marker a struck-off entry carries. */
 export const STRUCK_OFF_LABEL = 'हटाया गया';
+
+/** The share button's text. */
+export const VOTER_SHARE_LABEL = 'साझा करें';
+
+/** Shown once the text is on the clipboard. */
+export const VOTER_SHARE_COPIED = 'कॉपी हो गया। अब इसे किसी भी ऐप में चिपकाकर भेजें।';
+
+/** Shown when the share is cancelled or the clipboard refuses: what to do, whom to call. */
+export const VOTER_SHARE_FAILED = 'जानकारी साझा या कॉपी नहीं हो सकी। फिर से कोशिश करें, या जानकारी को देर तक दबाकर कॉपी करें। फिर भी न हो तो अपनी टीम के समन्वयक को फ़ोन करें।';
 
 /** What a field the entry does not carry reads as. */
 export const MISSING = '—';
@@ -72,15 +89,55 @@ export function voterCardFields(entry, ward, booth) {
 }
 
 /**
- * Build the voter card: a DESIGN.md panel whose header names the voter and
- * whose body is a definition list of the ten labelled fields.
+ * One voter's details as share text: a "label: value" line per card field, in
+ * card order and with the card's labels ("—" for a missing field), then a
+ * blank line and the SEC footer lines (source, not an official SEC app, the
+ * printed roll prevails).
+ * @param {object} [entry]
+ * @param {string|number|{ward?: string|number}} [ward]
+ * @param {{name?: string, address?: string}} [booth]
+ * @returns {string}
+ */
+export function voterShareText(entry, ward, booth) {
+  const lines = voterCardFields(entry, ward, booth)
+    .map(([key, text]) => `${VOTER_CARD_LABELS[key]}: ${text}`);
+  return [...lines, '', ...SEC_FOOTER_LINES].join('\n');
+}
+
+/**
+ * Share text through the phone's share sheet, or copy it when there is none.
+ * Resolves to 'shared', 'copied' or 'failed'; never rejects.
+ * @param {string} text
+ * @param {Navigator} [nav]
+ * @returns {Promise<'shared'|'copied'|'failed'>}
+ */
+export async function shareText(text, nav) {
+  try {
+    if (nav && typeof nav.share === 'function') {
+      await nav.share({ text });
+      return 'shared';
+    }
+    await nav.clipboard.writeText(text);
+    return 'copied';
+  } catch {
+    return 'failed';
+  }
+}
+
+/**
+ * Build the voter card: a DESIGN.md panel whose header names the voter, whose
+ * body is a definition list of the ten labelled fields, and whose one control
+ * is the share button with its notice below.
  * @param {object} entry the roll entry
  * @param {string|number|{ward?: string|number}} ward the ward number
  * @param {{name?: string, address?: string}} booth the polling booth
  * @param {Document} [doc] the document to build in (defaults to the page's)
- * @returns {Element} the card, not attached anywhere
+ * @param {{navigator?: Navigator}} [options] the navigator to share through
+ *   (defaults to the page's, read at tap time)
+ * @returns {Element} the card, not attached anywhere; `card.share()` runs one
+ *   tap's share and resolves to its state
  */
-export function renderVoterCard(entry, ward, booth, doc = globalThis.document) {
+export function renderVoterCard(entry, ward, booth, doc = globalThis.document, options = {}) {
   const struck = Boolean(entry && entry.deleted);
   const fields = voterCardFields(entry, ward, booth);
   const name = fields[0][1];
@@ -116,5 +173,26 @@ export function renderVoterCard(entry, ward, booth, doc = globalThis.document) {
     list.appendChild(row);
   }
   root.appendChild(list);
+
+  const shareButton = el(doc, 'button', 'btn-secondary voter-share', VOTER_SHARE_LABEL);
+  shareButton.setAttribute('type', 'button');
+  const message = el(doc, 'p', 'notice voter-share-message');
+  message.setAttribute('role', 'status');
+  message.setAttribute('aria-live', 'polite');
+  root.appendChild(shareButton);
+  root.appendChild(message);
+
+  // One tap shares this card's voter, and only this one.
+  const text = voterShareText(entry, ward, booth);
+  root.share = async () => {
+    const nav = 'navigator' in options ? options.navigator : globalThis.navigator;
+    const state = await shareText(text, nav);
+    root.setAttribute('data-share-state', state);
+    if (state === 'copied') setNotice(message, VOTER_SHARE_COPIED, 'success');
+    else if (state === 'failed') setNotice(message, VOTER_SHARE_FAILED, 'error');
+    else setNotice(message, '');
+    return state;
+  };
+  shareButton.addEventListener('click', () => root.share());
   return root;
 }
