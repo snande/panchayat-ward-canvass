@@ -211,6 +211,29 @@ header p {
   outline-offset: var(--focus-ring-offset);
 }
 
+/* SEC footer (DESIGN.md "SEC footer"): three static lines below every screen,
+   the data source, "not an official SEC app" and "the printed roll prevails",
+   in body text on the surface (not muted: it must stay 7:1 outdoors). */
+.sec-footer {
+  margin-top: var(--space-6);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-4);
+}
+
+.sec-footer-text {
+  max-width: var(--content-max-width);
+  margin: 0 auto var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+}
+
+.sec-footer-text:last-child {
+  margin-bottom: 0;
+}
+
 main {
   width: 100%;
   max-width: var(--content-max-width);

@@ -45,6 +45,10 @@
     <p id="status" class="notice status" aria-live="polite"></p>
     <button type="button" class="btn-secondary status-retry" id="status-retry" data-i18n="roll_retry" hidden>फिर से कोशिश करें</button>
   </main>
+  <!-- The SEC disclaimer footer below every screen: data source, not an
+       official SEC app, the printed roll prevails (src/ui/secFooter.js,
+       rendered by js/app.js; static text, so it shows offline). -->
+  <footer id="sec-footer" class="sec-footer"></footer>
   <script src="js/app.js"></script>
   <script type="module" src="js/picker.js"></script>
 </body>
