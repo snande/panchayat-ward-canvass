@@ -173,5 +173,18 @@
   "search_ward": "वार्ड",
   "search_booth": "बूथ",
   "search_serial": "क्रम",
-  "nav_search": "खोजें"
+  "nav_search": "खोजें",
+  "household_house": "मकान नं.",
+  "household_members": "सदस्य",
+  "household_loading": "परिवार के सदस्यों का नंबर, टैग और संपर्क की स्थिति पढ़ी जा रही है…",
+  "household_empty": "लोड किए गए वार्ड में इस नंबर का कोई मकान नहीं मिला। मकान नंबर जाँचें, या ऊपर सही वार्ड चुनकर उसकी सूची लोड करें।",
+  "household_failed": "इस परिवार की जानकारी नहीं पढ़ी जा सकी। दोबारा कोशिश करें, या पेज फिर खोलें।",
+  "household_error_contact": "फिर भी न खुले तो अपने समन्वयक से संपर्क करें।",
+  "household_retry": "फिर कोशिश करें",
+  "household_list_label": "परिवार के सदस्य",
+  "household_serial": "क्रम",
+  "household_age": "उम्र",
+  "household_phone": "फ़ोन",
+  "household_tag": "टैग",
+  "household_visit": "संपर्क की स्थिति"
 }

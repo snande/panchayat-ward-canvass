@@ -1459,3 +1459,68 @@ select.picker-select,
   color: var(--color-text);
   text-decoration: underline;
 }
+
+/* Household card (src/households/householdCard.js): every voter at one house
+   number in a .panel, one .list-row button per member. Body text in
+   --color-text at --font-size-body; secondary lines muted at --font-size-sm. */
+.household-card {
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+}
+
+.household-members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.household-member {
+  gap: var(--space-1);
+}
+
+.household-member-head,
+.household-member-meta,
+.household-member-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.household-member-serial {
+  color: var(--color-primary-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.household-member-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.household-member-fields {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.household-member-fields .badge {
+  margin: 0;
+}
+
+.household-member-phone {
+  color: var(--color-text);
+}
+
+.household-member-phone .household-member-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-digits);
+}
+
+.household-contact {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.household-retry {
+  margin-top: var(--space-3);
+}
