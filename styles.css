@@ -167,17 +167,19 @@ header p {
 }
 
 /* Seat header (DESIGN.md "Seat header"): one strip under the app header, above
-   every screen, naming the loaded panchayat and ward in body text. With no
-   seat it is the empty state: an info-toned link to the ward picker. */
+   every screen, naming the loaded panchayat and ward in body text. While the
+   stored seat is read it is a blank strip of the same height (no false
+   "nothing loaded"); with no seat it is the empty state, an info-toned link
+   to the ward picker that fills the strip. */
 .seat-header {
+  min-height: var(--touch-target);
   background: var(--color-surface);
   color: var(--color-text);
   border-bottom: 1px solid var(--color-border);
   padding: 0 var(--space-4);
 }
 
-.seat-header[data-state="empty"],
-.seat-header:not([data-state]) {
+.seat-header[data-state="empty"] {
   background: var(--color-primary-tint);
 }
 
@@ -196,6 +198,7 @@ header p {
 
 .seat-header-link {
   appearance: none;
+  width: 100%;
   min-width: var(--touch-target);
   padding-left: var(--space-3);
   border-left: 4px solid var(--color-primary);

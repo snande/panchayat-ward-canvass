@@ -74,8 +74,21 @@ export function seatFromSelection(config, selection) {
   const samiti = district && find(district.samitis, selection.samiti);
   const panchayat = samiti && find(samiti.panchayats, selection.panchayat);
   if (!panchayat || !isText(panchayat.label)) return null;
-  const seat = { seatType: 'ward', panchayat: panchayat.label, ward: String(selection.ward ?? '') };
-  return isSeat(seat) ? seat : null;
+  const ward = find(panchayat.wards, selection.ward);
+  if (!ward) return null;
+  return { seatType: 'ward', panchayat: panchayat.label, ward: String(ward.id) };
+}
+
+/**
+ * The seat of a shown roll, from its ward key ("district/samiti/panchayat/ward",
+ * see wardKeyFor in src/roll/rollStore.js), or null outside the catalogue.
+ */
+export function seatFromWardKey(config, wardKey) {
+  if (typeof wardKey !== 'string') return null;
+  const parts = wardKey.split('/');
+  if (parts.length !== 4) return null;
+  const [district, samiti, panchayat, ward] = parts;
+  return seatFromSelection(config, { district, samiti, panchayat, ward });
 }
 
 function defaultStorage() {

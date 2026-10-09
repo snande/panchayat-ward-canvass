@@ -28,7 +28,8 @@ export async function decodeWithTable(pdfBytes) {
  * @param {Element} container where the loading line, error or list goes
  * @param {Record<string,string>} strings the Hindi string table
  * @param {object} [deps] fetchRoll, decode, store ({encryptAndStore,
- *   loadStored, lastWardKey}), mountList, onShow (called when a list shows),
+ *   loadStored, lastWardKey}), mountList, onShow (called with the entries and
+ *   the ward key when a list shows),
  *   listOptions (passed to mountList, with the ward key added as wardKey), log
  */
 export function createRollFlow(container, strings, deps = {}) {
@@ -69,7 +70,7 @@ export function createRollFlow(container, strings, deps = {}) {
     unmountList();
     list = mountList(container, entries, strings, { ...deps.listOptions, wardKey });
     container.removeAttribute('hidden');
-    if (typeof deps.onShow === 'function') deps.onShow(entries);
+    if (typeof deps.onShow === 'function') deps.onShow(entries, wardKey);
     return list;
   }
 

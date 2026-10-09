@@ -6,11 +6,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 import {
-  renderSeatHeader, seatFromSelection, saveSeat, loadSeat, SEAT_STORAGE_KEY, SEAT_SCHEMA_VERSION,
+  renderSeatHeader, seatFromSelection, seatFromWardKey, saveSeat, loadSeat, SEAT_STORAGE_KEY, SEAT_SCHEMA_VERSION,
 } from '../src/ui/seatHeader.js';
 import { createDocument } from './helpers/fakeDom.js';
 
@@ -23,12 +23,14 @@ const EMPTY = 'कोई वार्ड लोड नहीं — ऊपर �
 
 function memoryStorage(initial = {}) {
   const map = new Map(Object.entries(initial));
-  return {
+  const storage = {
     map,
-    getItem: (k) => (map.has(k) ? map.get(k) : null),
+    reads: 0,
+    getItem: (k) => { storage.reads += 1; return map.has(k) ? map.get(k) : null; },
     setItem: (k, v) => { map.set(k, String(v)); },
     removeItem: (k) => { map.delete(k); },
   };
+  return storage;
 }
 
 function mount() {
@@ -68,7 +70,7 @@ test('with no seat the header is the empty state, a link to the picker', () => {
   }
 });
 
-test('re-rendering replaces the line: a new pick shows without a reload', () => {
+test('re-rendering replaces the line: a new seat shows without a reload', () => {
   const root = mount();
   renderSeatHeader(root, null);
   renderSeatHeader(root, { seatType: 'ward', panchayat: 'बडली', ward: '1' });
@@ -93,11 +95,16 @@ test('the header text comes from the string table, and its built-in copies match
   assert.equal(root.textContent, 'पंचायत: बडली · वार्ड नं.: 1');
 });
 
-test('a picker selection names its panchayat by label and its ward by number', () => {
+test('a picker selection or a shown roll\'s ward key names its panchayat by label and its ward by number', () => {
   const selection = { district: '17', samiti: '125', panchayat: '6313', ward: '3', pdfUrl: 'x' };
   assert.deepEqual(seatFromSelection(config, selection), { seatType: 'ward', panchayat: 'बडली', ward: '3' });
   assert.equal(seatFromSelection(config, { ...selection, panchayat: 'nope' }), null);
+  assert.equal(seatFromSelection(config, { ...selection, ward: '999' }), null);
   assert.equal(seatFromSelection(null, selection), null);
+  assert.deepEqual(seatFromWardKey(config, '17/125/6313/3'), { seatType: 'ward', panchayat: 'बडली', ward: '3' });
+  for (const key of [null, '', '17/125/6313', '17/125/6313/3/x', '17/125/nope/3']) {
+    assert.equal(seatFromWardKey(config, key), null, String(key));
+  }
 });
 
 test('the stored seat holds only a schema version, seat type, panchayat and ward, and round-trips', () => {
@@ -131,13 +138,13 @@ test('a stored seat of an unknown version or shape is reported and falls back to
   assert.equal(root.textContent, EMPTY);
 });
 
-test('index.html has one seat header, outside every screen container, holding the empty state', () => {
+test('index.html has one seat header, outside every screen container, pending until the stored seat is read', () => {
   const html = read('index.html');
   assert.equal(html.split('id="seat-header"').length - 1, 1);
   const at = html.indexOf('id="seat-header"');
   assert.ok(at > html.indexOf('</header>') && at < html.indexOf('<main'), 'the seat header sits between the app header and <main>');
-  assert.match(html, /<a class="seat-header-link" href="#ward-picker" data-i18n="seat_header_empty">([^<]*)<\/a>/);
-  assert.equal(html.match(/data-i18n="seat_header_empty">([^<]*)</)[1], EMPTY);
+  // No false "nothing loaded" before js/app.js has read the stored seat.
+  assert.match(html, /<div id="seat-header" class="seat-header" data-state="pending" aria-live="polite"><\/div>/);
   assert.match(html, /id="ward-picker"/, 'the empty state links to the picker');
 });
 
@@ -148,17 +155,23 @@ test('sw.js precaches the seat header so it renders offline', () => {
   assert.match(precache, /"src\/ui\/dom\.js"/, 'its one import is precached too');
 });
 
-test('js/picker.js re-renders and stores the seat on every pick', () => {
-  const source = read('js/picker.js');
-  assert.match(source, /from '\.\.\/src\/ui\/seatHeader\.js'/);
-  assert.match(source, /onSelect: function \(selection\) \{\s*showSeat\(config, selection, table\);/);
-  assert.match(source, /saveSeat\(seat\);\s*renderSeatHeader\(seatHeader, seat/);
-});
-
 // vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER arrived in Node 20.12 and 21.7.
 const canImport = Boolean(vm.constants && vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER);
+const skip = !canImport && 'no vm dynamic import';
 
-async function bootApp(storage, header) {
+async function waitFor(cond, ms = 5000) {
+  const until = Date.now() + ms;
+  while (!cond()) {
+    if (Date.now() > until) throw new Error('timed out');
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+
+// Runs js/app.js as the classic script it is, with a pending seat header.
+// beforeImport runs right after the script, before its import() resolves.
+async function bootApp(storage, { beforeImport } = {}) {
+  const header = mount();
+  header.setAttribute('data-state', 'pending');
   const errors = [];
   const ctx = vm.createContext({
     document: {
@@ -180,36 +193,48 @@ async function bootApp(storage, header) {
       importModuleDynamically: vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER,
     });
     script.runInContext(ctx);
-    const until = Date.now() + 5000;
-    while (!header.hasAttribute('data-state') && errors.length === 0) {
-      if (Date.now() > until) throw new Error('timed out');
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
+    if (beforeImport) beforeImport(header);
+    await waitFor(() => storage.reads > 0 || errors.length > 0);
+    await new Promise((resolve) => setTimeout(resolve, 5));
   } finally {
     if (saved) Object.defineProperty(globalThis, 'localStorage', saved);
     else delete globalThis.localStorage;
   }
-  return errors;
+  return { header, errors };
 }
 
-test('at startup js/app.js restores the last seat from local storage', { skip: !canImport && 'no vm dynamic import' }, async () => {
+test('at startup js/app.js restores the last seat from local storage', { skip }, async () => {
   assert.match(read('js/app.js'), /renderSeatHeader\(seatHeader, stored\.seat\)/);
   const storage = memoryStorage();
   saveSeat({ seatType: 'ward', panchayat: 'बडली', ward: '4' }, storage);
-  const header = mount();
-  const errors = await bootApp(storage, header);
+  const { header, errors } = await bootApp(storage);
   assert.deepEqual(errors, []);
   assert.equal(header.textContent, 'पंचायत: बडली · वार्ड: 4');
 });
 
-test('at startup an unknown stored version is reported and the header shows the empty state', { skip: !canImport && 'no vm dynamic import' }, async () => {
-  const storage = memoryStorage({ [SEAT_STORAGE_KEY]: JSON.stringify({ schemaVersion: 99 }) });
-  const header = mount();
-  const errors = await bootApp(storage, header);
-  await new Promise((resolve) => setTimeout(resolve, 5));
+test('at startup with nothing stored the pending header becomes the empty state', { skip }, async () => {
+  const { header, errors } = await bootApp(memoryStorage());
+  assert.deepEqual(errors, []);
+  assert.equal(header.getAttribute('data-state'), 'empty');
+  assert.equal(header.textContent, EMPTY);
+});
+
+test('at startup an unknown stored version is reported and the header shows the empty state', { skip }, async () => {
+  const { header, errors } = await bootApp(memoryStorage({ [SEAT_STORAGE_KEY]: JSON.stringify({ schemaVersion: 99 }) }));
   assert.equal(header.textContent, EMPTY);
   assert.equal(errors.length, 1);
   assert.match(String(errors[0][0]), /unknown-version/);
+});
+
+test('at startup a seat shown before the stored one is read is not overwritten', { skip }, async () => {
+  const storage = memoryStorage();
+  saveSeat({ seatType: 'ward', panchayat: 'बडली', ward: '4' }, storage);
+  const { header, errors } = await bootApp(storage, {
+    beforeImport: (root) => renderSeatHeader(root, { seatType: 'ward', panchayat: 'बडली', ward: '7' }),
+  });
+  assert.deepEqual(errors, []);
+  assert.ok(storage.reads > 0, 'the stored seat was read');
+  assert.equal(header.textContent, 'पंचायत: बडली · वार्ड: 7');
 });
 
 // The innermost `selector { body }` rules naming a selector, merged.
@@ -250,8 +275,11 @@ test('the header follows DESIGN.md: token colours, text at least 16 px, light co
   assert.ok(contrast(hex(text.color), hex(strip.background)) >= 7, 'seat line contrast');
   assert.ok(contrast(hex(link.color), hex(empty.background)) >= 7, 'empty link contrast');
   assert.equal(rootTokens['--touch-target'], '48px');
+  // The pending strip keeps the loaded strip's height, so nothing jumps.
+  assert.equal(strip['min-height'], 'var(--touch-target)');
   assert.equal(link['min-height'], 'var(--touch-target)');
   assert.equal(link['min-width'], 'var(--touch-target)');
+  assert.equal(link.width, '100%', 'the whole strip is the tap target');
   assert.equal(link.appearance, 'none');
   assert.match(ruleFor('.seat-header-link:focus-visible').outline, /var\(--color-focus\)/);
 });
