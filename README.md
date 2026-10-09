@@ -13,7 +13,11 @@ one.
    requests the same-origin `/roll?url=<encoded pdfUrl>`.
 2. `decodeRoll` from `src/decoder/` turns the bytes into entries on the text
    layer. The decoder and its glyph table are imported only when a PDF has to
-   be decoded.
+   be decoded. `scripts/check_startup_budget.mjs` (run by `npm test`) fails if
+   any script `index.html` loads statically imports `src/decoder/`, if the
+   startup critical path (`index.html`, `styles.css`, `js/app.js` and its
+   static imports, the Devanagari font) exceeds 350 KB, or if `sw.js` does not
+   precache a shell file.
 3. `src/roll/rollStore.js` keeps only `serial, name, relative, age, gender,
    house` of each live entry. Struck-off (deleted) entries, EPIC numbers and
    the PDF are never stored. The entries are encrypted with WebCrypto AES-GCM
