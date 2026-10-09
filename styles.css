@@ -145,6 +145,8 @@ body {
   font-size: var(--font-size-body);
   line-height: var(--line-height-body);
   overflow-wrap: anywhere;
+  /* Room for the fixed navigation bar under the footer. */
+  padding-bottom: calc(var(--touch-target) + var(--space-4));
 }
 
 header {
@@ -518,10 +520,127 @@ select.picker-select,
   color: var(--color-text-muted);
 }
 
+/* A roll row is also a list row (DESIGN.md), but of the fixed height
+   ROW_HEIGHT, so it keeps the tighter padding that fits its three lines; a
+   row only shows it can be tapped when it can (below). */
+.list-row.roll-row {
+  min-width: 0;
+  padding: var(--space-2) var(--space-4);
+  cursor: default;
+}
+
+/* Ward-roll screen (src/ui/wardRollScreen.js): the whom-to-call line under
+   the error notice, and the progress bar above the loading line. */
+.roll-contact {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.progress {
+  position: relative;
+  height: var(--space-1);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+.progress-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar {
+    width: 100%;
+    animation: none;
+  }
+}
+
+/* Navigation bar (DESIGN.md): fixed to the bottom of the screen, one entry
+   per screen, the current one marked with a teal edge. */
+.nav-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 0 var(--space-1) env(safe-area-inset-bottom);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.nav-bar:empty {
+  display: none;
+}
+
+.nav-bar-items {
+  display: flex;
+  gap: var(--space-1);
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+.nav-item {
+  appearance: none;
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-top: 3px solid transparent;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+  text-align: center;
+  cursor: pointer;
+}
+
+.nav-item:hover,
+.nav-item:active {
+  background: var(--color-primary-tint);
+  color: var(--color-text);
+}
+
+.nav-item[aria-current="page"] {
+  border-top-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+.nav-item:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
 /* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
    shown above the roll's search box. Rows open it, so they show they can. */
 .roll-row[tabindex],
 .pwc-search__row[tabindex] {
+  cursor: pointer;
+}
+
+.list-row.roll-row[tabindex] {
   cursor: pointer;
 }
 

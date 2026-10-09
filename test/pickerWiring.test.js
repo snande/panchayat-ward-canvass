@@ -34,7 +34,8 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false } 
   team.setAttribute('hidden', '');
   const seat = doc.createElement('div');
   seat.setAttribute('data-state', 'pending');
-  const byId = { 'ward-picker': picker, roll, 'seat-header': seat };
+  const nav = doc.createElement('nav');
+  const byId = { 'ward-picker': picker, roll, 'seat-header': seat, 'nav-bar': nav };
   if (syncEnv) byId['team-join'] = team;
   const fakeDocument = {
     getElementById: (id) => byId[id] || null,
@@ -70,7 +71,7 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false } 
       else delete globalThis[k];
     }
   };
-  return { picker, roll, empty, team, seat, restore };
+  return { picker, roll, empty, team, seat, nav, restore };
 }
 
 function choose(select, value) {
@@ -98,9 +99,21 @@ test('picking a ward opens its roll and hides the empty state; a reload restores
     choose(samiti, '125');
     choose(panchayat, '6313');
     assert.equal(first.roll.querySelectorAll('div.roll-row').length, 0);
+    // The empty ward-roll screen says to pick a ward; the call list entry in
+    // the nav bar leads there too, as it needs a loaded ward.
+    assert.equal(first.empty.hidden, false);
+    assert.ok(first.roll.querySelector('p.roll-empty'));
+    const navItem = (id) => first.nav.querySelectorAll('button.nav-item').find((b) => b.getAttribute('data-screen') === id);
+    navItem('calls').dispatchEvent({ type: 'click' });
+    assert.equal(navItem('roll').getAttribute('aria-current'), 'page');
+    assert.equal(first.roll.querySelector('section.call-list-screen'), null);
     choose(ward, '1');
 
     await waitFor(() => first.roll.querySelectorAll('div.roll-row').length > 0);
+    // With a roll on screen the nav bar opens its call list.
+    navItem('calls').dispatchEvent({ type: 'click' });
+    assert.ok(first.roll.querySelector('section.call-list-screen'), 'the call list opens from the nav bar');
+    assert.equal(navItem('calls').getAttribute('aria-current'), 'page');
     assert.ok(requests.includes(`/roll?url=${encodeURIComponent(WARD1)}`), requests.join('\n'));
     assert.equal(first.empty.hidden, true);
     assert.equal(first.roll.hidden, false);

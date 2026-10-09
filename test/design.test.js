@@ -106,9 +106,9 @@ const contrast = (a, b) => {
 const lightTokens = tokenBlock(':root');
 const darkTokens = tokenBlock(':root[data-theme="dark"]');
 // Each shared control DESIGN.md requires: buttons, text input, select,
-// checkbox/toggle, list row, card and status banner.
+// checkbox/toggle, list row, card, navigation entry and status banner.
 const CONTROLS = ['btn-primary', 'btn-secondary', 'btn-quiet', 'btn-quiet-danger', 'btn-danger',
-  'field-input', 'field-select', 'picker-select', 'choice', 'choice-input', 'list-row', 'card', 'notice'];
+  'field-input', 'field-select', 'picker-select', 'choice', 'choice-input', 'list-row', 'card', 'nav-item', 'notice'];
 
 test('the dark theme overrides every colour token, the same under data-theme="dark" and prefers-color-scheme: dark', () => {
   const media = css.match(/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root:not\(\[data-theme="light"\]\)\s*\{([^}]*)\}\s*\}/);

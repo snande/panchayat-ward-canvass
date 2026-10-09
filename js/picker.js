@@ -1,5 +1,7 @@
 import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
+import { createWardRollScreen } from '../src/ui/wardRollScreen.js';
+import { mountAppFrame } from '../src/ui/appFrame.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
 import { renderSeatHeader, saveSeat, seatFromWardKey } from '../src/ui/seatHeader.js';
@@ -80,14 +82,6 @@ function showFailure(strings) {
   container.replaceChildren(p);
 }
 
-// Once a roll is on screen the "not loaded yet" card is no longer true.
-function hideEmptyState() {
-  var empty = document.querySelector('.empty-state');
-  if (empty) {
-    empty.hidden = true;
-  }
-}
-
 // The seat header above every screen names the ward whose roll is on screen,
 // and keeps it (panchayat name, ward, seat type only) for the next cold start.
 // It follows the shown roll, not the pick: a pick whose download fails leaves
@@ -107,10 +101,15 @@ function showSeat() {
 }
 
 function onRollShown(entries, wardKey) {
-  hideEmptyState();
   shownWardKey = wardKey;
   showSeat();
 }
+
+// The ward-roll screen (src/ui/wardRollScreen.js): empty until a ward is
+// picked or a stored roll is restored, then loading, filled or error. The
+// "not loaded yet" card shows only in its empty state.
+var rollScreen = null;
+var frame = null;
 
 // Picking a ward downloads, decodes and stores its roll (src/roll/rollFlow.js);
 // at startup the last stored roll is shown again with no network request.
@@ -118,7 +117,20 @@ function startRoll(strings) {
   if (!rollContainer) {
     return null;
   }
-  var roll = createRollFlow(rollContainer, Object.assign({}, FALLBACK_STRINGS, strings || {}), {
+  var table = Object.assign({}, FALLBACK_STRINGS, strings || {});
+  rollScreen = createWardRollScreen(rollContainer, table, {
+    emptyCard: document.querySelector('.empty-state'),
+    // A new state replaces whatever was open over the roll, so the nav bar
+    // marks the ward roll as current again.
+    onState: function () {
+      if (frame) {
+        frame.select('roll');
+      }
+    },
+  });
+  rollScreen.setState('empty');
+  var roll = createRollFlow(rollContainer, table, {
+    screen: rollScreen,
     onShow: onRollShown,
     // marks: tapping a voter offers "seen voting", and the turnout button
     // shows the ward's de-duplicated count beside the official turnout.
@@ -128,6 +140,41 @@ function startRoll(strings) {
   });
   roll.restore();
   return roll;
+}
+
+// Brings the ward-roll screen into view: the roll (or its loading line or
+// error) once there is one, otherwise the ward picker's first dropdown.
+function showRollScreen() {
+  var target = rollScreen && rollScreen.state !== 'empty' ? rollContainer : container;
+  if (target && typeof target.scrollIntoView === 'function') {
+    target.scrollIntoView();
+  }
+  if (!rollScreen || rollScreen.state === 'empty') {
+    var first = document.getElementById('picker-district');
+    if (first && typeof first.focus === 'function') {
+      first.focus();
+    }
+  }
+}
+
+// The bottom navigation bar (src/ui/appFrame.js) reaches every screen. The
+// call list, polling-day count and SMS tally belong to a loaded ward, so they
+// open over the roll on screen; with none, the entry leads to the ward picker.
+function navigate(id) {
+  var list = rollScreen && rollScreen.state === 'filled' ? rollScreen.list : null;
+  var openers = list ? { calls: list.openCallList, turnout: list.openTurnout, sms: list.openSmsTally } : {};
+  if (id !== 'roll' && typeof openers[id] === 'function' && openers[id]()) {
+    return true;
+  }
+  showRollScreen();
+  return id === 'roll';
+}
+
+function startFrame(strings) {
+  var nav = document.getElementById('nav-bar');
+  if (nav) {
+    frame = mountAppFrame(nav, strings, { onNavigate: navigate });
+  }
 }
 
 // Until this device has joined its candidate's team, show the join screen
@@ -166,17 +213,24 @@ if (container) {
   loadJson('src/strings.hi.json')
     .catch(function (err) {
       roll = startRoll(null);
+      startFrame(null);
       throw err;
     })
     .then(function (strings) {
       table = strings;
       roll = startRoll(strings);
+      startFrame(strings);
       startTeamJoin(strings);
       return loadJson('config/constituency.json');
     })
     .then(function (config) {
       catalogue = config;
       seatStrings = table;
+      // Whom to call when a roll will not open: the constituency's support
+      // contact if the catalogue names one, else the neutral coordinator line.
+      if (rollScreen) {
+        rollScreen.setSupport(config && config.supportContact);
+      }
       showSeat();
       var picker = mountWardPicker(container, config, table, {
         onSelect: function (selection) {

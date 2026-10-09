@@ -94,6 +94,8 @@ three lines still fit its fixed height.
 | Field (older names) | `.picker-field`, `.picker-label`, `.picker-select` | The label wrapper, the label and the input/select the existing screens use. `.picker-select` looks like `.field-input` (plus the chevron on a `<select>`). New screens use `.field-input` and `.field-select`. |
 | Checkbox / toggle | `.choice`, `.choice-input` | A tappable 48 px row holding a checkbox and its sentence; turns green when checked. The checkbox is itself 48 px; its 24 px box and tick are drawn in CSS. |
 | List row | `.list-row` | One tappable line of a list: at least 48 px, a hairline below, tint on hover, the focus ring drawn inside the row. |
+| Navigation bar | `.nav-bar`, `.nav-item` | The frame's bottom bar, fixed to the foot of the screen on the surface above a hairline: one `.nav-item` per screen (ward roll, call list, polling day, SMS tally), equal widths, `--font-size-sm` muted labels; the current one (`aria-current="page"`) has a teal top edge and `--color-primary-strong` text. The frame's other slots are the seat header, `<main>` and the SEC footer. Built by `mountAppFrame()` in `src/ui/appFrame.js`. |
+| Progress bar | `.progress`, `.progress-bar` | A `--space-1` high track in `--color-border` with a sliding teal bar, above the loading notice while a roll is downloaded or decoded; the bar stands still under reduced motion. Built by `createWardRollScreen()` in `src/ui/wardRollScreen.js`. |
 | Card | `.card` | The panel's surface for anything that is not voter-level, e.g. a summary or a settings group. |
 | Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record" or "marked" in place of the seen-voting button; the success tone draws a tick; the error tone marks a voter struck off the roll ("हटाया गया"). |
 | Voter card fields | `.voter-roll-fields`, `.voter-roll-field`, `.voter-roll-label`, `.voter-roll-value` | The read-only roll line inside a `.panel`: one row per field, a muted `--font-size-sm` label and the value in body text; a field the entry lacks reads "—". A struck-off voter's name is struck through (`<del>`) under the error badge. No control. Built by `renderVoterCard()` in `src/card/voterCard.js`. |
@@ -105,8 +107,8 @@ three lines still fit its fixed height.
 
 The controls `.btn-primary`, `.btn-secondary`, `.btn-quiet`,
 `.btn-quiet-danger`, `.btn-danger`, `.field-input`, `.field-select`,
-`.picker-select`, `.choice`, `.choice-input`, `.list-row`, `.card` and
-`.notice` each set an explicit `appearance: none`, draw the focus ring on
+`.picker-select`, `.choice`, `.choice-input`, `.list-row`, `.card`,
+`.nav-item` and `.notice` each set an explicit `appearance: none`, draw the focus ring on
 `:focus-visible`, and are at least `--touch-target` (48 px) high and wide.
 `test/design.test.js` checks all three.
 
@@ -126,3 +128,9 @@ A surface shows one state at a time.
 | Focus | 3 px `--color-focus` ring, 2 px offset, on every control. |
 
 An empty notice takes no space.
+
+The ward-roll screen (`src/ui/wardRollScreen.js`), the frame's default screen,
+carries these as one `state` field: empty (info notice: pick a ward), loading
+(progress bar and info notice), filled (the roll's `.list-row` lines) and
+error (error notice saying what to do, a line saying whom to call, and a
+secondary retry).
