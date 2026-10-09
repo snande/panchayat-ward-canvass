@@ -7,6 +7,9 @@ const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
 // Every shell asset (HTML, manifest, icons, CSS, JS, string table, fonts).
 // The font must be here so Hindi renders with correct conjuncts offline.
+// scripts/check_startup_budget.mjs (npm test) fails if the page, stylesheet,
+// manifest, font or any module statically imported by index.html's scripts
+// is missing here.
 const PRECACHE = [
   "./",
   "index.html",
