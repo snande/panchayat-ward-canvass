@@ -12,23 +12,32 @@ one.
    `relay-required` (the SEC server sends no CORS header), so the browser
    requests the same-origin `/roll?url=<encoded pdfUrl>`.
 2. `decodeRoll` from `src/decoder/` turns the bytes into entries on the text
-   layer. The decoder and its glyph table are imported only when a PDF has to
+   layer: every entry the PDF prints, in printed order, each with a `struck`
+   flag (`true` where an `O`, `E`, `S` or `R` beside the serial marks it struck
+   off). `src/decoder/secFixtures.test.js` holds it line for line to the
+   reference decoder's expected entries for five wards under `fixtures/sec/`. The decoder and its glyph table are imported only when a PDF has to
    be decoded. `scripts/check_startup_budget.mjs` (run by `npm test`) fails if
    any script `index.html` loads statically imports `src/decoder/`, if the
    startup critical path (`index.html`, `styles.css`, `js/app.js` and its
    static imports, the Devanagari font) exceeds 350 KB, or if `sw.js` does not
    precache a shell file.
-3. `src/roll/rollStore.js` keeps only `serial, name, relative, age, gender,
-   house` of each live entry. Struck-off (deleted) entries, EPIC numbers and
-   the PDF are never stored. The entries are encrypted with WebCrypto AES-GCM
+3. `src/roll/rollStore.js` keeps `serial, name, relative, age, gender,
+   house, struck` of every entry. Struck-off entries are stored alongside the
+   live ones, with `struck: true`, and shown struck off. EPIC numbers and the
+   PDF are never stored. The entries are encrypted with WebCrypto AES-GCM
    (256-bit, fresh 12-byte IV per write, ward key as additional data) and
    written to IndexedDB (`ward-canvass`). The key is generated on the device
    as a non-extractable `CryptoKey` and kept in the same database.
-   Struck-off serials are left out because the benchmark roll
-   (`fixtures/badli-ward1-expected.json`, 297 voters) does not list them.
+   Each stored record carries a schema version (`RECORD_VERSION`, now 2). A
+   version-1 record (live entries only) reads as not stored, so picking the
+   ward downloads and decodes the roll again; an unknown version throws
+   `RollRecordVersionError` instead of being misread.
 4. `src/ui/rollList.js` renders the entries as a virtualised list: fixed
    100 px rows, with only the rows in view (plus 6 above and below) in the
-   DOM. Text uses the page's Noto Sans Devanagari font.
+   DOM. Text uses the page's Noto Sans Devanagari font. A struck-off entry
+   stays in the list at its serial: its serial and name are struck through
+   and its last line starts with "हटाया गया". The count line counts live
+   voters, then the struck-off ones.
 
 `src/roll/rollFlow.js` ties these together. Picking a ward that is already
 stored shows the encrypted copy without a request. At startup the last stored

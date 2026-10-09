@@ -271,7 +271,9 @@ test('upgrading a v1 database keeps its roll and its device key, which the conta
   assert.equal(idb.databases.get(DB_NAME).version, 1);
 
   const rolls = createRollStore({ indexedDB: idb, crypto: webcrypto });
-  assert.deepEqual(await rolls.loadStored(WARD), roll);
+  // The v1 roll record is kept, but read as stale: the roll is decoded again.
+  assert.equal(idb.databases.get(DB_NAME).stores.get(ROLLS_STORE).get(WARD).v, 1);
+  assert.equal(await rolls.loadStored(WARD), null);
   assert.equal(await rolls.lastWardKey(), WARD);
   const record = idb.databases.get(DB_NAME);
   assert.equal(record.version, DB_VERSION);
@@ -284,6 +286,9 @@ test('upgrading a v1 database keeps its roll and its device key, which the conta
   assert.equal(record.stores.get(KEYS_STORE).size, 1);
   assert.equal(record.stores.get(KEYS_STORE).get(DEVICE_KEY_ID), key);
   assert.equal((await decryptRecord(idb, `${WARD}:1`)).phone, PHONE);
+  // The decoded-again roll is stored under the same device key and reads back.
+  await rolls.encryptAndStore(WARD, roll);
+  assert.equal(record.stores.get(KEYS_STORE).size, 1);
   assert.deepEqual(await rolls.loadStored(WARD), roll);
 });
 

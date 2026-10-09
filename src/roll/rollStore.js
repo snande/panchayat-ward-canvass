@@ -1,17 +1,11 @@
 // Encrypted on-device copy of a decoded ward roll.
 //
-// - Only STORED_FIELDS of each entry are kept; the PDF bytes, EPIC numbers,
-//   page numbers and struck-off (deleted) entries are never written.
-// - The entries are encrypted with WebCrypto AES-GCM (256-bit key, fresh
-//   12-byte IV per write, the ward key as additional data) and stored in
-//   IndexedDB.
-// - The key is the shared device key (src/crypto/deviceKey.js): generated on
-//   the device with extractable: false and kept in IndexedDB as a CryptoKey
-//   object, so its bytes can never be read by script. The contact store
-//   (src/contacts/contactStore.js), the call-assignment store
-//   (src/calls/assignmentStore.js) and the official-turnout store
-//   (src/tally/turnoutStore.js) use this same key and AES-GCM handling.
-//
+// - STORED_FIELDS of every entry, struck-off ones included; never the PDF,
+//   EPIC numbers or pages.
+// - Record version RECORD_VERSION. An older one reads as null (decode
+//   again); an unknown one throws RollRecordVersionError.
+// - AES-GCM (fresh 12-byte IV, ward key as additional data) under the shared
+//   non-extractable device key (src/crypto/deviceKey.js), in IndexedDB.
 // No network access: reopening a stored ward works offline.
 
 import {
@@ -21,21 +15,31 @@ import { createDeviceKeyLoader } from '../crypto/deviceKey.js';
 
 export { DB_NAME, KEYS_STORE, ROLLS_STORE, META_STORE };
 const LAST_WARD = 'last-ward';
-const RECORD_VERSION = 1;
 
-export const STORED_FIELDS = Object.freeze(['serial', 'name', 'relative', 'age', 'gender', 'house']);
+export const RECORD_VERSION = 2; // 2 keeps struck-off entries
+export const STALE_RECORD_VERSIONS = Object.freeze([1]);
+
+export const STORED_FIELDS = Object.freeze(['serial', 'name', 'relative', 'age', 'gender', 'house', 'struck']);
+
+export class RollRecordVersionError extends Error {
+  constructor(version) {
+    super(`unknown roll record version ${version}`);
+    this.name = 'RollRecordVersionError';
+    this.version = version;
+  }
+}
 
 /** Stable storage key for a ward selection {district, samiti, panchayat, ward}. */
 export function wardKeyFor(selection) {
   return [selection.district, selection.samiti, selection.panchayat, selection.ward].join('/');
 }
 
-/** Keep only STORED_FIELDS of the live (not struck-off) entries. */
+/** STORED_FIELDS of every entry, struck off or not. */
 export function minimiseEntries(entries) {
   if (!Array.isArray(entries)) throw new TypeError('entries must be an array');
   const out = [];
   for (const entry of entries) {
-    if (!entry || typeof entry !== 'object' || entry.deleted === true) continue;
+    if (!entry || typeof entry !== 'object') continue;
     if (!Number.isFinite(entry.serial)) continue;
     out.push({
       serial: entry.serial,
@@ -44,6 +48,7 @@ export function minimiseEntries(entries) {
       age: Number.isFinite(entry.age) ? entry.age : null,
       gender: typeof entry.gender === 'string' ? entry.gender : '',
       house: entry.house == null ? '' : String(entry.house),
+      struck: entry.struck === true,
     });
   }
   return out;
@@ -81,11 +86,12 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
     return minimal;
   }
 
-  /** Decrypt a stored ward's entries, or null when none is stored. */
+  /** Stored entries; null when none or an old version is stored. */
   async function loadStored(wardKey) {
     const record = await readValue(db, ROLLS_STORE, wardKey);
     if (!record) return null;
-    if (record.v !== RECORD_VERSION) return null;
+    if (STALE_RECORD_VERSIONS.includes(record.v)) return null;
+    if (record.v !== RECORD_VERSION) throw new RollRecordVersionError(record.v);
     const key = await deviceKey();
     const plain = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: record.iv, additionalData: encoder.encode(wardKey) },

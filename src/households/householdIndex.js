@@ -1,7 +1,7 @@
 // Household index: a ward's roll entries grouped by normaliseHouse() key
 // (Devanagari digits to ASCII, trimmed, no space around "/" or "-",
-// lowercase; "12 A" and "12A" stay apart). Entries with no house are left
-// out. Pure, in memory, no stored record.
+// lowercase; "12 A" and "12A" stay apart). Entries with no house or struck
+// off are left out. Pure, in memory, no stored record.
 
 import { toAsciiDigits } from '../search/voterSearch.js';
 
@@ -29,7 +29,7 @@ export function buildHouseholdIndex(entries, ward) {
   if (!Array.isArray(entries)) throw new TypeError('entries must be an array');
   const index = new Map();
   for (const entry of entries) {
-    if (!entry || typeof entry !== 'object') continue;
+    if (!entry || typeof entry !== 'object' || entry.struck === true) continue;
     const key = normaliseHouse(entry.house);
     if (key === '') continue;
     let household = index.get(key);

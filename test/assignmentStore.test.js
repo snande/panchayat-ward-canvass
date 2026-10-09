@@ -191,7 +191,7 @@ test('the assignment, contact and roll stores share one device key', async () =>
   const rolls = createRollStore({ indexedDB: idb, crypto: webcrypto });
   await rolls.encryptAndStore(WARD, [{ serial: 1, name: 'x' }]);
   assert.equal(idb.databases.get(DB_NAME).stores.get(KEYS_STORE).size, 1);
-  assert.deepEqual(await rolls.loadStored(WARD), [{ serial: 1, name: 'x', relative: '', age: null, gender: '', house: '' }]);
+  assert.deepEqual(await rolls.loadStored(WARD), [{ serial: 1, name: 'x', relative: '', age: null, gender: '', house: '', struck: false }]);
   assert.deepEqual(await store.loadAssignments(), { 1: ANIL });
 });
 

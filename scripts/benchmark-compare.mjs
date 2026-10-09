@@ -12,14 +12,14 @@
 const norm = (v) => (typeof v === 'string' ? v.normalize('NFC') : v);
 
 /**
- * @param {object[]} decoded decodeRoll output (struck-off entries flagged `deleted`)
+ * @param {object[]} decoded decodeRoll output (struck-off entries flagged `struck`)
  * @param {object[]} expected ground truth, struck-off serials left out
  * @returns {{total: number, matched: object[], mismatches: object[], percent: number, deleted: number}}
  *   matched: [{got, want}]; mismatches: [{serial, page, field, decoded, expected}]
  */
 export function compareEntries(decoded, expected) {
   const all = new Map(decoded.map((e) => [e.serial, e]));
-  const live = new Map(decoded.filter((e) => !e.deleted).map((e) => [e.serial, e]));
+  const live = new Map(decoded.filter((e) => !e.struck).map((e) => [e.serial, e]));
   const sortedDecoded = [...decoded].sort((a, b) => a.serial - b.serial);
   // Page of an entry the decoder lost: where it put the serial (struck off),
   // else the page of the nearest decoded serial before it.
@@ -42,7 +42,7 @@ export function compareEntries(decoded, expected) {
       mismatches.push({
         serial: want.serial,
         page: pageOf(want.serial),
-        field: struck ? 'deleted' : '(entry not decoded)',
+        field: struck ? 'struck' : '(entry not decoded)',
         decoded: struck ? true : undefined,
         expected: struck ? false : want.name,
       });
@@ -61,7 +61,7 @@ export function compareEntries(decoded, expected) {
   mismatches.sort((a, b) => a.serial - b.serial);
   const total = expected.length;
   const percent = total ? Math.round((matched.length / total) * 10000) / 100 : 0;
-  return { total, matched, mismatches, percent, deleted: decoded.filter((e) => e.deleted).length };
+  return { total, matched, mismatches, percent, deleted: decoded.filter((e) => e.struck).length };
 }
 
 /**
