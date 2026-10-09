@@ -520,6 +520,17 @@ select.picker-select,
   color: var(--color-text-muted);
 }
 
+/* A struck-off entry (src/ui/rollList.js) keeps its row, on the error tint;
+   its serial and name, in a <del>, are struck through in the error tone. */
+.roll-row--struck {
+  background: var(--color-danger-bg);
+}
+
+.roll-row--struck .roll-name {
+  color: var(--color-danger);
+  text-decoration: line-through;
+}
+
 /* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
    shown above the roll's search box. Rows open it, so they show they can. */
 /* A roll row is also a list row (DESIGN.md), but of the fixed height

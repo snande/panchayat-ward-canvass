@@ -6,7 +6,7 @@ import { compareEntries, renderReport, sampleMatched } from './benchmark-compare
 const want = (serial, extra = {}) => ({
   serial, name: 'राम', relation: 'पिता', relative: 'श्याम', age: 40, gender: 'पुरूष', house: '1', epic: `UPY${serial}`, ...extra,
 });
-const got = (serial, page, extra = {}) => ({ ...want(serial), page, deleted: false, ...extra });
+const got = (serial, page, extra = {}) => ({ ...want(serial), page, struck: false, ...extra });
 
 test('an entry matches only when every expected field is equal', () => {
   const r = compareEntries([got(1, 3), got(2, 3, { age: 41 })], [want(1), want(2)]);
@@ -41,8 +41,8 @@ test('a missing entry is reported with the page of the nearest decoded serial be
 });
 
 test('an expected entry the decoder struck off is a mismatch on its own page', () => {
-  const r = compareEntries([got(1, 3), got(2, 4, { deleted: true })], [want(1), want(2)]);
-  assert.deepEqual(r.mismatches, [{ serial: 2, page: 4, field: 'deleted', decoded: true, expected: false }]);
+  const r = compareEntries([got(1, 3), got(2, 4, { struck: true })], [want(1), want(2)]);
+  assert.deepEqual(r.mismatches, [{ serial: 2, page: 4, field: 'struck', decoded: true, expected: false }]);
   assert.equal(r.deleted, 1);
 });
 

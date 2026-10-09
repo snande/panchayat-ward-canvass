@@ -5,7 +5,7 @@ form in glyphtable.py, look it up in master-glyph-table.json for its Unicode exp
 map each 1-byte text code to that expansion, assemble each text line from its runs,
 reorder visual glyph order to logical Unicode, then parse the lines into voter records.
 """
-import json, re, sys
+import json, os, re, sys, tempfile, unicodedata
 import pypdf
 from fontTools.ttLib import TTFont
 from glyphtable import glyph_hash
@@ -144,7 +144,9 @@ LABEL_SEX = re.compile(r"लिं?ग\s*:?")
 def parse_entries(lines):
     """Entries start at a 'नाम:' label and end at the bold serial. Every value sits on the row
     (same y) of its label: name on the नाम row, relative on the 'X का नाम' row, house on the
-    मकान संख्या row, age and gender on the आयु row; the EPIC is a row of its own."""
+    मकान संख्या row, age and gender on the आयु row; the EPIC is a row of its own. An O, E, S or R
+    in the serial font on the serial's row marks a struck-off entry (O in Badli's roll; E death,
+    S shifted, R repetition per the roll's legend)."""
     def same_row(a, b): return abs(a["y"] - b["y"]) < 2.0
     def finish(block, serial):
         e, labels = {"serial": serial, "deleted": False}, {}
@@ -176,25 +178,26 @@ def parse_entries(lines):
         if LABEL_NAME.fullmatch(t): block = [ln]; continue
         if "serial" in ln["fonts"] and re.fullmatch(r"\d+", t) and block:
             e = finish(block, int(t)); e["_serial_y"] = ln["y"]; entries.append(e); block = []; continue
-        if "serial" in ln["fonts"] and t == "O" and entries and abs(entries[-1].get("_serial_y", 1e9) - ln["y"]) < 2.0:
+        if "serial" in ln["fonts"] and t in ("O", "E", "S", "R") and entries and abs(entries[-1].get("_serial_y", 1e9) - ln["y"]) < 2.0:
             entries[-1]["deleted"] = True; continue
         if block: block.append(ln)
     return entries
 
-if __name__ == "__main__":
-    pdf, table_path, out_dir = sys.argv[1], sys.argv[2], sys.argv[3]
-    table = json.load(open(table_path))["glyphs"]
+def decode_entries(pdf, table, out_dir, dump_pages=True):
+    """Every serial of the roll, one record each, in serial order. The supplement's deletion
+    list repeats entries already in the original list: one record per serial is kept, and a
+    struck-off repeat marks the kept record deleted."""
     reader = pypdf.PdfReader(pdf)
     all_entries, unmatched = [], []
     for idx in range(len(reader.pages)):
-        lines, um = page_lines(reader, idx, table, out_dir, debug_codes=(idx == 2)); unmatched += um
-        with open(f"{out_dir}/page{idx+1:02d}.txt", "w") as fh:
-            for ln in lines: fh.write(f"{''.join(sorted(ln['fonts']))}\t{ln['x']:.1f}\t{ln['y']:.1f}\t{ln['text']}" + (f"\t{ln['raw']}" if idx == 2 and "लिग" in ln["text"] else "") + "\n")
+        lines, um = page_lines(reader, idx, table, out_dir, debug_codes=dump_pages and idx == 2); unmatched += um
+        if dump_pages:
+            with open(f"{out_dir}/page{idx+1:02d}.txt", "w") as fh:
+                for ln in lines: fh.write(f"{''.join(sorted(ln['fonts']))}\t{ln['x']:.1f}\t{ln['y']:.1f}\t{ln['text']}" + (f"\t{ln['raw']}" if idx == 2 and "लिग" in ln["text"] else "") + "\n")
         if idx >= 2:
             ents = parse_entries(lines)
             for e in ents: e["page"] = idx + 1
             all_entries += ents
-    # the supplement's deletion list repeats entries already in the original list: keep one per serial
     seen, deduped = set(), []
     for e in all_entries:
         e.pop("_serial_y", None)
@@ -202,7 +205,33 @@ if __name__ == "__main__":
             prev = next(x for x in deduped if x["serial"] == e["serial"])
             prev["deleted"] = prev["deleted"] or e["deleted"]; continue
         seen.add(e["serial"]); deduped.append(e)
-    all_entries = sorted(deduped, key=lambda e: e["serial"])
+    return sorted(deduped, key=lambda e: e["serial"]), unmatched
+
+def expected_entries(entries):
+    """The expected-entries shape src/decoder/secFixtures.test.js compares decodeRoll against:
+    serial, name, relative, age, gender, house and struck, in serial order, strings NFC
+    (the JS decoder returns NFC); a field the roll does not print is null."""
+    nfc = lambda v: unicodedata.normalize("NFC", v) if isinstance(v, str) else v
+    return [{"serial": e["serial"], "name": nfc(e.get("name")), "relative": nfc(e.get("rel")), "age": e.get("age"),
+             "gender": nfc(e.get("gender")), "house": nfc(e.get("house")), "struck": bool(e["deleted"])} for e in entries]
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "--expected":
+    # decode.py --expected TABLE LIST: LIST is a JSON array of {"pdf", "expected"} paths relative
+    # to the repository root (fixtures/sec/expected-fixtures.json); writes each expected file.
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    table = json.load(open(sys.argv[2]))["glyphs"]
+    for item in json.load(open(sys.argv[3])):
+        pdf, out = os.path.join(root, item["pdf"]), os.path.join(root, item["expected"])
+        with tempfile.TemporaryDirectory() as tmp:
+            entries, unmatched = decode_entries(pdf, table, tmp, dump_pages=False)
+        if unmatched: print(f"{item['pdf']}: unmatched glyphs {unmatched}", file=sys.stderr)
+        with open(out, "w") as fh:
+            fh.write("[\n" + ",\n".join(json.dumps(e, ensure_ascii=False) for e in expected_entries(entries)) + "\n]\n")
+        print(item["expected"], "entries:", len(entries), "struck:", sum(1 for e in entries if e["deleted"]))
+elif __name__ == "__main__":
+    pdf, table_path, out_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+    table = json.load(open(table_path))["glyphs"]
+    all_entries, unmatched = decode_entries(pdf, table, out_dir)
     json.dump(all_entries, open(f"{out_dir}/entries.json", "w"), ensure_ascii=False, indent=1)
     print("deleted:", sum(1 for e in all_entries if e["deleted"]), "remaining:", sum(1 for e in all_entries if not e["deleted"]))
     print("unmatched glyphs:", unmatched or "none")

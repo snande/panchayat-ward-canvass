@@ -35,18 +35,19 @@ function bySerial(a, b) {
 /**
  * Group a ward's entries into households.
  *
- * @param {object[]} entries {serial, name, relative, age, gender, house}
+ * @param {object[]} entries {serial, name, relative, age, gender, house, struck}
  * @param {*} ward the ward the entries belong to, carried on each household
  * @returns {Map<string, {ward: *, key: string, house: string, members: object[]}>}
  *   keyed by normalised house number; `house` is the first spelling seen and
  *   `members` are the original entries in ascending serial order. Entries
- *   with an empty or missing house are left out.
+ *   with an empty or missing house, and struck-off entries (no longer on the
+ *   roll), are left out.
  */
 export function buildHouseholdIndex(entries, ward) {
   if (!Array.isArray(entries)) throw new TypeError('entries must be an array');
   const index = new Map();
   for (const entry of entries) {
-    if (!entry || typeof entry !== 'object') continue;
+    if (!entry || typeof entry !== 'object' || entry.struck === true) continue;
     const key = normaliseHouse(entry.house);
     if (key === '') continue;
     let household = index.get(key);

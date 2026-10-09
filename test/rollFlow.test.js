@@ -10,7 +10,9 @@ import { fileURLToPath } from 'node:url';
 
 import { createRollFlow, decodeWithTable } from '../src/roll/rollFlow.js';
 import { RollFetchError } from '../src/roll/fetchRoll.js';
-import { createRollStore, minimiseEntries } from '../src/roll/rollStore.js';
+import {
+  createRollStore, minimiseEntries, DB_NAME, ROLLS_STORE, UnknownRecordVersionError,
+} from '../src/roll/rollStore.js';
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
@@ -189,6 +191,34 @@ test('a PDF that decodes to no entries is an error with retry, and is not stored
   assert.equal(s.container.querySelector('p.roll-message').textContent, strings.roll_failed);
   assert.ok(s.container.querySelector('button.roll-retry'));
   assert.equal(await s.store.loadStored('17/125/6313/1'), null);
+});
+
+test('struck-off entries are stored and listed, flagged, not dropped', async () => {
+  const s = setup({ fetchRoll: async () => pdfBuffer() });
+  await s.flow.open(SELECTION);
+  const list = s.shown[0];
+  assert.deepEqual(list.map((e) => e.serial), Array.from({ length: 326 }, (_, i) => i + 1));
+  assert.equal(list.filter((e) => e.struck).length, 29);
+  assert.deepEqual(await s.store.loadStored('17/125/6313/1'), list);
+});
+
+test('an old-version stored roll is decoded again; an unknown version is reported and refetched', async () => {
+  const idb = createFakeIndexedDB();
+  const rolls = () => idb.databases.get(DB_NAME).stores.get(ROLLS_STORE);
+  const first = setup({ fetchRoll: async () => pdfBuffer(), idb });
+  await first.flow.open(SELECTION);
+  assert.equal(rolls().get('17/125/6313/1').v, 2);
+
+  for (const v of [1, 99]) {
+    rolls().set('17/125/6313/1', { ...rolls().get('17/125/6313/1'), v });
+    const s = setup({ fetchRoll: async () => pdfBuffer(), idb });
+    await s.flow.open(SELECTION);
+    assert.equal(s.calls.length, 1, `version ${v} is not read as a copy`);
+    assert.equal(s.shown[0].filter((e) => e.struck).length, 29);
+    assert.equal(rolls().get('17/125/6313/1').v, 2);
+    const reported = s.errors.flat().filter((x) => x instanceof UnknownRecordVersionError);
+    assert.equal(reported.length, v === 1 ? 0 : 1);
+  }
 });
 
 test('rollFlow reaches the decoder only through dynamic imports (offline startup)', () => {

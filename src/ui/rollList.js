@@ -7,12 +7,17 @@
 // voters therefore costs a few dozen DOM nodes, which keeps 2 GB phones
 // smooth. Text is set with textContent only and inherits the page's
 // Noto Sans Devanagari font (--font-family-base in styles.css).
+//
+// A struck-off entry stays in the list, in its place: its row carries
+// `roll-row--struck` (and data-state="struck-off") and its serial and name
+// sit in a <del>, so they show struck through.
 
 import { el } from './dom.js';
 
 export const ROW_HEIGHT = 100; // px; styles.css .roll-row content fits in this
 export const OVERSCAN = 6;
 const DEFAULT_VIEWPORT_HEIGHT = 600;
+const ROW_CLASS = 'list-row roll-row';
 
 /** Index range [start, end) of the rows to render for a scroll position. */
 export function visibleRange(scrollTop, viewportHeight, count, rowHeight = ROW_HEIGHT, overscan = OVERSCAN) {
@@ -33,7 +38,7 @@ function defaultFrame(fn) {
 
 /**
  * Mount the list into container (replacing its content).
- * @param {object[]} entries {serial, name, relative, age, gender, house}
+ * @param {object[]} entries {serial, name, relative, age, gender, house, struck}
  * @param {Record<string,string>} strings the Hindi string table
  * @param {{viewportHeight?: number, requestFrame?: Function, onSelect?: (entry: object) => void}} [opts]
  *   onSelect is called with the entry of a tapped row (Enter or Space on a
@@ -76,7 +81,14 @@ export function mountRollList(container, entries, strings, opts = {}) {
     row.setAttribute('aria-posinset', String(index + 1));
     shownIndex.set(row, index);
     const [name, relative, meta] = row.childNodes;
-    name.textContent = `${entry.serial}. ${entry.name}`;
+    // Rows are recycled, so the struck-off look is set or cleared on every fill.
+    const struck = entry.struck === true;
+    row.setAttribute('class', struck ? `${ROW_CLASS} roll-row--struck` : ROW_CLASS);
+    if (struck) row.setAttribute('data-state', 'struck-off');
+    else row.removeAttribute('data-state');
+    const label = `${entry.serial}. ${entry.name}`;
+    if (struck) name.replaceChildren(el(doc, 'del', null, label));
+    else name.textContent = label;
     relative.textContent = entry.relative;
     const parts = [];
     if (entry.age != null) parts.push(`${text('roll_age')} ${entry.age}`);
@@ -86,7 +98,7 @@ export function mountRollList(container, entries, strings, opts = {}) {
   }
 
   function newRow() {
-    const row = el(doc, 'div', 'list-row roll-row');
+    const row = el(doc, 'div', ROW_CLASS);
     row.setAttribute('role', 'listitem');
     row.setAttribute('aria-setsize', String(count));
     row.appendChild(el(doc, 'span', 'roll-name'));

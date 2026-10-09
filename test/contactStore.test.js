@@ -6,7 +6,7 @@ import { webcrypto } from 'node:crypto';
 
 import * as contactModule from '../src/contacts/contactStore.js';
 import { createContactStore, normalisePhone } from '../src/contacts/contactStore.js';
-import { createRollStore, minimiseEntries } from '../src/roll/rollStore.js';
+import { createRollStore } from '../src/roll/rollStore.js';
 import {
   DB_NAME, DB_VERSION, KEYS_STORE, ROLLS_STORE, META_STORE, CONTACTS_STORE,
 } from '../src/storage/deviceDb.js';
@@ -244,10 +244,10 @@ test('voter keys never collide: ":" is rejected in wardId and serial 5 equals "5
   assert.equal((await store.getContact(WARD, '5')).serial, 5);
 });
 
-test('upgrading a v1 database keeps its roll and its device key, which the contact store reuses', async () => {
+test('upgrading a v1 database keeps its device key, which the contact store reuses, and re-decodes its roll', async () => {
   const idb = createFakeIndexedDB();
-  // Seed the database exactly as the v1 roll store left it.
-  const roll = minimiseEntries([{ serial: 1, name: 'किशनादेवी', relative: 'सत्यनारायण', age: 57, gender: 'स्त्री', house: '1' }]);
+  // Seed the database exactly as the v1 roll store left it: six fields, record version 1.
+  const roll = [{ serial: 1, name: 'किशनादेवी', relative: 'सत्यनारायण', age: 57, gender: 'स्त्री', house: '1' }];
   const key = await webcrypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
   const iv = webcrypto.getRandomValues(new Uint8Array(12));
   const data = await webcrypto.subtle.encrypt(
@@ -271,7 +271,8 @@ test('upgrading a v1 database keeps its roll and its device key, which the conta
   assert.equal(idb.databases.get(DB_NAME).version, 1);
 
   const rolls = createRollStore({ indexedDB: idb, crypto: webcrypto });
-  assert.deepEqual(await rolls.loadStored(WARD), roll);
+  // A version-1 roll record reads as no copy, so the roll is decoded again.
+  assert.equal(await rolls.loadStored(WARD), null);
   assert.equal(await rolls.lastWardKey(), WARD);
   const record = idb.databases.get(DB_NAME);
   assert.equal(record.version, DB_VERSION);
@@ -284,7 +285,10 @@ test('upgrading a v1 database keeps its roll and its device key, which the conta
   assert.equal(record.stores.get(KEYS_STORE).size, 1);
   assert.equal(record.stores.get(KEYS_STORE).get(DEVICE_KEY_ID), key);
   assert.equal((await decryptRecord(idb, `${WARD}:1`)).phone, PHONE);
-  assert.deepEqual(await rolls.loadStored(WARD), roll);
+  // The re-decoded roll is stored again under the same device key.
+  const restored = await rolls.encryptAndStore(WARD, roll);
+  assert.deepEqual(await rolls.loadStored(WARD), restored);
+  assert.equal(record.stores.get(KEYS_STORE).size, 1);
 });
 
 test('the roll store and the contact store share one device key on a new device', async () => {

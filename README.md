@@ -18,17 +18,26 @@ one.
    startup critical path (`index.html`, `styles.css`, `js/app.js` and its
    static imports, the Devanagari font) exceeds 350 KB, or if `sw.js` does not
    precache a shell file.
+   Every entry the PDF prints is returned, in roll order, with a boolean
+   `struck` flag: `true` for an entry printed as struck off (an `O`, `E`, `S`
+   or `R` in the serial font beside its serial), `false` otherwise.
+   `src/decoder/secFixtures.test.js` holds the decoder to the reference
+   decoder's output for five wards from five districts under `fixtures/sec/`.
 3. `src/roll/rollStore.js` keeps only `serial, name, relative, age, gender,
-   house` of each live entry. Struck-off (deleted) entries, EPIC numbers and
-   the PDF are never stored. The entries are encrypted with WebCrypto AES-GCM
+   house, struck` of each entry. Struck-off entries are stored alongside the
+   live ones, flagged `struck`, and shown struck off; EPIC numbers and the
+   PDF are never stored. The entries are encrypted with WebCrypto AES-GCM
    (256-bit, fresh 12-byte IV per write, ward key as additional data) and
    written to IndexedDB (`ward-canvass`). The key is generated on the device
-   as a non-extractable `CryptoKey` and kept in the same database.
-   Struck-off serials are left out because the benchmark roll
-   (`fixtures/badli-ward1-expected.json`, 297 voters) does not list them.
+   as a non-extractable `CryptoKey` and kept in the same database. The stored
+   record carries a schema version (2). A version-1 copy, which held only the
+   live entries, reads as no copy, so the roll is downloaded and decoded
+   again; a version the code does not know is reported as an error, never
+   misread.
 4. `src/ui/rollList.js` renders the entries as a virtualised list: fixed
    100 px rows, with only the rows in view (plus 6 above and below) in the
-   DOM. Text uses the page's Noto Sans Devanagari font.
+   DOM. Text uses the page's Noto Sans Devanagari font. A struck-off entry
+   keeps its row in roll order, with its serial and name struck through.
 
 `src/roll/rollFlow.js` ties these together. Picking a ward that is already
 stored shows the encrypted copy without a request. At startup the last stored

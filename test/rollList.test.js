@@ -84,6 +84,41 @@ test('a row shows serial, name, relative, age, gender and house in Hindi', () =>
   assert.equal(view.viewport.getAttribute('aria-label'), strings.roll_list_label);
 });
 
+test('a struck-off entry keeps its row, with its serial and name struck through', () => {
+  const list = entries(3000).map((e) => ({ ...e, struck: e.serial % 2 === 0 }));
+  const { view, flush } = mount(list);
+  const at = (serial) => rows(view).find((r) => r.getAttribute('aria-posinset') === String(serial));
+  const struckRow = at(2);
+  assert.ok(struckRow.classList.contains('roll-row--struck'));
+  assert.equal(struckRow.getAttribute('data-state'), 'struck-off');
+  const del = struckRow.querySelector('del');
+  assert.ok(del, 'serial and name are in a <del>');
+  assert.equal(struckRow.children[0].children[0], del, 'the <del> is the name line');
+  assert.equal(del.textContent, '2. नाम2');
+  assert.equal(struckRow.children[1].textContent, 'सत्यनारायण');
+  assert.ok(!at(1).classList.contains('roll-row--struck'));
+  assert.equal(at(1).querySelector('del'), null);
+  assert.equal(view.root.querySelector('p.roll-count').textContent, `${strings.roll_count}: 3000`);
+
+  // Recycled rows take the look of the entry they now show, and the struck-off
+  // entry stays reachable by scrolling, in roll order.
+  view.viewport.scrollTop = 1500 * ROW_HEIGHT;
+  view.viewport.dispatchEvent({ type: 'scroll' });
+  flush();
+  assert.equal(at(1501).getAttribute('data-state'), null);
+  assert.equal(at(1501).querySelector('del'), null);
+  assert.equal(at(1502).querySelector('del').textContent, '1502. नाम1502');
+});
+
+test('a struck-off row is tappable like any other', () => {
+  const doc = createDocument();
+  const picked = [];
+  const list = [{ serial: 1, name: 'क', struck: true }, { serial: 2, name: 'ख', struck: false }];
+  const view = mountRollList(doc.body, list, strings, { viewportHeight: VIEWPORT, requestFrame: () => {}, onSelect: (e) => picked.push(e.serial) });
+  view.viewport.querySelectorAll('div.roll-row')[0].dispatchEvent({ type: 'click' });
+  assert.deepEqual(picked, [1]);
+});
+
 test('resize re-renders for the new height and destroy() removes the listener', () => {
   const doc = createDocument();
   const listeners = new Map();
@@ -133,4 +168,15 @@ test('the list uses the Noto Sans Devanagari base font and fixed-height rows', (
   assert.match(row, /overflow:\s*hidden/);
   assert.doesNotMatch(row, /font-family/);
   assert.match(css, /\.roll-viewport\s*\{[^}]*overflow-y:\s*auto/);
+});
+
+test('styles.css strikes a struck-off row through with a DESIGN.md colour token', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  assert.match(css, /\.roll-row--struck\s*\{[^}]*background:\s*var\(--color-danger-bg\)/);
+  const rule = css.match(/\.roll-row--struck \.roll-name\s*\{([^}]*)\}/)[1];
+  assert.match(rule, /text-decoration:\s*line-through/);
+  assert.match(rule, /color:\s*var\(--color-danger\)/);
+  const design = readFileSync(new URL('../DESIGN.md', import.meta.url), 'utf8');
+  assert.match(design, /`--color-danger`/);
+  assert.match(design, /`\.roll-row--struck`/);
 });

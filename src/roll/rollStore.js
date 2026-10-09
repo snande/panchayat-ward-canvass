@@ -1,7 +1,11 @@
 // Encrypted on-device copy of a decoded ward roll.
 //
-// - Only STORED_FIELDS of each entry are kept; the PDF bytes, EPIC numbers,
-//   page numbers and struck-off (deleted) entries are never written.
+// - Only STORED_FIELDS of each entry are kept, struck-off entries included
+//   (flagged `struck`, so the list can show them struck through); the PDF
+//   bytes, EPIC numbers and page numbers are never written.
+// - The record carries a schema version (`v`). A record of an older version
+//   reads as no copy, so the roll is downloaded and decoded again; a version
+//   this code does not know is reported as an error, never misread.
 // - The entries are encrypted with WebCrypto AES-GCM (256-bit key, fresh
 //   12-byte IV per write, the ward key as additional data) and stored in
 //   IndexedDB.
@@ -21,21 +25,32 @@ import { createDeviceKeyLoader } from '../crypto/deviceKey.js';
 
 export { DB_NAME, KEYS_STORE, ROLLS_STORE, META_STORE };
 const LAST_WARD = 'last-ward';
-const RECORD_VERSION = 1;
+// 1: live entries only, six fields. 2: struck-off entries too, with `struck`.
+const RECORD_VERSION = 2;
+const OLD_RECORD_VERSIONS = new Set([1]);
 
-export const STORED_FIELDS = Object.freeze(['serial', 'name', 'relative', 'age', 'gender', 'house']);
+export const STORED_FIELDS = Object.freeze(['serial', 'name', 'relative', 'age', 'gender', 'house', 'struck']);
+
+/** A stored roll record whose schema version this code does not know. */
+export class UnknownRecordVersionError extends Error {
+  constructor(version) {
+    super(`stored roll record has unknown schema version ${JSON.stringify(version)}`);
+    this.name = 'UnknownRecordVersionError';
+    this.version = version;
+  }
+}
 
 /** Stable storage key for a ward selection {district, samiti, panchayat, ward}. */
 export function wardKeyFor(selection) {
   return [selection.district, selection.samiti, selection.panchayat, selection.ward].join('/');
 }
 
-/** Keep only STORED_FIELDS of the live (not struck-off) entries. */
+/** Keep only STORED_FIELDS of every entry, struck-off ones included. */
 export function minimiseEntries(entries) {
   if (!Array.isArray(entries)) throw new TypeError('entries must be an array');
   const out = [];
   for (const entry of entries) {
-    if (!entry || typeof entry !== 'object' || entry.deleted === true) continue;
+    if (!entry || typeof entry !== 'object') continue;
     if (!Number.isFinite(entry.serial)) continue;
     out.push({
       serial: entry.serial,
@@ -44,6 +59,7 @@ export function minimiseEntries(entries) {
       age: Number.isFinite(entry.age) ? entry.age : null,
       gender: typeof entry.gender === 'string' ? entry.gender : '',
       house: entry.house == null ? '' : String(entry.house),
+      struck: entry.struck === true,
     });
   }
   return out;
@@ -81,11 +97,16 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
     return minimal;
   }
 
-  /** Decrypt a stored ward's entries, or null when none is stored. */
+  /**
+   * Decrypt a stored ward's entries, or null when none is stored or the copy
+   * is of an older schema version (the caller then decodes the roll again).
+   * @throws {UnknownRecordVersionError} for a version this code does not know
+   */
   async function loadStored(wardKey) {
     const record = await readValue(db, ROLLS_STORE, wardKey);
     if (!record) return null;
-    if (record.v !== RECORD_VERSION) return null;
+    if (OLD_RECORD_VERSIONS.has(record.v)) return null;
+    if (record.v !== RECORD_VERSION) throw new UnknownRecordVersionError(record.v);
     const key = await deviceKey();
     const plain = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: record.iv, additionalData: encoder.encode(wardKey) },

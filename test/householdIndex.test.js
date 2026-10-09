@@ -60,10 +60,10 @@ test('buildHouseholdIndex groups by normalised house with members in ascending s
 test('buildHouseholdIndex accepts the entries rollStore keeps (STORED_FIELDS via minimiseEntries)', () => {
   // Decoder-shaped entries, including a struck-off one and fields rollStore drops.
   const decoded = [
-    { serial: 8, page: 3, name: 'सीता', relation: 'पति', relative: 'राम', age: 40, gender: 'स्त्री', house: '१२/३', epic: 'UPY1', deleted: false },
-    { serial: 4, page: 3, name: 'राम', relation: 'पिता', relative: 'श्याम', age: 45, gender: 'पुरूष', house: '12 / 3', epic: 'UPY2', deleted: false },
-    { serial: 6, page: 3, name: 'गीता', relation: 'पिता', relative: 'राम', age: 20, gender: 'स्त्री', house: '12/3', epic: 'UPY3', deleted: true },
-    { serial: 2, page: 2, name: 'मोहन', relation: 'पिता', relative: 'सोहन', age: 50, gender: 'पुरूष', house: null, epic: 'UPY4', deleted: false },
+    { serial: 8, page: 3, name: 'सीता', relation: 'पति', relative: 'राम', age: 40, gender: 'स्त्री', house: '१२/३', epic: 'UPY1', struck: false },
+    { serial: 4, page: 3, name: 'राम', relation: 'पिता', relative: 'श्याम', age: 45, gender: 'पुरूष', house: '12 / 3', epic: 'UPY2', struck: false },
+    { serial: 6, page: 3, name: 'गीता', relation: 'पिता', relative: 'राम', age: 20, gender: 'स्त्री', house: '12/3', epic: 'UPY3', struck: true },
+    { serial: 2, page: 2, name: 'मोहन', relation: 'पिता', relative: 'सोहन', age: 50, gender: 'पुरूष', house: null, epic: 'UPY4', struck: false },
   ];
   const stored = minimiseEntries(decoded);
   for (const e of stored) assert.deepEqual(Object.keys(e).sort(), [...STORED_FIELDS].sort());
@@ -71,6 +71,8 @@ test('buildHouseholdIndex accepts the entries rollStore keeps (STORED_FIELDS via
   const index = buildHouseholdIndex(stored, 'ward-3');
   assert.equal(index.size, 1);
   const household = findHousehold(index, '12/3');
+  // the struck-off serial 6 is stored, but is not a member of the household
+  assert.ok(stored.some((e) => e.serial === 6 && e.struck));
   assert.deepEqual(serials(household), [4, 8]);
   assert.equal(household.ward, 'ward-3');
 });
