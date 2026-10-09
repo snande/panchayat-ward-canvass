@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+node_modules/
+# timings vary run to run; CI publishes it as an artifact instead
+reports/search-perf.md
