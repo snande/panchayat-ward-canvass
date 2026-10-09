@@ -716,6 +716,46 @@ select.picker-select,
   transform: rotate(45deg);
 }
 
+/* The error tone: a voter struck off the roll ("हटाया गया"). */
+.badge[data-tone="error"] {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* Voter card (src/card/voterCard.js): the full roll line as label / value
+   rows. Read-only, so it holds no control. */
+.voter-roll-card .badge {
+  margin: var(--space-2) 0 0;
+}
+
+.voter-roll-fields {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.voter-roll-field {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.voter-roll-label {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+  color: var(--color-text-muted);
+}
+
+.voter-roll-value {
+  margin: 0;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
 /* Notice: the one feedback line of a surface (DESIGN.md "Status banner"),
    tinted by its tone: info, success or error. Empty notices take no space. */
 .notice {
