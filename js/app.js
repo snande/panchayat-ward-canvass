@@ -116,6 +116,8 @@ if (secFooter) {
 // request: the module is precached and the roll is read from the encrypted
 // store. While it is open, #app carries data-route="voter" and styles.css
 // hides the other screens; the seat header and SEC footer stay.
+// Its first look at location.hash happens once it has loaded, so an app
+// opened at (or moved to) a voter address before then still opens it.
 var voterRoute = document.getElementById("voter-route");
 if (voterRoute) {
   import("../src/ui/voterRoute.js")

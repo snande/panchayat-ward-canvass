@@ -179,7 +179,5 @@
   "voter_route_empty_contact": "फिर भी न मिले तो अपनी टीम के समन्वयक को फ़ोन करें।",
   "voter_route_error": "मतदाता की जानकारी इस फ़ोन पर पढ़ी नहीं जा सकी। फिर से कोशिश करें या खोज पर वापस जाएँ।",
   "voter_route_error_contact": "फिर भी न खुले तो अपनी टीम के समन्वयक को फ़ोन करें।",
-  "voter_route_back": "वापस जाएँ",
-  "voter_route_panchayat": "पंचायत",
-  "voter_route_ward": "वार्ड"
+  "voter_route_back": "वापस जाएँ"
 }

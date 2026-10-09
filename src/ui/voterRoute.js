@@ -2,21 +2,24 @@
 // card, the same card wherever the voter is opened from. js/app.js starts it;
 // it is the only caller of renderVoterCard() (src/card/voterCard.js).
 //
-// The ward is one of the loaded panchayat's: the last stored ward key
-// ("district/samiti/panchayat/ward", src/roll/rollStore.js) with the route's
-// ward swapped in. Entries come from the encrypted store on the phone, so it
-// works offline with no network request, and it writes nothing.
+// The route names a ward of the loaded panchayat, the one this phone holds a
+// roll for: the ward key of the last stored roll ("district/samiti/panchayat/
+// ward", src/roll/rollStore.js) with the route's ward swapped in. A ward of
+// another panchayat is not looked up; it reads as not stored (the empty
+// state), and the line on top names the panchayat that was searched.
+// Entries come from the encrypted store on the phone, so the route works
+// offline with no network request, and it writes nothing.
 //
 // One `state` at a time (DESIGN.md): loading (progress bar, info notice),
-// empty (not stored: go back to search, call the coordinator), error (read or
-// decryption failed: what to do, whom to call, retry) or card. Every state has
-// a back button and a panchayat and ward line; the seat header and SEC footer
-// sit outside #app and stay.
+// empty (not stored, or a malformed voter address: go back to search, call
+// the coordinator), error (read or decryption failed: what to do, whom to
+// call, retry) or card. Every state has a back button and the seat line; the
+// seat header and SEC footer sit outside #app and stay.
 
 import { el, textFrom } from './dom.js';
 import { renderVoterCard } from '../card/voterCard.js';
 import { loadStored, lastWardKey } from '../roll/rollStore.js';
-import { loadSeat } from './seatHeader.js';
+import { loadSeat, seatLabel } from './seatHeader.js';
 
 export const VOTER_ROUTE_STATES = Object.freeze(['loading', 'empty', 'error', 'card']);
 
@@ -28,16 +31,21 @@ export const FALLBACK_TEXT = {
   voter_route_error: 'मतदाता की जानकारी इस फ़ोन पर पढ़ी नहीं जा सकी। फिर से कोशिश करें या खोज पर वापस जाएँ।',
   voter_route_error_contact: 'फिर भी न खुले तो अपनी टीम के समन्वयक को फ़ोन करें।',
   voter_route_back: 'वापस जाएँ',
-  voter_route_panchayat: 'पंचायत',
-  voter_route_ward: 'वार्ड',
+  seat_header_ward: 'वार्ड',
   roll_progress_label: 'मतदाता सूची लोड हो रही है',
   roll_retry: 'फिर से कोशिश करें',
 };
 
+const PREFIX = '#/voter/';
 const ROUTE = /^#\/voter\/([^/]+)\/(\d+)\/?$/;
 
 // "03" and "3" are the same ward; the catalogue's ward ids are unpadded.
 const wardPart = (value) => (/^\d+$/.test(value) ? String(Number(value)) : value);
+
+/** Whether a hash is a voter address at all, well formed or not. */
+export function isVoterHash(hash) {
+  return String(hash || '').startsWith(PREFIX);
+}
 
 /**
  * Parse a location hash: "#/voter/3/145" gives { ward: '3', serial: 145 }.
@@ -58,7 +66,7 @@ export function parseVoterRoute(hash) {
 
 /** The hash that opens a voter, e.g. voterRouteHash(3, 145) is "#/voter/3/145". */
 export function voterRouteHash(ward, serial) {
-  return `#/voter/${encodeURIComponent(wardPart(String(ward).trim()))}/${Number(serial)}`;
+  return `${PREFIX}${encodeURIComponent(wardPart(String(ward).trim()))}/${Number(serial)}`;
 }
 
 /**
@@ -96,7 +104,7 @@ export async function lookupVoter(store, route) {
  * @param {Record<string,string>|null} strings the Hindi string table
  * @param {{store?: {loadStored, lastWardKey}, seat?: () => object|null,
  *   onBack?: () => void, support?: string, log?: Function}} [opts]
- * @returns {{state: string|null, root: Element, open: (route: {ward: string, serial: number}) => Promise<string>,
+ * @returns {{state: string|null, root: Element, open: (route: {ward: string, serial: number}|null) => Promise<string>,
  *   setSupport: (text: string) => void}}
  */
 export function createVoterRouteScreen(container, strings, opts = {}) {
@@ -107,8 +115,9 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
   const log = opts.log || ((...args) => console.error(...args));
   let state = null;
   let support = '';
-  // Only the newest open() renders.
+  // Only the newest open() renders; an older one resolves with the newest.
   let current = 0;
+  let latest = Promise.resolve(null);
 
   const root = el(doc, 'div', 'voter-route');
   root.setAttribute('lang', 'hi');
@@ -136,8 +145,10 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
     return el(doc, 'p', 'voter-route-contact', support || text(key));
   }
 
-  // "पंचायत: बडली · वार्ड: 3": the loaded panchayat and the route's ward.
+  // The seat header's own line (seatLabel), "पंचायत: बडली · वार्ड: 3", for the
+  // loaded panchayat and the route's ward; blank for a malformed address.
   function seatLine(route) {
+    if (!route) return '';
     let panchayat = '';
     try {
       const s = seat();
@@ -145,8 +156,8 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
     } catch (err) {
       log('stored seat could not be read', err);
     }
-    const ward = `${text('voter_route_ward')}: ${route.ward}`;
-    return panchayat ? `${text('voter_route_panchayat')}: ${panchayat} · ${ward}` : ward;
+    if (panchayat) return seatLabel({ seatType: 'ward', panchayat, ward: route.ward }, strings || {});
+    return `${text('seat_header_ward')}: ${route.ward}`;
   }
 
   function setState(next, nodes) {
@@ -165,6 +176,10 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
     return [progress, notice('voter_route_loading', 'info', 'status')];
   }
 
+  function renderEmpty() {
+    return [notice('voter_route_empty', 'info', 'status'), contact('voter_route_empty_contact')];
+  }
+
   function renderError(route) {
     const retry = el(doc, 'button', 'btn-secondary voter-route-retry', text('roll_retry'));
     retry.setAttribute('type', 'button');
@@ -172,28 +187,41 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
     return [notice('voter_route_error', 'error', 'alert'), contact('voter_route_error_contact'), retry];
   }
 
-  /** Show the voter `route` names: loading, then card, empty or error. Resolves to the final state. */
-  async function open(route) {
-    const token = ++current;
+  async function run(route, token) {
     where.textContent = seatLine(route);
+    if (!route) {
+      setState('empty', renderEmpty());
+      return state;
+    }
     setState('loading', renderLoading());
     let found;
     try {
       found = await lookupVoter(store, route);
     } catch (err) {
-      if (token !== current) return state;
+      if (token !== current) return latest;
       log('voter could not be read from the stored roll', err);
       setState('error', renderError(route));
       return state;
     }
-    if (token !== current) return state;
+    if (token !== current) return latest;
     if (found.entry) {
       // The booth is not stored with the roll yet, so its fields read "—".
       setState('card', [renderVoterCard(found.entry, route.ward, null, doc)]);
     } else {
-      setState('empty', [notice('voter_route_empty', 'info', 'status'), contact('voter_route_empty_contact')]);
+      setState('empty', renderEmpty());
     }
     return state;
+  }
+
+  /**
+   * Show the voter `route` names (null: a malformed voter address, shown as
+   * empty): loading, then card, empty or error. Resolves to the final state;
+   * a call overtaken by a newer one resolves to the newer one's.
+   */
+  function open(route) {
+    const token = ++current;
+    latest = run(route, token);
+    return latest;
   }
 
   /** The whom-to-call line of the empty and error states; blank keeps the coordinator line. */
@@ -211,11 +239,13 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
 }
 
 /**
- * Follow the location hash: while it is a voter route, show the screen in
+ * Follow the location hash: while it is a voter address, show the screen in
  * container and mark opts.main (#app) with data-route="voter" so styles.css
  * hides the other screens; any other hash hides it again and leaves the other
- * screens as they were. Back goes to the screen the voter was opened from
- * (history.back()); with no history it clears the hash.
+ * screens as they were. The first sync reads the hash as it is when this
+ * starts, so an app opened at (or moved to) a voter address before the module
+ * loaded still opens it. Back goes to the screen the voter was opened from
+ * (history.back()); with no history it drops the hash and closes the route.
  * @param {Element} container the #voter-route section
  * @param {Record<string,string>|null} strings
  * @param {{window: Window, main?: Element, store?: object, seat?: Function, log?: Function}} opts
@@ -231,21 +261,29 @@ export function startVoterRoute(container, strings, opts) {
     log: opts.log,
     onBack() {
       const history = win.history;
-      if (history && history.length > 1 && typeof history.back === 'function') history.back();
-      else win.location.hash = '';
+      if (history && history.length > 1 && typeof history.back === 'function') {
+        history.back();
+      } else if (history && typeof history.replaceState === 'function') {
+        // No bare "#" left behind; replaceState fires no hashchange, so sync here.
+        history.replaceState(null, '', `${win.location.pathname || ''}${win.location.search || ''}`);
+        settled = sync();
+      } else {
+        win.location.hash = '';
+      }
     },
   });
 
   function sync() {
-    const route = parseVoterRoute(win.location && win.location.hash);
-    container.hidden = !route;
+    const hash = win.location && win.location.hash;
+    const shown = isVoterHash(hash);
+    container.hidden = !shown;
     if (main) {
-      if (route) main.setAttribute('data-route', 'voter');
+      if (shown) main.setAttribute('data-route', 'voter');
       else main.removeAttribute('data-route');
     }
-    if (!route) return Promise.resolve(null);
+    if (!shown) return Promise.resolve(null);
     if (typeof container.scrollIntoView === 'function') container.scrollIntoView();
-    return screen.open(route);
+    return screen.open(parseVoterRoute(hash));
   }
 
   let settled = sync();

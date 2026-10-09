@@ -1479,7 +1479,17 @@ select.picker-select,
   align-self: flex-start;
 }
 
-.voter-route-seat,
+/* The seat line is body text, like the seat header it echoes. */
+.voter-route-seat {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+}
+
+.voter-route-seat:empty {
+  display: none;
+}
+
 .voter-route-contact {
   margin: 0;
   color: var(--color-text);
