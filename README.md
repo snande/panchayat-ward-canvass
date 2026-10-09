@@ -219,8 +219,9 @@ The `बिना इंटरनेट: एसएमएस से गिनत�
   the SMS inbox and then becomes a seen-voting mark for each serial
   (`src/tally/smsMarks.js`), in the name of the worker who sent it. Marks are
   keyed by ward and serial, so a voter who arrives by SMS from two phones, or
-  by SMS and by sync, counts once. Serials that are not in the ward's roll are
-  not counted, and the form says so. The ward's team count sits under the
+  by SMS and by sync, counts once. Serials that are not in the ward's roll,
+  or are struck off it, are not counted, and the form says so. A struck-off
+  serial is never sent from the top panel either. The ward's team count sits under the
   form, and the turnout screen shows the same figure.
 
 Before polling day, the coordinator saves the team's SMS number in that form.
@@ -240,7 +241,8 @@ saves a seen-voting mark through `src/tally/seenVotingStore.js`: kept on the
 phone, encrypted, and queued for the team, so it works offline. A voter
 already marked, on this phone or a teammate's, shows `वोट डाल दिया — दर्ज है।`
 instead of the button, and this follows marks that arrive while the panel is
-open. The mark is attributed to this phone's id in its team (`getDeviceId()`
+open. A voter struck off the roll gets no button: an info notice says the
+name was struck off and no vote can be recorded for it. The mark is attributed to this phone's id in its team (`getDeviceId()`
 in `src/sync/teamAuth.js`), or `device` before it has joined.
 
 The `मतदान के दिन का हिसाब खोलें` button above the roll opens the turnout

@@ -68,7 +68,7 @@ function countLine(doc, className, label) {
  *   settings: () => Promise<{teamSmsNumber?: string, candidateId?: string}>,
  *   teamNumber?: {save: (value: string) => Promise<string>, onChange?: (cb: (number: string) => void) => Function},
  *   workerId?: () => string | Promise<string>,
- *   inRoll?: (serial: number) => boolean,
+ *   inRoll?: (serial: number) => boolean, (false for a serial absent or struck off)
  *   inbox?: {applyTallySms: Function},
  *   location?: {href: string}, log?: Function,
  * }} opts workerId names this phone's worker (defaults to 'device', as for a
@@ -136,7 +136,8 @@ export function mountSmsTally(container, strings, opts) {
     if (request === wardRequest) showCount(value, 'seen_team_count_failed');
   }
 
-  // The serials the send button packs: this worker's marks in this ward.
+  // The serials the send button packs: this worker's marks in this ward,
+  // less any serial inRoll says is not a live roll entry.
   let ownSerials = [];
   let settings = null;
   let worker = null;
@@ -166,6 +167,8 @@ export function mountSmsTally(container, strings, opts) {
       const all = await marks.listMarks();
       serials = all
         .filter((mark) => mark.wardId === wardId && mark.workerId === worker && mark.serial >= 1)
+        // A serial struck off the roll is not sent, even if it was marked.
+        .filter((mark) => typeof opts.inRoll !== 'function' || opts.inRoll(mark.serial))
         .map((mark) => mark.serial);
     } catch (err) {
       log('this worker\'s seen-voting marks could not be read', err);

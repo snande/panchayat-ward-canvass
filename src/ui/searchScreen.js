@@ -10,6 +10,7 @@ export const DEBOUNCE_MS = 100;
 export const RESULT_LIMIT = 50;
 export const PLACEHOLDER = 'नाम खोजें';
 export const NO_RESULTS_MESSAGE = 'कोई मतदाता नहीं मिला';
+export const STRUCK_OFF_LABEL = 'हटाया गया';
 
 const STYLE = `
 .pwc-search { font-family: var(--font-family-base, 'Noto Sans Devanagari', 'Mangal', sans-serif); max-width: 40rem; margin: 0 auto 0.75rem; }
@@ -41,8 +42,12 @@ function renderRow(doc, voter, onSelect) {
       onSelect(voter);
     });
   }
-  row.appendChild(el(doc, 'span', 'pwc-search__name', voter.name));
+  const name = row.appendChild(el(doc, 'span', 'pwc-search__name'));
+  // A struck-off voter stays a result, its name struck through as in the roll.
+  if (voter.struck === true) name.appendChild(el(doc, 'del', 'roll-struck', voter.name));
+  else name.textContent = String(voter.name ?? '');
   const meta = el(doc, 'span', 'pwc-search__meta');
+  if (voter.struck === true) meta.appendChild(el(doc, 'span', 'pwc-search__struck', STRUCK_OFF_LABEL));
   meta.appendChild(el(doc, 'span', 'pwc-search__relative', voter.relativeName ?? ''));
   meta.appendChild(el(doc, 'span', 'pwc-search__serial', `क्रम सं. ${voter.serial ?? ''}`));
   meta.appendChild(el(doc, 'span', 'pwc-search__house', `मकान नं. ${voter.houseNo ?? ''}`));
@@ -52,7 +57,7 @@ function renderRow(doc, voter, onSelect) {
 
 /**
  * Mount the search screen into container over the given voters
- * ({ id, serial, name, relativeName, houseNo }).
+ * ({ id, serial, name, relativeName, houseNo, struck? }).
  *
  * options.onRender(results) is called after each render (used by tests and
  * for instrumentation). options.onSelect(voter), when given, is called when a

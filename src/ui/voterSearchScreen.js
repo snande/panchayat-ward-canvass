@@ -6,6 +6,9 @@
 // A query that is a loaded house number shows its household card above the
 // rows (all members, whatever the filters but ward keep); a member tap calls
 // opts.onOpenVoter({ward, serial, wardKey}).
+// A struck-off entry (struck: true) stays a result, marked as the roll list
+// marks it: its ward/serial and name in a <del>, its meta line led by
+// "हटाया गया" (or the supplementary roll's wording).
 // Voter text is only ever text nodes. No store writes, no network.
 
 import {
@@ -56,6 +59,8 @@ export const FALLBACK_TEXT = {
   search_serial: 'क्रम',
   roll_age: 'उम्र',
   roll_house: 'मकान नं.',
+  roll_struck_off: 'हटाया गया',
+  supp_deleted: 'हटाया गया (पूरक सूची)',
   roll_progress_label: 'मतदाता सूची लोड हो रही है',
 };
 
@@ -328,11 +333,18 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     const row = el(doc, 'li', 'list-row search-row');
     row.setAttribute('role', 'option');
     row.setAttribute('data-key', result.key);
+    const struck = entry.struck === true;
     const head = el(doc, 'span', 'search-row-head');
-    part(head, 'search-serial', `${entry.ward}/`, entry.serial, at('serial'));
-    part(head, 'search-name', '', entry.name, at('name'));
+    // A struck-off serial and name sit in a <del>, struck through.
+    const headText = struck ? head.appendChild(el(doc, 'del', 'roll-struck search-row-struck')) : head;
+    part(headText, 'search-serial', `${entry.ward}/`, entry.serial, at('serial'));
+    part(headText, 'search-name', '', entry.name, at('name'));
     row.appendChild(head);
     const meta = el(doc, 'span', 'search-row-meta');
+    if (struck) {
+      row.setAttribute('data-state', 'struck-off');
+      meta.appendChild(el(doc, 'span', 'search-struck', text(entry.supplement === 'deletion' ? 'supp_deleted' : 'roll_struck_off')));
+    }
     part(meta, 'search-relative', '', entry.relative, at('relative'));
     part(meta, 'search-age', `${text('roll_age')} `, entry.age ?? '—', null);
     part(meta, 'search-gender', '', entry.gender || '—', null);

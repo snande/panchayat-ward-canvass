@@ -18,6 +18,10 @@
 // after every added mark, both this phone's and those a sync pull brings from
 // teammates (the store reports both through onMarksChanged once they are
 // stored). All text comes from the strings table.
+//
+// An entry struck off the roll (struck: true) is not a voter: the control
+// offers no button and never calls markSeen, and an info notice says why;
+// the team count line still shows.
 
 import { el, setNotice } from './dom.js';
 
@@ -27,7 +31,7 @@ import { el, setNotice } from './dom.js';
  * @param {Record<string, string>} strings the Hindi string table
  * @param {{
  *   marks: {markSeen: Function, getMark: Function, teamCount?: Function, onMarksChanged?: Function},
- *   wardId: string, entry: {serial: number},
+ *   wardId: string, entry: {serial: number, struck?: boolean},
  *   workerId?: () => string | Promise<string>, log?: Function,
  * }} opts workerId names who marks the voter (defaults to 'device')
  * @returns {{root, button, badge, status, message, count: Element | null, countValue: Element | null,
@@ -38,11 +42,13 @@ export function mountSeenVotingMark(container, strings, opts) {
   const doc = container.ownerDocument;
   const text = (key) => (strings && Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : '');
   const { marks, wardId, entry } = opts;
+  const struck = Boolean(entry && entry.struck === true);
   const workerId = typeof opts.workerId === 'function' ? opts.workerId : () => 'device';
   const log = opts.log || ((...args) => console.error(...args));
 
   const root = el(doc, 'section', 'panel seen-voting');
   root.setAttribute('lang', 'hi');
+  if (struck) root.setAttribute('data-state', 'struck-off');
   const status = el(doc, 'p', 'notice seen-voting-status');
   status.setAttribute('aria-live', 'polite');
   const button = el(doc, 'button', 'btn-primary seen-voting-mark', text('seen_mark_action'));
@@ -72,6 +78,12 @@ export function mountSeenVotingMark(container, strings, opts) {
   // undefined: still reading; null: not marked; false: could not be read;
   // otherwise the mark.
   function showState(state) {
+    if (struck) {
+      button.hidden = true;
+      badge.hidden = true;
+      setNotice(status, text('seen_struck_off'), 'info');
+      return;
+    }
     const marked = Boolean(state);
     button.hidden = state === undefined || marked;
     badge.hidden = !marked;
@@ -105,6 +117,7 @@ export function mountSeenVotingMark(container, strings, opts) {
   // Later reads win over slower earlier ones.
   let readRequest = 0;
   async function read() {
+    if (struck) return;
     const request = ++readRequest;
     let state;
     try {
@@ -118,7 +131,7 @@ export function mountSeenVotingMark(container, strings, opts) {
 
   let busy = false;
   async function mark() {
-    if (busy) return;
+    if (busy || struck) return;
     busy = true;
     root.setAttribute('aria-busy', 'true');
     button.setAttribute('disabled', '');
