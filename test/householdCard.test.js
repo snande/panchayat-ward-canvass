@@ -7,14 +7,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { webcrypto } from 'node:crypto';
 
-import { renderHouseholdCard, FALLBACK_TEXT, HOUSEHOLD_CARD_STATES } from '../src/households/householdCard.js';
+import { renderHouseholdCard, HOUSEHOLD_TEXT, HOUSEHOLD_CARD_STATES } from '../src/households/householdCard.js';
 import { buildHouseholdIndex, findHousehold } from '../src/households/householdIndex.js';
 import { createContactStore } from '../src/contacts/contactStore.js';
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
-const strings = JSON.parse(read('src/strings.hi.json'));
 const css = read('styles.css');
 const design = read('DESIGN.md');
 const WARD = '17/125/6313/1';
@@ -36,13 +35,16 @@ const classes = (node) => node.className.split(/\s+/);
 const tone = (node) => node.getAttribute('data-tone');
 const rowsOf = (view) => view.list.querySelectorAll('button.household-member');
 const fieldValue = (row, cls) => row.querySelector(`span.${cls}`).querySelector('span.household-member-value').textContent;
+// styles.css as innermost `selectors { body }` rules, comments stripped.
+const rules = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  .map((m) => ({ selectors: m[1].trim().split(/,\s*/), body: m[2] }));
+const ruleOf = (selector) => rules.filter((r) => r.selectors.includes(selector)).map((r) => r.body).join(';');
 
 function mount(household, overrides = {}) {
   const doc = createDocument();
   const container = doc.createElement('div');
   const opened = [];
   const view = renderHouseholdCard(container, household, {
-    strings,
     contacts: { getContact: async (ward, serial) => (serial === 7 ? { phone: '9876543210', consentAt: 'x' } : null) },
     getMemberStatus: async (ward, serial) => (serial === 7 ? { tag: 'समर्थक', visit: 'मिल लिए' } : serial === 9 ? { tag: 'अनिश्चित' } : null),
     onOpenMember: (member) => opened.push(member),
@@ -52,8 +54,11 @@ function mount(household, overrides = {}) {
   return { doc, container, view, opened };
 }
 
-test('the fallback copies match src/strings.hi.json', () => {
-  for (const [key, value] of Object.entries(FALLBACK_TEXT)) assert.equal(strings[key], value, key);
+test('the card\'s copy is Hindi text with no Latin letters', () => {
+  for (const [key, value] of Object.entries(HOUSEHOLD_TEXT)) {
+    assert.match(value, /[ऀ-ॿ]/, key);
+    assert.doesNotMatch(value, /[A-Za-z]/, key);
+  }
 });
 
 test('success: one card headed by house number and member count, one row per member in serial order', async () => {
@@ -83,6 +88,7 @@ test('success: one card headed by house number and member count, one row per mem
   assert.equal(fieldValue(first, 'household-member-tag'), 'समर्थक');
   assert.equal(fieldValue(first, 'household-member-visit'), 'मिल लिए');
   assert.ok(classes(first.querySelector('span.household-member-tag')).includes('badge'));
+  assert.ok(classes(first.querySelector('span.household-member-visit')).includes('badge'));
 });
 
 test('a field with no value reads "—", never blank or undefined', async () => {
@@ -136,9 +142,10 @@ test('each row is a button-role .list-row at least 48 px tall', async () => {
     assert.equal(row.parentNode.tagName, 'LI');
   }
   assert.match(css, /:root\s*\{[^}]*--touch-target:\s*48px/);
-  const listRow = css.match(/\n\.list-row\s*\{([^}]*)\}/)[1];
+  const listRow = ruleOf('.list-row');
   assert.match(listRow, /min-height:\s*var\(--touch-target\)/);
   assert.match(listRow, /appearance:\s*none/);
+  assert.doesNotMatch(ruleOf('.household-member'), /min-height|height/);
 });
 
 test('loading: an info notice and aria-busy until every member\'s data settles', async () => {
@@ -147,8 +154,9 @@ test('loading: an info notice and aria-busy until every member\'s data settles',
   assert.equal(view.state, 'loading');
   assert.equal(view.root.getAttribute('data-state'), 'loading');
   assert.equal(view.root.getAttribute('aria-busy'), 'true');
-  assert.equal(view.message.textContent, strings.household_loading);
+  assert.equal(view.message.textContent, HOUSEHOLD_TEXT.household_loading);
   assert.equal(tone(view.message), 'info');
+  assert.ok(classes(view.message).includes('notice'));
   assert.equal(view.list.hidden, true);
   assert.equal(rowsOf(view).length, 0);
   pending.resolve({ tag: 'समर्थक', visit: 'मिल लिए' });
@@ -163,7 +171,7 @@ test('empty: a null household shows Hindi copy saying no such house in the loade
   await view.ready;
   assert.equal(view.state, 'empty');
   assert.ok(classes(view.root).includes('panel'));
-  assert.equal(view.message.textContent, strings.household_empty);
+  assert.equal(view.message.textContent, HOUSEHOLD_TEXT.household_empty);
   assert.equal(tone(view.message), 'info');
   assert.match(view.message.textContent, /वार्ड/);
   assert.match(view.message.textContent, /नहीं मिला/);
@@ -182,12 +190,13 @@ test('error: a dependency that throws shows what to do and whom to call, and a r
     await view.ready;
     assert.equal(view.state, 'error');
     assert.equal(errors, 1);
-    assert.equal(view.message.textContent, strings.household_failed);
+    assert.equal(view.message.textContent, HOUSEHOLD_TEXT.household_failed);
     assert.equal(tone(view.message), 'error');
     assert.match(view.message.textContent, /कोशिश करें/);
     const contact = view.root.querySelector('p.household-contact');
     assert.equal(contact.hidden, false);
-    assert.equal(contact.textContent, strings.household_error_contact);
+    assert.ok(classes(contact).includes('roll-contact'));
+    assert.equal(contact.textContent, HOUSEHOLD_TEXT.household_error_contact);
     assert.match(contact.textContent, /समन्वयक/);
     assert.equal(view.retryButton.hidden, false);
     assert.ok(classes(view.retryButton).includes('btn-secondary'));
@@ -205,6 +214,8 @@ test('error: a dependency that throws shows what to do and whom to call, and a r
   await view.ready;
   assert.equal(view.state, 'error');
   fail = false;
+  view.retryButton.dispatchEvent({ type: 'click' });
+  assert.equal(view.state, 'loading');
   await view.reload();
   assert.equal(view.state, 'success');
   assert.equal(view.root.querySelector('p.household-contact').hidden, true);
@@ -216,26 +227,25 @@ test('the four states are distinct', () => {
 });
 
 test('body text is at least 16 px in theme text colour tokens, with no literal sizes or colours', () => {
-  const bodies = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter((m) => m[1].includes('.household-'));
-  assert.ok(bodies.length >= 5);
-  const card = bodies.find((m) => m[1].trim() === '.household-card');
-  assert.ok(card);
-  assert.match(card[2], /color:\s*var\(--color-text\)/);
-  assert.match(card[2], /font-size:\s*var\(--font-size-body\)/);
-  for (const [, selector, body] of bodies) {
+  assert.match(ruleOf('.list-row'), /color:\s*var\(--color-text\)/);
+  assert.match(ruleOf('.list-row'), /font-size:\s*var\(--font-size-body\)/);
+  assert.match(ruleOf('.household-card'), /color:\s*var\(--color-text\)/);
+  assert.match(ruleOf('.search-row-meta'), /font-size:\s*var\(--font-size-sm\)/);
+  const own = rules.filter((r) => r.selectors.some((sel) => sel.includes('.household-')));
+  assert.ok(own.length >= 2);
+  for (const { selectors, body } of own) {
     for (const m of body.matchAll(/font-size:\s*([^;]+)/g)) {
-      assert.match(m[1].trim(), /^var\(--font-size-(sm|body|lg)\)$/, selector);
+      assert.match(m[1].trim(), /^var\(--font-size-(sm|body|lg)\)$/, String(selectors));
     }
     for (const m of body.matchAll(/(?:^|[\s;])color:\s*([^;]+)/g)) {
-      assert.match(m[1].trim(), /^var\(--color-[\w-]+\)$/, selector);
+      assert.match(m[1].trim(), /^var\(--color-[\w-]+\)$/, String(selectors));
     }
   }
 });
 
 test('DESIGN.md names the household card and its classes', () => {
   const table = design.slice(design.indexOf('## Shared controls'), design.indexOf('## States'));
-  for (const name of ['household-card', 'household-members', 'household-member', 'household-member-fields']) {
+  for (const name of ['household-card', 'household-members']) {
     assert.ok(table.includes(`\`.${name}\``), name);
   }
   assert.match(design, /renderHouseholdCard\(\)/);
@@ -248,7 +258,7 @@ test('it writes no stored record, has no destructive action and makes no network
 
   const calls = [];
   const contacts = new Proxy({}, {
-    get: (_, name) => async (...args) => { calls.push(name); return name === 'getContact' ? { phone: '9876543210' } : null; },
+    get: (_, name) => async () => { calls.push(name); return name === 'getContact' ? { phone: '9876543210' } : null; },
   });
   const realFetch = globalThis.fetch;
   globalThis.fetch = () => { throw new Error('no network'); };

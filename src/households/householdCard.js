@@ -12,6 +12,11 @@
 // saying what to do, a line saying whom to call and a secondary retry) and
 // success (the rows).
 //
+// The rows reuse the search screen's row lines and the error state the
+// ward-roll screen's whom-to-call line, so the card adds almost nothing to
+// styles.css. Its copy lives here (like src/card/voterCard.js), not in
+// src/strings.hi.json, which counts against the precache budget.
+//
 // It only reads: it adds no stored record, deletes or overwrites nothing and
 // makes no network request, so it works fully offline. Voter text is only
 // ever text nodes.
@@ -22,9 +27,8 @@ import { el, textFrom, setNotice } from '../ui/dom.js';
 
 export const HOUSEHOLD_CARD_STATES = Object.freeze(['loading', 'empty', 'error', 'success']);
 
-// Copies of src/strings.hi.json entries, used when the caller passes no string
-// table; test/householdCard.test.js fails if they drift.
-export const FALLBACK_TEXT = {
+/** The card's Hindi copy; deps.strings may override any key. */
+export const HOUSEHOLD_TEXT = Object.freeze({
   household_house: 'मकान नं.',
   household_members: 'सदस्य',
   household_loading: 'परिवार के सदस्यों का नंबर, टैग और संपर्क की स्थिति पढ़ी जा रही है…',
@@ -38,7 +42,7 @@ export const FALLBACK_TEXT = {
   household_phone: 'फ़ोन',
   household_tag: 'टैग',
   household_visit: 'संपर्क की स्थिति',
-};
+});
 
 const defaultContacts = { getContact };
 
@@ -53,14 +57,14 @@ const defaultContacts = { getContact };
  *   a member's tag and visit status
  * @param {(member: {ward, serial}) => void} deps.onOpenMember called once per row tap
  * @param {{getContact: Function}} [deps.contacts] defaults to src/contacts/contactStore.js
- * @param {Record<string,string>} [deps.strings] the string table
+ * @param {Record<string,string>} [deps.strings] overrides of HOUSEHOLD_TEXT
  * @param {Document} [deps.doc] defaults to the container's document
  * @param {(err: Error) => void} [deps.log]
  * @returns {{root, message, list, retryButton, ready: Promise<void>, state: string, reload: () => Promise<void>}}
  */
 export function renderHouseholdCard(container, household, deps = {}) {
   const doc = deps.doc || container.ownerDocument || globalThis.document;
-  const text = textFrom(deps.strings, FALLBACK_TEXT);
+  const text = textFrom(deps.strings, HOUSEHOLD_TEXT);
   const contacts = deps.contacts || defaultContacts;
   const log = deps.log || ((err) => console.error(err));
   const members = household && Array.isArray(household.members) ? household.members : [];
@@ -70,9 +74,9 @@ export function renderHouseholdCard(container, household, deps = {}) {
   root.setAttribute('lang', 'hi');
   const message = el(doc, 'p', 'notice household-message');
   message.setAttribute('role', 'status');
-  const contactLine = el(doc, 'p', 'household-contact', text('household_error_contact'));
+  const contactLine = el(doc, 'p', 'roll-contact household-contact', text('household_error_contact'));
   contactLine.hidden = true;
-  const retryButton = el(doc, 'button', 'btn-secondary household-retry', text('household_retry'));
+  const retryButton = el(doc, 'button', 'btn-secondary status-retry household-retry', text('household_retry'));
   retryButton.setAttribute('type', 'button');
   retryButton.hidden = true;
   const list = el(doc, 'ul', 'household-members');
@@ -123,19 +127,19 @@ export function renderHouseholdCard(container, household, deps = {}) {
     row.setAttribute('type', 'button');
     row.setAttribute('data-serial', fieldText(member.serial));
 
-    const head = el(doc, 'span', 'household-member-head');
-    head.appendChild(el(doc, 'span', 'household-member-serial', `${text('household_serial')} ${fieldText(member.serial)}`));
+    const head = el(doc, 'span', 'search-row-head household-member-head');
+    head.appendChild(el(doc, 'span', 'search-serial household-member-serial', `${text('household_serial')} ${fieldText(member.serial)}`));
     head.appendChild(el(doc, 'span', 'household-member-name', fieldText(member.name)));
     row.appendChild(head);
 
-    const meta = el(doc, 'span', 'household-member-meta');
+    const meta = el(doc, 'span', 'search-row-meta household-member-meta');
     meta.appendChild(el(doc, 'span', 'household-member-relative', fieldText(member.relative)));
     meta.appendChild(el(doc, 'span', 'household-member-age', `${text('household_age')} ${fieldText(member.age)}`));
     meta.appendChild(el(doc, 'span', 'household-member-gender', fieldText(member.gender)));
     row.appendChild(meta);
 
     const s = status && typeof status === 'object' ? status : {};
-    const fields = el(doc, 'span', 'household-member-fields');
+    const fields = el(doc, 'span', 'search-row-head household-member-fields');
     fields.appendChild(field('household-member-phone', text('household_phone'), contact && contact.phone));
     fields.appendChild(field('badge household-member-tag', text('household_tag'), s.tag));
     fields.appendChild(field('badge household-member-visit', text('household_visit'), s.visit ?? s.visitStatus));
