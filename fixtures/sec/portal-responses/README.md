@@ -15,6 +15,7 @@ The file names are the ones the generator's fetch stage writes:
 | `district-<D>.html` | the district dropdown post | the samiti / urban body dropdown |
 | `samiti-<D>-<S>.html` | the samiti dropdown post | the gram panchayat dropdown |
 | `search-<D>-<S>-<GP>.html` | the Search post | the ward grid (`Grampanchayat`, `Ward No.`, `Final PDF`, `Final With Supp-2 PDF`) |
+| `click-<D>-<S>-<GP>.html` | the first ward's Final PDF link | the PDF file name, for panchayats whose name is not one plain word (none here) |
 
 The responses cover two fixture panchayats and one urban body:
 
@@ -43,3 +44,7 @@ on those runs:
 Option values in Chaksu's ward dropdown and the grid's control ids are
 placeholders. The view-state values are placeholders too, so these pages
 cannot be replayed against the portal.
+
+`scripts/test_build_catalogue.py` builds from copies of this directory with
+one response broken, or with extra panchayats added, to check the
+generator's failures, sorting and urban-ward count.

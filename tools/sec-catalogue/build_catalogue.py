@@ -17,15 +17,24 @@ the walk replays those posts:
   1 POST per walked samiti       -> samiti-<D>-<S>.html: its gram panchayats
   1 Search POST per panchayat    -> search-<D>-<S>-<GP>.html: its ward grid
 
+  1 POST per click, when needed  -> click-<D>-<S>-<GP>.html: a Final PDF link's answer
+
 Only rural panchayat samitis are walked: an urban body's third dropdown lists
-municipal wards, not gram panchayats. A ward's PDF URL is built from the
-Final PDF template (samiti id, panchayat name, ward number); see
+municipal wards, not gram panchayats. A ward's PDF URL is the Final PDF
+template filled with the samiti id, the panchayat's dropdown name
+upper-cased and the ward number. That spelling is confirmed only for names
+that are one plain word. For any other name (spaces, brackets, hyphens,
+digits: about 4% of the state), fetch clicks the first ward's Final PDF link
+and saves the answer, and build takes the PDF file name from it; see
 docs/research/sec-statewide-catalogue.md.
 
 build reads such a directory, and nothing else, and writes the catalogue. It
 makes no network request. It stops with a non-zero exit, naming the district
 and panchayat, when a panchayat has no wards, a ward has no Final PDF link
-(so no pdfUrl) or a ward number repeats within a panchayat. Urban bodies'
+(so no pdfUrl) or a ward number repeats within a panchayat (also when the
+grid is missing or malformed, or names no Hindi panchayat name). It writes
+nothing then; otherwise every file is staged and moved into place, the
+index last. Urban bodies'
 wards found in the input are skipped and counted in the summary printed to
 stdout. Every file written carries schemaVersion; keys are sorted and the
 indentation fixed, so two runs over the same input write identical bytes.
@@ -361,8 +370,15 @@ NAME_COLUMN = "Grampanchayat"
 WARD_COLUMN = "Ward No."
 FINAL_COLUMN = "Final PDF"
 _TARGET_RE = re.compile(r'WebForm_PostBackOptions\("([^"]+)"|__doPostBack\(\'([^\']+)\'')
-_SAVED_RE = re.compile(r"^(?:page|district-(\w+)|samiti-(\w+)-(\w+)|search-(\w+)-(\w+)-(\w+))\.html$")
+_SAVED_RE = re.compile(r"^(?:page|district-(\w+)|samiti-(\w+)-(\w+)|search-(\w+)-(\w+)-(\w+)"
+                       r"|click-(\w+)-(\w+)-(\w+))\.html$")
 _WARD_NUMBER_RE = re.compile(r"[0-9]+")
+# The portal's PDF paths carry a literal space ("Ward No-001.pdf").
+_PDF_URL_RE = re.compile(r"https?://[^'\"<>\r\n]+?\.pdf", re.I)
+# Dropdown names whose PDF file name is known to be the name upper-cased
+# (every fixture panchayat and Badli). Any other name - spaces, brackets,
+# hyphens, digits - has its ward 1 Final PDF link clicked instead.
+_PLAIN_NAME_RE = re.compile(r"[A-Za-z]+")
 
 
 class CatalogueError(RuntimeError):
@@ -378,11 +394,13 @@ class _OverCap(Exception):
 
 
 def grid_rows(page):
-    """The Search result grid: (column headers, data rows). A row is
-    {"cells": [text], "links": {column header: postback target}}; rows whose
-    cell count differs from the header row (a pager, say) are skipped."""
+    """The Search result grid: (column headers, data rows, malformed rows). A
+    row is {"cells": [text], "links": {column header: postback target}}. A
+    one-cell row (a pager) is skipped; any other row whose cell count differs
+    from the header row is returned as malformed, as a list of cell texts."""
     headers = None
     rows = []
+    malformed = []
     for row in page.rows:
         texts = [c["text"] for c in row]
         if headers is None:
@@ -390,6 +408,8 @@ def grid_rows(page):
                 headers = texts
             continue
         if len(row) != len(headers):
+            if len(row) > 1:
+                malformed.append(texts)
             continue
         links = {}
         for header, cell in zip(headers, row):
@@ -398,13 +418,13 @@ def grid_rows(page):
                 if m:
                     links[header] = m.group(1) or m.group(2)
         rows.append({"cells": texts, "links": links})
-    return headers or [], rows
+    return headers or [], rows, malformed
 
 
 def result_grid(page):
     """The ward rows of a Search result that carry a link and a ward number:
     (column headers, rows), each row {"cells", "ward": int, "links"}."""
-    headers, rows = grid_rows(page)
+    headers, rows, _malformed = grid_rows(page)
     out = []
     for row in rows:
         ward = row["cells"][headers.index(WARD_COLUMN)]
@@ -417,11 +437,46 @@ def district_slug(name):
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
+def needs_click(panchayat_name):
+    """True when the PDF file name cannot be taken from the dropdown name."""
+    return not _PLAIN_NAME_RE.fullmatch(panchayat_name)
+
+
 def ward_pdf_url(samiti_id, panchayat_name, ward):
     """The Final PDF of a ward: the dropdown name upper-cased, spaces as %20."""
     return WARD_PDF_URL_TEMPLATE.format(
         samiti_id=samiti_id, PANCHAYAT_NAME=urllib.parse.quote(panchayat_name.upper(), safe=""),
         ward=ward)
+
+
+def click_record(status, headers, body):
+    """The saved form of a link postback's response: a status line, the
+    headers, a blank line, then the body."""
+    head = [f"HTTP {status}"] + [f"{k}: {v}" for k, v in sorted(headers.items())]
+    return ("\n".join(head) + "\n\n").encode("utf-8") + body
+
+
+def pdf_location(record):
+    """The PDF URL a saved link postback answered with: its redirect, or the
+    URL its page opens. None when it names no PDF."""
+    head, _sep, body = record.partition(b"\n\n")
+    lines = head.decode("utf-8", errors="replace").split("\n")
+    status = lines[0].split()[1] if len(lines[0].split()) > 1 else ""
+    url = None
+    if status.startswith("3"):
+        for line in lines[1:]:
+            key, _colon, value = line.partition(":")
+            if key.strip().lower() == "location":
+                url = urllib.parse.urljoin(SOURCE_PAGE, value.strip())
+    elif status == "200":
+        m = _PDF_URL_RE.search(body.decode("utf-8", errors="replace"))
+        if m:
+            url = m.group(0).replace("&amp;", "&")
+    if url and url.lower().endswith(".pdf"):
+        # Encode only what a URL cannot carry (the portal's literal spaces);
+        # keep reserved characters such as brackets as the portal spells them.
+        return urllib.parse.quote(url, safe=":/?#[]@!$&'()*+,;=%")
+    return None
 
 
 class SavedResponses:
@@ -435,6 +490,7 @@ class SavedResponses:
         self.districts = {}
         self.samitis = {}
         self.searches = {}
+        self.clicks = {}
         for name in sorted(os.listdir(path)):
             m = _SAVED_RE.match(name)
             if not m:
@@ -446,12 +502,17 @@ class SavedResponses:
                 self.samitis[(m.group(2), m.group(3))] = name
             elif m.group(4):
                 self.searches[(m.group(4), m.group(5), m.group(6))] = name
+            else:
+                self.clicks[(m.group(7), m.group(8), m.group(9))] = name
         if not os.path.exists(os.path.join(path, "page.html")):
             raise UnexpectedResponse(f"{path}: no page.html (the district list)")
 
     def page(self, name):
+        return parse_page(self.raw(name), name)
+
+    def raw(self, name):
         with open(os.path.join(self.path, name), "rb") as fh:
-            return parse_page(fh.read(), name)
+            return fh.read()
 
     def district(self, did):
         name = self.districts.get(did)
@@ -474,6 +535,29 @@ class SavedResponses:
 
 # --- build -------------------------------------------------------------------
 
+def ward_url_template(saved, district, samiti, panchayat, first_ward):
+    """A format string for this panchayat's Final PDF URLs ({ward:03d}).
+    From the saved click on the first grid row's Final PDF link when there
+    is one, else from the dropdown name when that name is a plain word."""
+    did, sid, gp = district[0], samiti[0], panchayat[0]
+    click = saved.clicks.get((did, sid, gp))
+    if click is not None:
+        url = pdf_location(saved.raw(click))
+        suffix = f"-{first_ward:03d}.pdf"
+        if not url or not url.lower().endswith(suffix):
+            raise CatalogueError(district, panchayat,
+                                 f"{click} does not resolve ward {first_ward} to a PDF URL")
+        return url[:-len(suffix)].replace("{", "{{").replace("}", "}}") + "-{ward:03d}.pdf"
+    if not panchayat[1]:
+        raise CatalogueError(district, panchayat, "no name in the samiti's dropdown, so no pdfUrl")
+    if needs_click(panchayat[1]):
+        raise CatalogueError(district, panchayat,
+                             f"the PDF file name for {panchayat[1]!r} is uncertain and no saved "
+                             f"Final PDF click resolves it, so no pdfUrl")
+    return WARD_PDF_URL_TEMPLATE.replace("{samiti_id}", sid).replace(
+        "{PANCHAYAT_NAME}", urllib.parse.quote(panchayat[1].upper(), safe=""))
+
+
 def read_panchayat(saved, district, samiti, panchayat):
     """One gram panchayat from its saved Search response, validated."""
     did, sid, gp = district[0], samiti[0], panchayat[0]
@@ -482,14 +566,23 @@ def read_panchayat(saved, district, samiti, panchayat):
     selected = page.selected(GP_FIELD)
     if selected and selected != gp:
         raise UnexpectedResponse(f"{name}: the response selects panchayat {selected}, not {gp}")
-    headers, rows = grid_rows(page)
+    headers, rows, malformed = grid_rows(page)
+    if not headers:
+        raise CatalogueError(district, panchayat,
+                             f"the Search result has no ward grid (no {WARD_COLUMN!r} column)")
+    if malformed:
+        raise CatalogueError(district, panchayat,
+                             f"a grid row has {len(malformed[0])} cells where the header has "
+                             f"{len(headers)}: {malformed[0]}")
     if not rows:
         raise CatalogueError(district, panchayat, "the Search result lists zero wards")
-    if not panchayat[1]:
-        raise CatalogueError(district, panchayat, "no name in the samiti's dropdown, so no pdfUrl")
+    if NAME_COLUMN not in headers:
+        raise CatalogueError(district, panchayat,
+                             f"the grid has no {NAME_COLUMN!r} column, so no Hindi name")
     ward_at = headers.index(WARD_COLUMN)
-    name_at = headers.index(NAME_COLUMN) if NAME_COLUMN in headers else None
-    hindi = ""
+    hindi = rows[0]["cells"][headers.index(NAME_COLUMN)]
+    if not hindi:
+        raise CatalogueError(district, panchayat, f"the grid's {NAME_COLUMN!r} cell is empty")
     wards = {}
     for row in rows:
         text = row["cells"][ward_at]
@@ -501,16 +594,16 @@ def read_panchayat(saved, district, samiti, panchayat):
         if not row["links"].get(FINAL_COLUMN):
             raise CatalogueError(district, panchayat,
                                  f"ward {ward} has no pdfUrl (no {FINAL_COLUMN!r} link)")
-        if name_at is not None and not hindi:
-            hindi = row["cells"][name_at]
-        wards[ward] = {"ward": ward, "pdfUrl": ward_pdf_url(sid, panchayat[1], ward)}
+        wards[ward] = ward
+    template = ward_url_template(saved, district, samiti, panchayat,
+                                 int(rows[0]["cells"][ward_at]))
     return {
         "id": gp,
-        "name": hindi or panchayat[1],
+        "name": hindi,
         "nameLatin": panchayat[1],
         "block": samiti[1],
         "blockId": sid,
-        "wards": [wards[w] for w in sorted(wards)],
+        "wards": [{"ward": w, "pdfUrl": template.format(ward=w)} for w in sorted(wards)],
     }
 
 
@@ -520,7 +613,8 @@ def collect(saved):
     summary = {"districts": 0, "panchayats": 0, "wards": 0,
                "districtsNotFetched": 0, "districtsWithoutPanchayats": 0,
                "samitisNotFetched": 0, "panchayatsNotSearched": 0,
-               "urbanBodiesSkipped": 0, "urbanWardsSkipped": 0, "otherEntriesSkipped": 0}
+               "urbanBodiesSkipped": 0, "urbanWardsSkipped": 0, "otherEntriesSkipped": 0,
+               "pdfUrlsFromClicks": 0}
     used = set()
     districts = []
     for did, dname in saved.page("page.html").options(DISTRICT_FIELD):
@@ -552,6 +646,8 @@ def collect(saved):
                     continue
                 used.add((did, sid, gp))
                 panchayats.append(read_panchayat(saved, (did, dname), (sid, sname), (gp, gname)))
+                if (did, sid, gp) in saved.clicks:
+                    summary["pdfUrlsFromClicks"] += 1
         if not panchayats:
             summary["districtsWithoutPanchayats"] += 1
             continue
@@ -572,38 +668,51 @@ def write_json(path, obj):
         fh.write(json.dumps(obj, ensure_ascii=False, sort_keys=True, indent=1) + "\n")
 
 
-def write_shards(out_dir, districts):
-    """index.json plus one file per district. Files a previous index listed
-    that this run does not write are removed."""
+def write_shards(out_dir, districts, prune):
+    """index.json plus one file per district. Every file is written to a
+    staging directory first and moved into out_dir only when all of them
+    are written, the index last, so a failed run never leaves an index that
+    names a missing or half-written file. With prune, files the previous
+    index listed that this run does not write are removed."""
+    out_dir = os.path.abspath(out_dir)
     os.makedirs(out_dir, exist_ok=True)
     index_path = os.path.join(out_dir, "index.json")
     previous = set()
-    if os.path.exists(index_path):
+    if prune and os.path.exists(index_path):
         try:
             with open(index_path, encoding="utf-8") as fh:
                 previous = {d["file"] for d in json.load(fh)["districts"]}
         except (ValueError, KeyError, TypeError):
             previous = set()
-    entries = []
-    taken = {"index.json"}
-    for d in sorted(districts, key=lambda d: (d["name"], d["id"])):
-        file = (district_slug(d["name"]) or f"district-{d['id']}") + ".json"
-        if file in taken:
-            file = f"{file[:-5]}-{d['id']}.json"
-        taken.add(file)
-        write_json(os.path.join(out_dir, file), {
+    staging = tempfile.mkdtemp(prefix=".catalogue-", dir=os.path.dirname(out_dir))
+    try:
+        entries = []
+        taken = {"index.json"}
+        for d in sorted(districts, key=lambda d: (d["name"], d["id"])):
+            file = (district_slug(d["name"]) or f"district-{d['id']}") + ".json"
+            if file in taken:
+                file = f"{file[:-5]}-{d['id']}.json"
+            taken.add(file)
+            write_json(os.path.join(staging, file), {
+                "schemaVersion": SCHEMA_VERSION,
+                "districtId": d["id"],
+                "districtName": d["name"],
+                "panchayats": d["panchayats"],
+            })
+            entries.append({"id": d["id"], "name": d["name"], "file": file,
+                            "panchayatCount": len(d["panchayats"])})
+        write_json(os.path.join(staging, "index.json"), {
             "schemaVersion": SCHEMA_VERSION,
-            "districtId": d["id"],
-            "districtName": d["name"],
-            "panchayats": d["panchayats"],
+            "sourcePage": SOURCE_PAGE,
+            "districts": entries,
         })
-        entries.append({"id": d["id"], "name": d["name"], "file": file,
-                        "panchayatCount": len(d["panchayats"])})
-    write_json(index_path, {
-        "schemaVersion": SCHEMA_VERSION,
-        "sourcePage": SOURCE_PAGE,
-        "districts": entries,
-    })
+        for entry in entries:
+            os.replace(os.path.join(staging, entry["file"]), os.path.join(out_dir, entry["file"]))
+        os.replace(os.path.join(staging, "index.json"), index_path)
+    finally:
+        for name in os.listdir(staging):
+            os.remove(os.path.join(staging, name))
+        os.rmdir(staging)
     for file in sorted(previous - taken):
         path = os.path.join(out_dir, file)
         if os.path.basename(file) == file and file.endswith(".json") and os.path.exists(path):
@@ -723,15 +832,30 @@ def fetch(args, client, form, raw_dir):
                     spage = spage_live
                 if args.skip_search or not should_walk(sname):
                     continue
-                todo = [gp for gp, _n in spage.options(GP_FIELD)
-                        if not os.path.exists(_saved_path(raw_dir, f"search-{did}-{sid}-{gp}.html"))]
+                todo = []
+                for gp, gname in spage.options(GP_FIELD):
+                    search = f"search-{did}-{sid}-{gp}.html"
+                    click = f"click-{did}-{sid}-{gp}.html"
+                    need_search = not os.path.exists(_saved_path(raw_dir, search))
+                    need_click = needs_click(gname) and not os.path.exists(_saved_path(raw_dir, click))
+                    if need_search or need_click:
+                        todo.append((gp, search, need_search, click, need_click))
                 if todo and spage_live is None:
                     spend()
                     spage_live, _raw = form.select_samiti(district_page(), did, sid)
-                for gp in todo:
+                for gp, search, need_search, click, need_click in todo:
                     spend()
-                    _result, raw = form.search(spage_live, did, sid, gp)
-                    _save_raw(raw_dir, f"search-{did}-{sid}-{gp}.html", raw)
+                    result, raw = form.search(spage_live, did, sid, gp)
+                    if need_search:
+                        _save_raw(raw_dir, search, raw)
+                    _headers, rows = result_grid(result)
+                    # Names that are not one plain word: learn the real PDF
+                    # file name from the first ward's Final PDF link.
+                    if need_click and rows and rows[0]["links"].get(FINAL_COLUMN):
+                        spend()
+                        status, headers, body = form.click(result, did, sid, gp,
+                                                           rows[0]["links"][FINAL_COLUMN])
+                        _save_raw(raw_dir, click, click_record(status, headers, body))
                 print(f"    {sname}: {len(spage.options(GP_FIELD))} panchayats, "
                       f"{len(todo)} searched now", file=sys.stderr)
     except _OverCap:
@@ -790,13 +914,18 @@ def main(argv=None):
         saved = SavedResponses(input_dir)
         if not args.skip_search:
             districts, summary = collect(saved)
-            write_shards(args.out, districts)
+            # A fetch narrowed by --districts or --samitis may hold fewer
+            # districts than out_dir already has; leave those files alone.
+            prune = bool(args.input) or not (args.districts or args.samitis)
+            write_shards(args.out, districts, prune)
         if legacy_out:
             catalogue = legacy_catalogue(saved, request_note)
-            os.makedirs(os.path.dirname(os.path.abspath(legacy_out)), exist_ok=True)
-            with open(legacy_out, "w", encoding="utf-8") as fh:
+            legacy_out = os.path.abspath(legacy_out)
+            os.makedirs(os.path.dirname(legacy_out), exist_ok=True)
+            with open(legacy_out + ".tmp", "w", encoding="utf-8") as fh:
                 json.dump(catalogue, fh, ensure_ascii=False, indent=1)
                 fh.write("\n")
+            os.replace(legacy_out + ".tmp", legacy_out)
     except CatalogueError as exc:
         print(f"FAILED: {exc}", file=sys.stderr)
         return 1

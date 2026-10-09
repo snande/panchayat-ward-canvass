@@ -22,7 +22,11 @@ jobs:
       - run: python3 -m unittest test_pwa_shell
         working-directory: scripts
       # the committed catalogue shards must be what the generator writes from
-      # the saved portal responses, and a second run must write the same bytes
+      # the saved portal responses (--input never touches catalogue.json), and
+      # a second run must write the same bytes
       - run: python3 tools/sec-catalogue/build_catalogue.py --input fixtures/sec/portal-responses --out data/sec/catalogue
-      - run: test -z "$(git status --porcelain -- data/sec/)" || { git status --porcelain -- data/sec/; git diff -- data/sec/; exit 1; }
+      - run: test -z "$(git status --porcelain -- data/sec/catalogue/)" || { git status --porcelain -- data/sec/catalogue/; git diff -- data/sec/catalogue/; exit 1; }
       - run: python3 tools/sec-catalogue/build_catalogue.py --input fixtures/sec/portal-responses --out "$RUNNER_TEMP/catalogue" && diff -r data/sec/catalogue "$RUNNER_TEMP/catalogue"
+      # failures on invalid input, the urban-ward count, sorting, schemaVersion, no network
+      - run: python3 -m unittest test_build_catalogue
+        working-directory: scripts

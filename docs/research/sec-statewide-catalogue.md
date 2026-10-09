@@ -270,7 +270,8 @@ in a directory (`--raw-dir`; default a new temporary directory):
 - `page.html`;
 - `district-<D>.html`;
 - `samiti-<D>-<S>.html`;
-- `search-<D>-<S>-<GP>.html`.
+- `search-<D>-<S>-<GP>.html`;
+- `click-<D>-<S>-<GP>.html` (see below).
 
 **build** reads only that directory and writes the catalogue. Without
 `--input`, the script fetches and then builds, and also rewrites
@@ -283,34 +284,62 @@ python3 tools/sec-catalogue/build_catalogue.py --input fixtures/sec/portal-respo
 ```
 
 It writes `index.json` and one file per district. `index.json` holds
-`schemaVersion` and `districts`, and each district has `id`, `name` (as the
-district dropdown publishes it), `file` and `panchayatCount`. Each district
-file holds:
+`schemaVersion` and `districts`, and each district has `id`, `name`, `file`
+and `panchayatCount`. Each district file holds:
 
 - `schemaVersion`, `districtId` and `districtName`;
 - `panchayats`, each with `id`, `name` (the Hindi name from the Search
   grid), `nameLatin` (the dropdown text), `block` (the samiti), `blockId`
   and `wards`.
 
-Each ward has a number `ward` and a `pdfUrl` built from the Final PDF
-template. Panchayats are sorted by name and wards by number. Keys are
-sorted, the indentation is fixed and there is no timestamp, so the same
-input always gives the same bytes.
+Each ward has a number `ward` and a `pdfUrl`. Panchayats are sorted by name
+and wards by number. Keys are sorted, the indentation is fixed and there is
+no timestamp, so the same input always gives the same bytes.
+
+A district's `name` is the district dropdown's text, which is Latin
+(`BHILWARA`). The portal's pages publish no Hindi district name: the
+dropdowns are Latin and the Search grid names only the gram panchayat. The
+only Hindi district name the SEC publishes is on a roll PDF's cover (`जयपुर`
+for Badli, `sec-roll-source.md` section 3). The generator reads only portal
+responses and no hand-edited table, so it cannot supply one. A Hindi
+district name needs either a portal source (a Hindi-language page, if there
+is one) or a decision to take it from the roll PDFs.
+
+`pdfUrl` is the Final PDF template filled with the samiti id, the dropdown
+name upper-cased (spaces as `%20`) and the ward number. That spelling is
+confirmed for names that are one plain word: the five fixture panchayats
+and Badli. 568 of the 14,403 dropdown names have spaces, brackets, hyphens,
+dots or digits (`Danta (Luhadiya)`, `Daulatpura -1`), and how the portal
+spells those file names is not known. For such a name, fetch also clicks
+the first ward's Final PDF link and saves the answer as
+`click-<D>-<S>-<GP>.html`. Build then takes the file name from the URL it
+names. Build fails on such a panchayat when that file is missing, instead
+of guessing.
 
 The build exits 1 and prints `FAILED: district <name> (<id>), panchayat
 <name> (<id>): <reason>` when:
 
 - a panchayat's Search lists no wards;
 - a ward has no Final PDF link, so no `pdfUrl`;
-- a ward number repeats or is not a number.
+- a ward number repeats or is not a number;
+- the grid is missing, has a malformed row, or gives no Hindi name;
+- an unconfirmed name has no saved click.
 
-A failed run writes nothing. Urban bodies are skipped, and their municipal
-wards are counted. One JSON summary line goes to stdout, with these counts:
+A failed run writes nothing. A successful run writes every file to a
+staging directory first, then moves them into `--out` with the index last.
+It removes files the previous index listed and this run did not write.
+After a live fetch narrowed by `--districts` or `--samitis`, it leaves
+those files alone.
+
+Urban bodies are skipped and their municipal wards counted. One JSON summary
+line goes to stdout, with these counts:
 
 - districts, panchayats and wards written;
 - urban bodies and urban wards skipped;
-- districts, samitis and panchayats that have no saved response.
+- districts, samitis and panchayats that have no saved response;
+- URLs taken from clicks.
 
 `fixtures/sec/portal-responses/` is the saved input for two fixture
 panchayats and one urban body; its README says how it was laid out.
+`scripts/test_build_catalogue.py` tests the build against it.
 `fetch_fixtures.py` saves its Search responses under the same names.
