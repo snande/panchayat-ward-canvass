@@ -24,7 +24,9 @@ What it does, in order:
    matra follows.
 5. Parses entries by row: an entry opens at a `नाम:` label and closes at the
    bold serial (Times New Roman); each value sits on the row of its label.
-   An `O` in the serial font on the serial's row marks a struck-off entry.
+   An `O`, `E`, `S` or `R` in the serial font on the serial's row marks a
+   struck-off entry (`O` in Badli's roll; elsewhere the legend's E death,
+   S shifted, R repetition).
    The supplement's deletion list repeats struck-off entries; one record
    per serial is kept.
 
@@ -39,6 +41,21 @@ cd tools/reference-decoder
 It writes `/tmp/out/entries.json` (all serials with a `deleted` flag) and a
 per-page text dump. Against `fixtures/badli-ward1-expected.json` it scores
 297 of 297.
+
+The expected-entries files the JavaScript decoder is checked against
+(`src/decoder/secFixtures.test.js`) come from this decoder. For each PDF in
+`fixtures/sec/expected-fixtures.json`, one ward from each of five districts,
+it writes the listed `.expected.json`: one line per serial, in serial order,
+with `serial, name, relative, age, gender, house, struck` (strings NFC, a
+field the roll does not print is null):
+
+```
+cd tools/reference-decoder
+../../venv/bin/python decode.py --expected ../../src/decoder/master-glyph-table.json ../../fixtures/sec/expected-fixtures.json
+```
+
+Commit the files it writes. The swarm's sandbox cannot run this (no PyPI), so
+regenerate them on a networked machine whenever the decoder changes.
 
 Rebuilding the glyph table needs Arial Unicode MS, which macOS ships at
 `/Library/Fonts/Arial Unicode.ttf` and which is not committed:
