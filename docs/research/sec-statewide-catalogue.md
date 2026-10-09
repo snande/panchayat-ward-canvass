@@ -1,6 +1,6 @@
 # State Election Commission of Rajasthan: statewide catalogue and five-district roll fixtures
 
-Fetched 2026-10-09 between 12:08 and 12:22 UTC by the operator, from a
+Fetched 2026-10-09 between 12:08 and 12:42 UTC by the operator, from a
 networked machine, with the scripts in `tools/sec-catalogue/`. This extends
 `docs/research/sec-roll-source.md`, which documents the portal and Badli; read
 that first. Nothing here changes the app, the relay or
@@ -40,7 +40,7 @@ Chaksu's 32 gram panchayats in `sec-roll-source.md` exactly), and 7 were two
 fixture attempts that stopped early while the script's reading of the Search
 result was fixed.
 
-## 2. The catalogue, and why it has no gram panchayats yet
+## 2. The catalogue
 
 The second dropdown ("ULB/PanchayatSamiti") lists 817 entries across the 41
 districts:
@@ -54,18 +54,16 @@ districts:
 `kind` is `rural` for the samitis, `urban` for the urban bodies, and
 `unknown` for the zilla parishads and the blank entries.
 
-Gram panchayats come from the third dropdown, one form post per samiti. The
-approval for this run was about 400 posts, with a stop after districts and
-samitis if the walk needed materially more than about 450. Walking the 457
-rural samitis needs 498 posts (one per samiti, plus one district post per
-district to get that district's form state), so the script stopped after the
-district pass as instructed and wrote every samiti with an empty
-`panchayats` list. The catalogue's own `notes` say so. The 457 is well above
-the roughly 350 samitis Rajasthan is often cited as having; the portal's list
+Gram panchayats come from the third dropdown, one form post per samiti, plus
+one district post per district to get that district's form state: 498 posts
+for the 457 rural samitis, made at 12:31 to 12:42 UTC at one request per
+second with no error. The catalogue lists 14,403 gram panchayats, which equals
+the SEC's own total for the four phases (3,672 + 3,626 + 3,605 + 3,500 in
+Annexure B of order 9836), so no samiti was missed. The 457 samitis are well
+above the roughly 350 Rajasthan is often cited as having; the portal's list
 follows the current 41-district map and its newer samitis.
 
-Finishing it is a re-run with a higher cap, which costs 498 posts at about
-1.2 seconds each (roughly ten minutes):
+To regenerate it (a networked machine, never the swarm's sandbox):
 
 ```
 python3 tools/sec-catalogue/build_catalogue.py --max-posts 520 --checkpoint /tmp/sec-checkpoint.json
