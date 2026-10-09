@@ -94,7 +94,7 @@ three lines still fit its fixed height.
 | Field (older names) | `.picker-field`, `.picker-label`, `.picker-select` | The label wrapper, the label and the input/select the existing screens use. `.picker-select` looks like `.field-input` (plus the chevron on a `<select>`). New screens use `.field-input` and `.field-select`. |
 | Checkbox / toggle | `.choice`, `.choice-input` | A tappable 48 px row holding a checkbox and its sentence; turns green when checked. The checkbox is itself 48 px; its 24 px box and tick are drawn in CSS. |
 | List row | `.list-row` | One tappable line of a list: at least 48 px, a hairline below, tint on hover, the focus ring drawn inside the row. |
-| Navigation bar | `.nav-bar`, `.nav-item` | The frame's bottom bar, fixed to the foot of the screen on the surface above a hairline: one `.nav-item` per screen (ward roll, call list, polling day, SMS tally), equal widths, `--font-size-sm` muted labels; the current one (`aria-current="page"`) has a teal top edge and `--color-primary-strong` text. The frame's other slots are the seat header, `<main>` and the SEC footer. Built by `mountAppFrame()` in `src/ui/appFrame.js`. |
+| Navigation bar | `.nav-bar`, `.nav-item` | The frame's bottom bar, fixed to the foot of the screen on the surface above a hairline: one `.nav-item` per screen (ward roll, search, call list, polling day, SMS tally), equal widths, `--font-size-sm` muted labels; the current one (`aria-current="page"`) has a teal top edge and `--color-primary-strong` text. The frame's other slots are the seat header, `<main>` and the SEC footer. Built by `mountAppFrame()` in `src/ui/appFrame.js`. |
 | Progress bar | `.progress`, `.progress-bar` | A `--space-1` high track in `--color-border` with a sliding teal bar, above the loading notice while a roll is opened, downloaded or decoded; the bar stands still under reduced motion. Built by `createWardRollScreen()` in `src/ui/wardRollScreen.js`. |
 | Card | `.card` | The panel's surface for anything that is not voter-level, e.g. a summary or a settings group. |
 | Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record" or "marked" in place of the seen-voting button; the success tone draws a tick; the error tone marks a voter struck off the roll ("हटाया गया"). |
@@ -103,6 +103,7 @@ three lines still fit its fixed height.
 | Status banner (notice) | `.notice` (+ `data-tone="info"`, `"success"` or `"error"`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. A 48 px banner with a toned left edge and tint. |
 | Seat header | `.seat-header`, `.seat-header-text`, `.seat-header-link` | One 48 px strip under the app header, above every screen, naming the seat whose roll is on screen in body text on the surface: "पंचायत: <name> · वार्ड: <n>", or "· सभी वार्ड" for a sarpanch. While the stored seat is read it is the same strip, blank (`data-state="pending"`). With no seat it is the empty state: on the info tint, an underlined link with a teal edge that fills the strip and leads to the ward picker. Built by `renderSeatHeader()` in `src/ui/seatHeader.js`. |
 | SEC footer | `.sec-footer`, `.sec-footer-text` | Three static lines below every screen, on the surface above a hairline, in body text (`--color-text`, `--font-size-sm`, never muted): the data source, "not an official SEC app" and "the printed roll prevails". No control, no party or candidate branding, no network; the same in every state. Built by `renderSecFooter()` in `src/ui/secFooter.js`. |
+| Search screen | `.search-screen`, `.search-filters`, `.search-row` | The query box (`.field-input`) over every loaded ward, shown in every state and disabled until a roll is loaded; then a grid of `.field-select`/`.field-input` filters (ward or booth, gender, age range, tag, visit status, sort) and two `.choice` rows (has a number, not called yet). Each result is a `.list-row`: ward/serial and name, then relative · age · gender · house in muted `--font-size-sm`; the matched text is a `<mark>` on `--color-success-bg`, and the row a ward/serial jump ("3/145") lands on is selected (`aria-selected`) with a teal edge on the tint. At most 100 rows. Built by `createVoterSearchScreen()` in `src/ui/voterSearchScreen.js`. |
 | Alert | `.alert` (+ `data-tone="error"`) | A block that asks before something is deleted: the consequence in body text, then the danger button and a secondary "no". |
 
 The controls `.btn-primary`, `.btn-secondary`, `.btn-quiet`,
@@ -134,3 +135,13 @@ carries these as one `state` field: empty (info notice: pick a ward), loading
 (progress bar and info notice), filled (the roll's `.list-row` lines) and
 error (error notice saying what to do, a line saying whom to call, and a
 secondary retry).
+
+The search screen (`src/ui/voterSearchScreen.js`) carries the same field:
+empty (info notice: load a ward's roll first), loading (progress bar and
+info notice, while a roll opens or a ticked has-number/not-called box waits
+for its lookup), filled (result rows), no results (info notice: change the
+spelling or clear a filter) and error (error notice saying what to do and a
+line saying whom to call: a ward/serial jump to a voter who is not loaded or
+is hidden by a filter, or a minimum age above the maximum). If the number
+and call lookups cannot be read, those two boxes are disabled under a line
+saying what to do and whom to call.

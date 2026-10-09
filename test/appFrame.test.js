@@ -72,13 +72,14 @@ test('the nav bar is fixed to the bottom at phone width and the page leaves room
 test('one nav entry per existing screen, the call list included, the ward roll current by default', () => {
   const { nav, frame } = mount();
   const items = navItems(nav);
-  assert.deepEqual(items.map((b) => b.getAttribute('data-screen')), ['roll', 'calls', 'turnout', 'sms']);
+  assert.deepEqual(items.map((b) => b.getAttribute('data-screen')), ['roll', 'search', 'calls', 'turnout', 'sms']);
   assert.deepEqual(items.map((b) => b.textContent), SCREENS.map((s) => strings[s.key]));
   assert.ok(items.some((b) => b.textContent === strings.nav_calls), 'the call list is reachable');
   assert.equal(nav.getAttribute('aria-label'), strings.nav_label);
   assert.equal(DEFAULT_SCREEN, 'roll');
   assert.equal(frame.current(), 'roll');
-  assert.deepEqual(items.map((b) => b.getAttribute('aria-current')), ['page', null, null, null]);
+  assert.deepEqual(items.map((b) => b.getAttribute('aria-current')), ['page', null, null, null, null]);
+  assert.ok(items.some((b) => b.textContent === strings.nav_search), 'the search screen is reachable');
   for (const item of items) assert.equal(item.getAttribute('type'), 'button');
 });
 
@@ -146,5 +147,6 @@ test('sw.js precaches every shell asset: the page, its links and scripts, and ev
   assert.ok(modules.size > 20, `${modules.size} startup modules`);
   for (const module of modules) assets.add(module);
   assert.ok(assets.has('src/ui/appFrame.js') && assets.has('src/ui/wardRollScreen.js'));
+  assert.ok(assets.has('src/ui/voterSearchScreen.js') && assets.has('src/search/voterSearch.js'));
   for (const asset of assets) assert.ok(listed.has(asset), `sw.js does not precache ${asset}`);
 });

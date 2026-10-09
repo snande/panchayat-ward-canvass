@@ -43,6 +43,8 @@
          whom to call and retry, or the virtualised voter list under its name
          search box (src/roll/rollFlow.js, src/ui/rollSearch.js, src/ui/rollList.js). -->
     <section id="roll" class="roll-section" aria-live="polite" hidden></section>
+    <!-- Search over every loaded ward (src/ui/voterSearchScreen.js), from the nav bar. -->
+    <section id="voter-search" class="roll-section search-section" hidden></section>
     <p id="status" class="notice status" aria-live="polite"></p>
     <button type="button" class="btn-secondary status-retry" id="status-retry" data-i18n="roll_retry" hidden>फिर से कोशिश करें</button>
   </main>
@@ -57,6 +59,7 @@
   <nav id="nav-bar" class="nav-bar" aria-label="मुख्य मेनू">
     <div class="nav-bar-items">
       <button type="button" class="nav-item" data-screen="roll" aria-current="page" data-i18n="nav_roll">मतदाता सूची</button>
+      <button type="button" class="nav-item" data-screen="search" data-i18n="nav_search">खोजें</button>
       <button type="button" class="nav-item" data-screen="calls" data-i18n="nav_calls">कॉल सूची</button>
       <button type="button" class="nav-item" data-screen="turnout" data-i18n="nav_turnout">मतदान दिवस</button>
       <button type="button" class="nav-item" data-screen="sms" data-i18n="nav_sms">एसएमएस गिनती</button>

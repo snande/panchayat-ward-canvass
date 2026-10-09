@@ -121,6 +121,21 @@ const screen = mountSearchScreen(document.body, voters); // voters: [{ id, seria
 
 Tests in `test/searchScreen.test.js` run with `npm test` (and in CI) against a small in-process fake DOM (`test/helpers/fakeDom.js`), not jsdom or a browser, so no extra dependencies are needed. The timing bound and the `lang`/`inputmode` attributes are therefore verified in that test DOM environment, not on a real Android Chrome device.
 
+### Constituency search (nav bar "खोजें")
+
+`src/ui/voterSearchScreen.js` (`createVoterSearchScreen`) is the search screen reached from the bottom navigation bar. It searches every ward whose roll has been shown since the app opened. It uses `buildSearchIndex`/`searchVoters` from `src/search/voterSearch.js`, and `js/picker.js` calls `setRolls()` to rebuild the index each time a roll finishes loading. A roll loading in the background does not close the screen.
+
+- Input is debounced by 50 ms and at most 100 rows are shown. Each row has ward/serial, name, relative, age, gender and house. The matched text, taken from the engine's `ranges`, is built as `<mark>` text nodes and never as markup.
+- Filters cover ward/booth, gender, age range, tag, visit status, has a number and not called yet. Sort is by relevance, serial, name or age.
+  - An age that is not a number is ignored. A minimum above the maximum is a Hindi error saying to fix it.
+  - Has-number comes from the contact store's `listConsented`. A consented voter whom the call list (`buildCallList` over `loadAssignments`) hands to a worker counts as called.
+  - An assignment holds a serial but no ward, so one whose serial is consented in more than one loaded ward is skipped.
+  - A ticked box shows loading until its lookup is read. If the read fails, both boxes are disabled under a line saying what to do and whom to call.
+  - Tag and visit lookups are Maps keyed by `voterKey` and passed to `setLookups()`. Without them, those filters keep everyone.
+- Typing `3/145` selects and scrolls to the ward 3, serial 145 row, whatever the sort. A voter who is not loaded, or who is hidden by a filter, gives a Hindi error saying what to do and whom to call.
+- The engine keys voters by ward number and serial, so two loaded panchayats with the same ward number collide. The screen logs this when it happens.
+- The screen has empty, loading, no-results and error states, and writes nothing to any store. `sw.js` precaches the screen and its engine. `scripts/sw_behavior_test.cjs` loads them through the worker with the network cut and checks that the search still returns results.
+
 ## Household index
 
 `src/households/householdIndex.js` groups a ward's stored entries (the

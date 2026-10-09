@@ -18,10 +18,12 @@ import { el, textFrom } from './dom.js';
 
 export const FRAME_SLOTS = Object.freeze({ header: 'seat-header', main: 'app', nav: 'nav-bar', footer: 'sec-footer' });
 
-// Every existing screen: the ward roll, and the call list, polling-day count
-// and SMS tally that open over a loaded roll (src/ui/rollSearch.js).
+// Every existing screen: the ward roll, the search over every loaded ward
+// (src/ui/voterSearchScreen.js), and the call list, polling-day count and SMS
+// tally that open over a loaded roll (src/ui/rollSearch.js).
 export const SCREENS = Object.freeze([
   { id: 'roll', key: 'nav_roll' },
+  { id: 'search', key: 'nav_search' },
   { id: 'calls', key: 'nav_calls' },
   { id: 'turnout', key: 'nav_turnout' },
   { id: 'sms', key: 'nav_sms' },
@@ -33,6 +35,7 @@ export const DEFAULT_SCREEN = 'roll';
 export const FALLBACK_TEXT = {
   nav_label: 'मुख्य मेनू',
   nav_roll: 'मतदाता सूची',
+  nav_search: 'खोजें',
   nav_calls: 'कॉल सूची',
   nav_turnout: 'मतदान दिवस',
   nav_sms: 'एसएमएस गिनती',

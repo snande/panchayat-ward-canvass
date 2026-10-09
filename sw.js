@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v22";
+const CACHE_VERSION = "v23";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -50,6 +50,9 @@ const PRECACHE = [
   "src/sync/syncEngine.js",
   "src/ui/teamJoinScreen.js",
   "src/search/hindiSearch.js",
+  // The search screen and its engine, so search works in airplane mode.
+  "src/search/voterSearch.js",
+  "src/ui/voterSearchScreen.js",
   "src/ui/callListScreen.js",
   "src/ui/callListFlow.js",
   // Tally by SMS: works with mobile data off.

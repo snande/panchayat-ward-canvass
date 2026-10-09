@@ -2,6 +2,8 @@ import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
 import { createWardRollScreen } from '../src/ui/wardRollScreen.js';
 import { mountAppFrame } from '../src/ui/appFrame.js';
+import { createVoterSearchScreen } from '../src/ui/voterSearchScreen.js';
+import { loadAssignments } from '../src/calls/assignmentStore.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
 import { renderSeatHeader, saveSeat, seatFromWardKey } from '../src/ui/seatHeader.js';
@@ -26,6 +28,7 @@ var container = document.getElementById('ward-picker');
 var rollContainer = document.getElementById('roll');
 var teamContainer = document.getElementById('team-join');
 var seatHeader = document.getElementById('seat-header');
+var searchContainer = document.getElementById('voter-search');
 
 // Tapping a voter in the roll records their consent and number on the device,
 // encrypted, and queues it for the team; numbers teammates saved arrive with
@@ -100,9 +103,49 @@ function showSeat() {
   renderSeatHeader(seatHeader, seat, seatStrings || {});
 }
 
+// The search screen (src/ui/voterSearchScreen.js) covers every ward whose
+// roll has been shown since the app opened; its index is rebuilt each time a
+// roll finishes loading. The rolls are held in memory only. It opens only
+// from the nav bar and closes only when the user goes elsewhere: a roll
+// loading or restoring in the background leaves it, and its nav mark, alone.
+var searchScreen = null;
+var searchShown = false;
+var loadedRolls = new Map();
+
 function onRollShown(entries, wardKey) {
   shownWardKey = wardKey;
   showSeat();
+  loadedRolls.set(wardKey, entries);
+  if (searchScreen) {
+    searchScreen.setRolls(loadedRolls);
+  }
+}
+
+function startSearch(strings) {
+  if (!searchContainer) {
+    return;
+  }
+  searchScreen = createVoterSearchScreen(searchContainer, strings, {
+    contacts: contacts,
+    assignments: { loadAssignments: loadAssignments },
+  });
+}
+
+function showSearch(on) {
+  if (!searchContainer) {
+    return;
+  }
+  searchShown = on;
+  searchContainer.hidden = !on;
+  if (on && searchScreen) {
+    if (typeof searchContainer.scrollIntoView === 'function') {
+      searchContainer.scrollIntoView();
+    }
+    var input = searchScreen.input;
+    if (!input.disabled && typeof input.focus === 'function') {
+      input.focus();
+    }
+  }
 }
 
 // The ward-roll screen (src/ui/wardRollScreen.js): empty until a ward is
@@ -132,8 +175,13 @@ function startRoll(strings) {
   var table = Object.assign({}, FALLBACK_STRINGS, strings || {});
   rollScreen = createWardRollScreen(rollContainer, table, {
     emptyCard: document.querySelector('.empty-state'),
-    onState: function () {
-      markNav('roll');
+    onState: function (state) {
+      if (searchScreen) {
+        searchScreen.setLoading(state === 'loading');
+      }
+      if (!searchShown) {
+        markNav('roll');
+      }
     },
   });
   rollScreen.setState('empty');
@@ -147,6 +195,7 @@ function startRoll(strings) {
     listOptions: {
       contacts: contacts, marks: marks, workerId: workerId, sms: { settings: smsSettings, teamNumber: teamNumber },
       onHostChange: function (view) {
+        showSearch(false);
         markNav(NAV_FOR_VIEW[view] || 'roll');
       },
     },
@@ -175,6 +224,11 @@ function showRollScreen() {
 // screen; with none, the entry leads to the ward picker and the roll stays
 // the current entry.
 function navigate(id) {
+  if (id === 'search') {
+    showSearch(true);
+    return true;
+  }
+  showSearch(false);
   var list = rollScreen && rollScreen.state === 'filled' ? rollScreen.list : null;
   var openers = list ? { calls: list.openCallList, turnout: list.openTurnout, sms: list.openSmsTally } : {};
   if (id !== 'roll' && typeof openers[id] === 'function' && openers[id]()) {
@@ -226,12 +280,14 @@ if (container) {
   var roll = null;
   loadJson('src/strings.hi.json')
     .catch(function (err) {
+      startSearch(null);
       roll = startRoll(null);
       startFrame(null);
       throw err;
     })
     .then(function (strings) {
       table = strings;
+      startSearch(strings);
       roll = startRoll(strings);
       startFrame(strings);
       startTeamJoin(strings);
@@ -244,6 +300,9 @@ if (container) {
       // contact if the catalogue names one, else the neutral coordinator line.
       if (rollScreen) {
         rollScreen.setSupport(config && config.supportContact);
+      }
+      if (searchScreen) {
+        searchScreen.setSupport(config && config.supportContact);
       }
       showSeat();
       var picker = mountWardPicker(container, config, table, {
