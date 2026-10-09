@@ -1,42 +1,13 @@
-// A ward roll with its name search box on top.
+// A ward roll (src/ui/rollList.js) with its name search box
+// (src/ui/searchScreen.js) on top; a query's results replace the list.
 //
-// The search screen (src/ui/searchScreen.js) sits above the virtualised list
-// (src/ui/rollList.js). While the box holds a query the results replace the
-// full list; clearing it brings the list back. Everything stays in memory, so
-// it works offline.
-//
-// With opts.contacts (src/contacts/contactSync.js) and opts.wardKey, tapping
-// a voter in the list or in the search results opens the consent and phone
-// panel (src/ui/contactPanel.js) for that voter above the search box; so
-// does selecting a search result. The one voter card of the app is the voter
-// route (src/ui/voterRoute.js, `#/voter/<ward>/<serial>`); nothing here
-// shows a second one.
-// The same opts add a call-list button on top: it opens the ward's call list
-// (src/ui/callListFlow.js) in that place, with opts.assignments and
-// opts.roster defaulting to the device's assignment store and worker roster.
-//
-// With opts.marks (src/tally/seenVotingStore.js) as well, the contact panel
-// carries the voter's "seen voting" control
-// (src/ui/seenVotingMark.js, with opts.workerId), and a turnout button on top
-// opens the polling-day screen (src/ui/turnoutScreen.js) in the same place.
-// opts.turnout defaults to the device's turnout store
-// (src/tally/turnoutStore.js). Its supporter count is the mark store's
-// wardCount for this ward, so a voter marked on several phones counts once,
-// and it is read again whenever marks are added, including teammates' marks
-// arriving with a pull. Whatever is open in the contact host is replaced when
-// another view opens there, and its mark subscriptions end with it.
-//
-// With opts.sms ({settings, teamNumber?, inbox?, location?}) as well, an SMS tally button
-// on top opens src/ui/smsTallyView.js in the same place: the worker's marks
-// in this ward go out by SMS, and a pasted tally SMS becomes marks of this
-// ward in opts.marks, for the serials that are in this ward's roll. That view
-// is imported when first opened, as its SMS checksum comes from
-// src/decoder/sha256.js and nothing under src/decoder loads at startup.
-//
-// opts.onHostChange(view), if given, is told whenever the place above the
-// search box changes: 'contact', 'calls', 'turnout' or 'sms' when that
-// view opens there, null when the call list is closed. The navigation bar
-// (src/ui/appFrame.js) follows it, so its current entry is what is open.
+// With opts.contacts and opts.wardKey, a voter tap opens the contact panel
+// above the box, and a call-list button opens the ward's call list there.
+// opts.marks adds the "seen voting" control and a turnout button (its count is
+// the mark store's de-duplicated wardCount, re-read as marks arrive). opts.sms
+// adds an SMS tally button whose view is imported on first open, as nothing
+// under src/decoder loads at startup. One view at a time; opts.onHostChange
+// (view) hears 'contact', 'calls', 'turnout', 'sms' or null, for the nav bar.
 
 import * as defaultAssignments from '../calls/assignmentStore.js';
 import * as defaultRoster from '../calls/workerRoster.js';

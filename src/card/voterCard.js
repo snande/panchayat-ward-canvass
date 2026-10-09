@@ -1,20 +1,9 @@
-// Voter card render (issue #138): the full roll line of one entry plus its
-// booth, the same card wherever a voter opens. A pure render: it reads only
-// its arguments, builds the DESIGN.md panel and returns it. It stores nothing,
-// deletes nothing and touches no network, IndexedDB or localStorage.
-//
-// The card shows whatever the entry and booth carry. A v1 rollStore entry has
-// no relation or EPIC, and the booth arrives later from the roll decoder, so
-// any field that is missing reads "—". An entry flagged `deleted` (struck off
-// the roll) carries the error badge and a struck-through name, never the look
-// of a live voter.
-//
-// The card's one control is the share button (issue #140): it hands this one
-// voter's labelled fields, plus the SEC footer lines, to the phone's share
-// sheet (navigator.share) or, without one, to the clipboard. It makes no
-// server call, so it works offline, and the text carries no candidate, party,
-// symbol or slogan. A cancelled share or a refused clipboard shows an error
-// notice saying what to do and whom to call; it never throws.
+// Voter card render (issue #138): one entry's roll line plus its booth in a
+// DESIGN.md panel; a missing field reads "—", a `deleted` entry carries the
+// error badge and a struck-through name. Pure: stores nothing, no network.
+// Its one control shares this voter's fields and the SEC footer lines through
+// navigator.share or the clipboard (issue #140); a failure shows an error
+// notice and never throws.
 
 import { el, setNotice } from '../ui/dom.js';
 import { SEC_FOOTER_LINES } from '../ui/secFooter.js';
@@ -63,13 +52,7 @@ function wardOf(ward) {
   return ward;
 }
 
-/**
- * The card's fields as [key, text] pairs, in VOTER_CARD_LABELS order.
- * @param {object} [entry] a roll entry: serial, name, relation, relative, age, gender, house, epic, deleted
- * @param {string|number|{ward?: string|number}} [ward]
- * @param {{name?: string, address?: string}} [booth]
- * @returns {Array<[string, string]>}
- */
+/** The card's fields as [key, text] pairs, in VOTER_CARD_LABELS order. */
 export function voterCardFields(entry, ward, booth) {
   const e = entry && typeof entry === 'object' ? entry : {};
   const b = booth && typeof booth === 'object' ? booth : {};
@@ -88,29 +71,14 @@ export function voterCardFields(entry, ward, booth) {
   ];
 }
 
-/**
- * One voter's details as share text: a "label: value" line per card field, in
- * card order and with the card's labels ("—" for a missing field), then a
- * blank line and the SEC footer lines (source, not an official SEC app, the
- * printed roll prevails).
- * @param {object} [entry]
- * @param {string|number|{ward?: string|number}} [ward]
- * @param {{name?: string, address?: string}} [booth]
- * @returns {string}
- */
+/** Share text: a "label: value" line per card field, a blank line, the SEC footer lines. */
 export function voterShareText(entry, ward, booth) {
   const lines = voterCardFields(entry, ward, booth)
     .map(([key, text]) => `${VOTER_CARD_LABELS[key]}: ${text}`);
   return [...lines, '', ...SEC_FOOTER_LINES].join('\n');
 }
 
-/**
- * Share text through the phone's share sheet, or copy it when there is none.
- * Resolves to 'shared', 'copied' or 'failed'; never rejects.
- * @param {string} text
- * @param {Navigator} [nav]
- * @returns {Promise<'shared'|'copied'|'failed'>}
- */
+/** Share or copy text; resolves to 'shared', 'copied' or 'failed', never rejects. */
 export async function shareText(text, nav) {
   try {
     if (nav && typeof nav.share === 'function') {
@@ -125,17 +93,8 @@ export async function shareText(text, nav) {
 }
 
 /**
- * Build the voter card: a DESIGN.md panel whose header names the voter, whose
- * body is a definition list of the ten labelled fields, and whose one control
- * is the share button with its notice below.
- * @param {object} entry the roll entry
- * @param {string|number|{ward?: string|number}} ward the ward number
- * @param {{name?: string, address?: string}} booth the polling booth
- * @param {Document} [doc] the document to build in (defaults to the page's)
- * @param {{navigator?: Navigator}} [options] the navigator to share through
- *   (defaults to the page's, read at tap time)
- * @returns {Element} the card, not attached anywhere; `card.share()` runs one
- *   tap's share and resolves to its state
+ * The voter card panel (unattached): header, the labelled fields, the share
+ * button and its notice. `card.share()` runs one tap's share.
  */
 export function renderVoterCard(entry, ward, booth, doc = globalThis.document, options = {}) {
   const struck = Boolean(entry && entry.deleted);

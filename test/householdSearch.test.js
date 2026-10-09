@@ -202,10 +202,10 @@ test('a query that is no house shows no card; a missing jump with no such house 
   await search(screen, '3/999');
   assert.equal(screen.state, 'error');
   assert.equal(screen.householdHost.hidden, true);
-  assert.equal(screen.households.length, 0, 'the error state shows no card');
+  assert.equal(screen.householdHost.children.length, 0, 'the error state shows no card');
 
   await search(screen, '');
-  assert.equal(screen.households.length, 0, 'an empty query matches no house, not the voters with no house');
+  assert.equal(screen.householdHost.children.length, 0, 'an empty query matches no house, not the voters with no house');
 });
 
 test('a filter that hides every row leaves the household card, without a "0 found" count', async () => {

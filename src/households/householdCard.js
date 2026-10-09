@@ -1,26 +1,8 @@
-// Household card (DESIGN.md "Household card"): every voter at one house
-// number in one .panel, headed by the house number and member count. Each
-// member is a .list-row button showing serial, name, relative, age and gender,
-// then the phone number (from src/contacts/contactStore.js), tag and visit
-// status (from deps.getMemberStatus). A value that is missing reads "—".
-// Tapping a row calls deps.onOpenMember({ward, serial}); the card does not
-// open the voter card itself.
-//
-// One `state` at a time: loading (info notice while every member's number and
-// status are read, in parallel), empty (no household: info notice saying the
-// house was not found and what to try), error (a read failed: error notice
-// saying what to do, a line saying whom to call and a secondary retry) and
-// success (the rows).
-//
-// The rows reuse the search screen's row lines and the error state the
-// ward-roll screen's whom-to-call line, so the card adds almost nothing to
-// styles.css. Its labels are src/strings.hi.json keys (most shared with the
-// roll and search screens); its three sentences live only here, because the
-// precached string table is at the offline download budget.
-//
-// It only reads: it adds no stored record, deletes or overwrites nothing and
-// makes no network request, so it works fully offline. Voter text is only
-// ever text nodes.
+// Household card (DESIGN.md "Household card"): one `state` at a time,
+// loading, empty, error (with retry) or success. A row tap calls
+// deps.onOpenMember({ward, serial}). Its three sentences live only here: the
+// precached string table is at the offline download budget. Read-only and
+// offline; voter text is only ever text nodes.
 
 import { getContact } from '../contacts/contactStore.js';
 import { fieldText } from '../card/voterCard.js';
@@ -28,10 +10,7 @@ import { el, textFrom, setNotice } from '../ui/dom.js';
 
 export const HOUSEHOLD_CARD_STATES = Object.freeze(['loading', 'empty', 'error', 'success']);
 
-/**
- * The card's Hindi copy, used where deps.strings (src/strings.hi.json) lacks a
- * key; test/householdCard.test.js fails if a key the table has drifts.
- */
+// Copy used where deps.strings lacks a key; tests catch drift from the table.
 export const HOUSEHOLD_TEXT = Object.freeze({
   roll_house: 'मकान नं.',
   roll_age: 'उम्र',
@@ -43,7 +22,6 @@ export const HOUSEHOLD_TEXT = Object.freeze({
   household_members: 'सदस्य',
   household_list_label: 'परिवार के सदस्य',
   household_phone: 'फ़ोन',
-  // Only here: the precached string table has no room for them.
   household_loading: 'परिवार के सदस्यों का नंबर, टैग और संपर्क की स्थिति पढ़ी जा रही है…',
   household_empty: 'लोड किए गए वार्ड में इस नंबर का कोई मकान नहीं मिला। मकान नंबर जाँचें, या ऊपर सही वार्ड चुनकर उसकी सूची लोड करें।',
   household_failed: 'इस परिवार की जानकारी नहीं पढ़ी जा सकी। दोबारा कोशिश करें, या पेज फिर खोलें।',
@@ -52,20 +30,9 @@ export const HOUSEHOLD_TEXT = Object.freeze({
 const defaultContacts = { getContact };
 
 /**
- * Render a household card into `container`, replacing what it held.
- *
- * @param {Element} container
- * @param {{ward: *, house: string, members: object[]}|null} household a
- *   household from src/households/householdIndex.js, or null when none matched
- * @param {object} deps
- * @param {(ward, serial) => Promise<{tag?, visit?, visitStatus?}|null>} deps.getMemberStatus
- *   a member's tag and visit status
- * @param {(member: {ward, serial}) => void} deps.onOpenMember called once per row tap
- * @param {{getContact: Function}} [deps.contacts] defaults to src/contacts/contactStore.js
- * @param {Record<string,string>} [deps.strings] the string table (src/strings.hi.json)
- * @param {Document} [deps.doc] defaults to the container's document
- * @param {(err: Error) => void} [deps.log]
- * @returns {{root, message, list, retryButton, ready: Promise<void>, state: string, reload: () => Promise<void>}}
+ * Render a household (from householdIndex.js, or null) into `container`.
+ * deps: getMemberStatus(ward, serial) -> {tag, visit}, onOpenMember, contacts
+ * {getContact} (default contactStore.js), strings, doc, log.
  */
 export function renderHouseholdCard(container, household, deps = {}) {
   const doc = deps.doc || container.ownerDocument || globalThis.document;

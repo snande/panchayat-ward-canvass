@@ -1,21 +1,11 @@
 // The search screen over every loaded ward (DESIGN.md "Search screen"), one
-// `state` at a time: empty (no roll), loading (a roll opening, or a ticked
-// has-number/not-called box waiting for its lookup), filled (rows with the
-// match in <mark> from the engine's ranges), noResults, and error (what to do
-// and whom to call: a ward/serial jump to a voter not loaded or filtered out,
-// an inverted age range, an index that could not be built).
-// setRolls() rebuilds the index (src/search/voterSearch.js) when a roll loads.
-// Has-number comes from the contact store, not-called from the call list (a
-// consented voter it hands to a worker counts as called). Tag and visit are
-// Maps keyed by voterKey(); with none, those filters keep everyone.
-// A query that is a house number of a loaded ward (src/households/
-// householdIndex.js, rebuilt with the search index) puts that house's
-// household card (src/households/householdCard.js) above the rows, in the
-// filled state: every member with number, tag and visit status, whatever the
-// age, gender or booth filters keep. The ward filter narrows which wards'
-// houses count. A member tap hands {ward, serial} to opts.onOpenVoter, which
-// opens the voter route. A house number that looks like a ward/serial jump
-// ("4/2") shows its card instead of the jump error.
+// `state` at a time: empty, loading, filled (match in <mark>), noResults or
+// error. setRolls() rebuilds the index. Has-number comes from the contact
+// store, not-called from the call list; tag and visit are Maps keyed by
+// voterKey() (none keeps everyone).
+// A query that is a loaded house number shows its household card above the
+// rows (all members, whatever the filters but ward keep); a member tap calls
+// opts.onOpenVoter({ward, serial, wardKey}).
 // Voter text is only ever text nodes. No store writes, no network.
 
 import {
@@ -31,8 +21,7 @@ export const RESULT_LIMIT = 100;
 export const SEARCH_STATES = Object.freeze(['empty', 'loading', 'filled', 'noResults', 'error']);
 export const SORT_KEYS = Object.freeze(['relevance', 'serial', 'name', 'age']);
 
-// Copies of src/strings.hi.json entries, used when the caller passes no string
-// table; test/voterSearchScreen.test.js fails if they drift.
+// Copies of src/strings.hi.json entries for when no table is passed.
 export const FALLBACK_TEXT = {
   search_label: 'नाम, मकान नं. या वार्ड/क्रम (जैसे 3/145) लिखें',
   search_empty: 'खोजने के लिए पहले ऊपर वार्ड चुनकर मतदाता सूची लोड करें।',
@@ -94,17 +83,14 @@ function ageValue(node) {
   return Number.isFinite(n) ? n : null;
 }
 
-// The text of one voter's value in a tag or visit lookup, or null.
+// One voter's tag or visit text, or null.
 function lookupText(lookup, key) {
-  if (!lookup) return null;
-  const value = lookup instanceof Map ? lookup.get(key)
-    : Object.prototype.hasOwnProperty.call(lookup, key) ? lookup[key] : undefined;
-  if (value === undefined || value === null) return null;
-  return Array.isArray(value) || value instanceof Set ? [...value].join(', ') : value;
+  const v = lookup instanceof Map ? lookup.get(key)
+    : lookup && Object.prototype.hasOwnProperty.call(lookup, key) ? lookup[key] : null;
+  return Array.isArray(v) || v instanceof Set ? [...v].join(', ') : v ?? null;
 }
 
-// A household card reads no number when the screen was given no contact store.
-const NO_CONTACTS = Object.freeze({ getContact: async () => null });
+const NO_CONTACTS = { getContact: async () => null };
 
 const byNumber = (a, b) => (Number(a) - Number(b)) || (a < b ? -1 : a > b ? 1 : 0);
 
@@ -132,9 +118,8 @@ export async function readLookups(wardKeys, { contacts, assignments } = {}) {
   return next;
 }
 
-// opts: contacts {listConsented, getContact}, assignments {loadAssignments},
-// tags, visits, support (whom to call), onOpenVoter({ward, serial, wardKey})
-// for a household member tap, onRender(results), log.
+// opts: contacts {listConsented, getContact}, onOpenVoter, assignments {loadAssignments}, tags, visits,
+// support (whom to call), onRender(results), log.
 export function createVoterSearchScreen(container, strings, opts = {}) {
   const doc = container.ownerDocument;
   const text = textFrom(strings, FALLBACK_TEXT);
@@ -150,12 +135,11 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   let lookupsPending = false;
   let lookupsFailed = false;
   let generation = 0;
-  // [wardKey, household index] per loaded roll; the cards on screen, and the
-  // households and data revision they were drawn for.
+  // [wardKey, household index] per roll; the cards shown and what for.
   let households = [];
-  let householdViews = [];
-  let householdShown = null;
-  let householdRevision = 0;
+  let cards = [];
+  let cardsFor = null;
+  let revision = 0;
 
   const root = el(doc, 'section', 'search-screen');
   root.setAttribute('lang', 'hi');
@@ -236,13 +220,13 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   progress.appendChild(el(doc, 'span', 'progress-bar'));
   const message = el(doc, 'p', 'notice search-message');
   const contact = el(doc, 'p', 'search-contact');
-  const householdHost = el(doc, 'div', 'search-households');
+  const houseHost = el(doc, 'div', 'search-households');
   const count = el(doc, 'p', 'search-count');
   count.setAttribute('role', 'status');
   const list = el(doc, 'ul', 'search-results');
   list.setAttribute('role', 'listbox');
   list.setAttribute('aria-label', text('search_results_label'));
-  for (const node of [controls, progress, message, contact, householdHost, count, list]) root.appendChild(node);
+  for (const node of [controls, progress, message, contact, houseHost, count, list]) root.appendChild(node);
   container.replaceChildren(root);
 
   function show(next, key, tone, prefix = '') {
@@ -257,75 +241,55 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     contact.hidden = next !== 'error';
     count.hidden = next !== 'filled';
     list.hidden = next !== 'filled';
-    householdHost.hidden = next !== 'filled';
+    houseHost.hidden = next !== 'filled';
     if (next !== 'filled') {
       list.replaceChildren();
-      showHouseholds([]);
+      showCards([]);
     }
   }
 
-  // The ward/booth filter as {ward} or {booth}; empty when it keeps all.
   function placeFilter() {
     const [kind, value, extra] = String(place.value || '').split(':');
     if (!value || extra !== undefined) return {};
-    if (kind === 'w') return { ward: value };
-    if (kind === 'b') return { booth: value };
-    return {};
+    return kind === 'w' ? { ward: value } : kind === 'b' ? { booth: value } : {};
   }
 
-  // The households whose house number is the query, in the wards the ward
-  // filter keeps.
+  // The households whose house number is the query, in the filtered ward.
   function matchHouseholds(query) {
     const { ward } = placeFilter();
-    const matched = [];
-    for (const [wardKey, index] of households) {
-      if (ward !== undefined && wardOfKey(wardKey) !== ward) continue;
-      const household = findHousehold(index, query);
-      if (household) matched.push(household);
-    }
-    return matched;
+    return households.filter(([wardKey]) => ward === undefined || wardOfKey(wardKey) === ward)
+      .map(([, houses]) => findHousehold(houses, query)).filter(Boolean);
   }
 
-  function memberStatus(wardKey, serial) {
-    const key = voterKey({ ward: wardOfKey(wardKey), serial });
-    return { tag: lookupText(tags, key), visit: lookupText(visits, key) };
-  }
-
-  function openMember({ ward, serial }) {
-    if (typeof opts.onOpenVoter === 'function') opts.onOpenVoter({ ward: wardOfKey(ward), serial, wardKey: ward });
-  }
-
-  // Draw a card per matched household. The same households over the same
-  // data keep their cards, so typing or a filter change does not re-read them.
-  function showHouseholds(matched) {
-    const shown = matched.length
-      ? `${householdRevision}|${matched.map((h) => `${h.ward}#${h.key}`).join('|')}`
-      : null;
-    if (shown === householdShown) return;
-    householdShown = shown;
+  // A card per household; the same households over the same data keep theirs.
+  function showCards(matched) {
+    const key = matched.length ? `${revision}|${matched.map((h) => `${h.ward}#${h.key}`).join('|')}` : null;
+    if (key === cardsFor) return;
+    cardsFor = key;
     const slots = matched.map((household) => {
       const slot = el(doc, 'div', 'search-household');
       // Two wards can share a house number: each card then names its ward.
       if (matched.length > 1) {
         slot.appendChild(el(doc, 'p', 'search-household-ward', `${text('search_ward')} ${wardOfKey(household.ward)}`));
       }
-      const cardHost = el(doc, 'div', 'search-household-card');
-      slot.appendChild(cardHost);
-      return { slot, cardHost, household };
+      return slot;
     });
-    householdHost.replaceChildren(...slots.map((s) => s.slot));
-    householdViews = slots.map(({ cardHost, household }) => renderHouseholdCard(cardHost, household, {
+    houseHost.replaceChildren(...slots);
+    cards = matched.map((household, i) => renderHouseholdCard(slots[i].appendChild(el(doc, 'div')), household, {
       doc,
       strings,
-      contacts: opts.contacts && typeof opts.contacts.getContact === 'function' ? opts.contacts : NO_CONTACTS,
-      getMemberStatus: memberStatus,
-      onOpenMember: openMember,
+      contacts: typeof opts.contacts?.getContact === 'function' ? opts.contacts : NO_CONTACTS,
+      getMemberStatus: (wardKey, serial) => {
+        const k = voterKey({ ward: wardOfKey(wardKey), serial });
+        return { tag: lookupText(tags, k), visit: lookupText(visits, k) };
+      },
+      onOpenMember: ({ ward, serial }) => opts.onOpenVoter?.({ ward: wardOfKey(ward), serial, wardKey: ward }),
       log: (err) => log('household could not be read', err),
     }));
   }
 
   function filters(age) {
-    const f = { ...placeFilter() };
+    const f = placeFilter();
     if (gender.value) f.gender = gender.value;
     if (age.min !== null) f.ageMin = age.min;
     if (age.max !== null) f.ageMax = age.max;
@@ -389,6 +353,7 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     const jump = parseWardSerial(query);
     const target = jump ? `${jump.ward}:${jump.serial}` : null;
     const at = target ? found.findIndex((r) => r.key === target) : -1;
+    // A house number like "4/2" shows its card, not the jump error.
     if (target && at < 0 && !matched.length) {
       // Loaded but not listed means a filter hides the voter.
       const key = index.byKey.has(target) ? 'search_jump_filtered' : 'search_jump_missing';
@@ -400,7 +365,7 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
       return found;
     }
     show('filled');
-    showHouseholds(matched);
+    showCards(matched);
     const rows = found.map(renderRow);
     list.replaceChildren(...rows);
     count.hidden = !found.length;
@@ -485,7 +450,7 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
       }
       index = entries.length ? buildSearchIndex(entries) : null;
       households = pairs.map(([wardKey, roll]) => [wardKey, buildHouseholdIndex([...(roll || [])], wardKey)]);
-      householdRevision += 1;
+      revision += 1;
       refreshOptions(entries);
     } catch (err) {
       log('search index could not be built', err);
@@ -525,7 +490,7 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   function setLookups(next = {}) {
     if ('tags' in next) tags = next.tags || null;
     if ('visits' in next) visits = next.visits || null;
-    householdRevision += 1;
+    revision += 1;
     setOptions(tag, tags ? lookupValues(tags).map((v) => [v, v]) : []);
     setOptions(visit, visits ? lookupValues(visits).map((v) => [v, v]) : []);
     return render();
@@ -540,12 +505,11 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   render();
 
   return {
-    root, input, list, message, contact, count, progress, lookupNote, householdHost,
+    root, input, list, message, contact, count, progress, lookupNote, householdHost: houseHost,
     controls: { place, gender, ageMin, ageMax, tag, visit, sort, hasNumber, notCalled },
     get state() { return state; },
     get results() { return results; },
-    /** The household cards on screen (renderHouseholdCard views). */
-    get households() { return householdViews; },
+    get households() { return cards; },
     setRolls, setLoading, setLookups, setSupport, render,
     destroy() {
       if (timer !== null) clearTimeout(timer);

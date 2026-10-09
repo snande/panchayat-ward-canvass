@@ -104,14 +104,9 @@ function showSeat() {
   renderSeatHeader(seatHeader, seat, seatStrings || {});
 }
 
-// The search screen (src/ui/voterSearchScreen.js) covers every ward whose
-// roll has been shown since the app opened; its index is rebuilt each time a
-// roll finishes loading. The rolls are held in memory only. It opens only
-// from the nav bar and closes only when the user goes elsewhere: a roll
-// loading or restoring in the background leaves it, and its nav mark, alone.
-// A query that is a house number shows that house's household card above the
-// results; tapping a member opens their voter card at "#/voter/<ward>/<serial>"
-// (src/ui/voterRoute.js, started by js/app.js), whose back button returns here.
+// The search screen (src/ui/voterSearchScreen.js) covers every roll shown
+// since the app opened (held in memory). Only the nav bar opens it and only
+// going elsewhere closes it; a background roll load leaves it alone.
 var searchScreen = null;
 var searchShown = false;
 var loadedRolls = new Map();
@@ -132,6 +127,7 @@ function startSearch(strings) {
   searchScreen = createVoterSearchScreen(searchContainer, strings, {
     contacts: contacts,
     assignments: { loadAssignments: loadAssignments },
+    // A household member tap opens their voter card (src/ui/voterRoute.js).
     onOpenVoter: function (voter) {
       window.location.hash = voterRouteHash(voter.ward, voter.serial);
     },
@@ -155,10 +151,8 @@ function showSearch(on) {
   }
 }
 
-// The ward-roll screen (src/ui/wardRollScreen.js): empty until a ward is
-// picked or a stored roll is restored, then loading, filled or error. The
-// "not loaded yet" card shows only in its empty state, which replaces the old
-// hideEmptyState() here.
+// The ward-roll screen (src/ui/wardRollScreen.js); the "not loaded yet" card
+// shows only in its empty state.
 var rollScreen = null;
 // The bottom navigation bar (src/ui/appFrame.js), once mounted.
 var frame = null;
@@ -252,11 +246,9 @@ function startFrame(strings) {
   }
 }
 
-// Until this device has joined its candidate's team, show the join screen
-// (candidate code + team passphrase). The ward roll works either way.
-// Once the device is in a team, records saved on it go to the team (and
-// teammates' records come in) now, on reconnect, when the page is shown
-// again and every 30 s while online (src/sync/syncEngine.js).
+// Until this device joins its candidate's team, show the join screen; the
+// roll works either way. In a team, records sync now, on reconnect, on show
+// and every 30 s online (src/sync/syncEngine.js).
 function startTeamJoin(strings) {
   if (!teamContainer) {
     return;
