@@ -1,0 +1,37 @@
+name: Search perf
+
+# Mandate quality bar "Fast": voter search p95 under 200 ms over a
+# 10,000-voter roll in headless Chrome with 4x CPU throttling.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  search-perf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Same fallback as ci.yml until package-lock.json lists puppeteer.
+      - run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+      - name: Install headless Chrome
+        run: npx puppeteer browsers install chrome
+      - run: node scripts/search-perf.mjs
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: search-perf-report
+          path: reports/search-perf.md
+          if-no-files-found: warn
+      - name: Append report to job summary
+        if: always()
+        run: |
+          if [ -f reports/search-perf.md ]; then
+            cat reports/search-perf.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "search-perf: no report was written" >> "$GITHUB_STEP_SUMMARY"
+          fi
