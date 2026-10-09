@@ -1472,6 +1472,26 @@ select.picker-select,
   text-decoration: underline;
 }
 
+/* A typed house number's household card sits above the result rows. */
+.search-households,
+.search-household {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* display: flex would otherwise override [hidden]. */
+.search-households[hidden],
+.search-households:empty {
+  display: none;
+}
+
+.search-household-ward {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
 /* Voter route (src/ui/voterRoute.js): one voter's card at #/voter/<ward>/<serial>.
    While it shows, #app has data-route="voter" and the other screens step
    aside; the seat header and SEC footer stay. The back button sits on top,

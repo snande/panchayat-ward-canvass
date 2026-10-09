@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v24";
+const CACHE_VERSION = "v25";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -52,6 +52,9 @@ const PRECACHE = [
   // The search screen and its engine, so search works in airplane mode.
   "src/search/voterSearch.js",
   "src/ui/voterSearchScreen.js",
+  // Household cards: a house number typed in search lists its members.
+  "src/households/householdIndex.js",
+  "src/households/householdCard.js",
   // The voter route and its card: opens a stored voter offline.
   "src/ui/voterRoute.js",
   "src/card/voterCard.js",

@@ -3,6 +3,7 @@ import { createRollFlow } from '../src/roll/rollFlow.js';
 import { createWardRollScreen } from '../src/ui/wardRollScreen.js';
 import { mountAppFrame } from '../src/ui/appFrame.js';
 import { createVoterSearchScreen } from '../src/ui/voterSearchScreen.js';
+import { voterRouteHash } from '../src/ui/voterRoute.js';
 import { loadAssignments } from '../src/calls/assignmentStore.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
@@ -108,6 +109,9 @@ function showSeat() {
 // roll finishes loading. The rolls are held in memory only. It opens only
 // from the nav bar and closes only when the user goes elsewhere: a roll
 // loading or restoring in the background leaves it, and its nav mark, alone.
+// A query that is a house number shows that house's household card above the
+// results; tapping a member opens their voter card at "#/voter/<ward>/<serial>"
+// (src/ui/voterRoute.js, started by js/app.js), whose back button returns here.
 var searchScreen = null;
 var searchShown = false;
 var loadedRolls = new Map();
@@ -128,6 +132,9 @@ function startSearch(strings) {
   searchScreen = createVoterSearchScreen(searchContainer, strings, {
     contacts: contacts,
     assignments: { loadAssignments: loadAssignments },
+    onOpenVoter: function (voter) {
+      window.location.hash = voterRouteHash(voter.ward, voter.serial);
+    },
   });
 }
 
