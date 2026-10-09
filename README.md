@@ -54,18 +54,18 @@ PORT=8080 HOST=0.0.0.0 node relay/server.mjs
 curl -s -o /dev/null -w '%{http_code}' 'http://localhost:8080/roll?url=https://example.com/x.pdf'   # 403
 ```
 
-The domain in `CNAME` must be served by this server (or the handler mounted
-at `/roll` on the same host), not by a static-only host. A static-only host
-has no relay, so every download fails with the Hindi retry message.
+The app's domain must be served by this server (or the handler mounted at
+`/roll` on the same host), not by a static-only host. A static-only host has
+no relay, so every download fails with the Hindi retry message.
 
-The live deployment is Cloudflare Pages: the repository root is the static
-site, and `functions/roll.js` mounts the same `createRollRelay` handler on
-`/roll` as a Pages Function, reading `config/constituency.json` through the
-static-asset binding on first use. `_routes.json` routes only `/roll` and
-`/sync/*` to functions, so every other URL stays a plain static file. The custom domain is
-a CNAME at the registrar to the Pages project. That deployment, and the
-Android Chrome check that Badli ward 1 loads, scrolls smoothly and reads as
-correct Hindi, are operator steps outside repo-ci.
+In the live deployment, `functions/roll.js` mounts the same `createRollRelay`
+handler on `/roll` as a Pages Function, reading `config/constituency.json`
+through the static-asset binding on first use. `_routes.json` routes only
+`/roll` and `/sync/*` to functions, so every other URL stays a plain static
+file. The hosting, DNS, bindings and plan this needs are listed in
+[`docs/operator-setup.md`](docs/operator-setup.md). The Android Chrome check
+that Badli ward 1 loads, scrolls smoothly and reads as correct Hindi is
+outside repo-ci.
 
 ## Team sync endpoints
 
@@ -94,9 +94,9 @@ earlier record on its next pull instead of skipping it. A gap is skipped only
 once the record after it was claimed more than five minutes ago, which means
 the push that owned the gap has died.
 
-The operator must bind `SYNC_SECRET` and `SYNC_KV` on the Pages project;
-without them the endpoints return 503. That binding, and the endpoints
-running against real Pages KV, are checked outside repo-ci. `test/sync.test.js`
+Without `SYNC_SECRET` or `SYNC_KV` the endpoints return 503; both are listed
+in [`docs/operator-setup.md`](docs/operator-setup.md). The endpoints running
+against real Pages KV are checked outside repo-ci. `test/sync.test.js`
 exercises the function against an in-memory `SYNC_KV`.
 
 ## Search screen
@@ -286,8 +286,8 @@ The header, `.btn-primary` and `.empty-state` take their colours only from
 these tokens. The `theme-color` meta tag and the manifest's `theme_color` and
 `background_color` must equal `--color-primary` and `--color-bg`.
 
-It must be served from a domain root (the repo has a `CNAME`, so it is served
-at the candidate's own domain). The manifest's `start_url` and `scope` are `/`;
+It must be served from a domain root (the custom domain in
+[`docs/operator-setup.md`](docs/operator-setup.md)). The manifest's `start_url` and `scope` are `/`;
 a subpath deployment such as a GitHub Pages project site would need them
 changed.
 
