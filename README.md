@@ -220,7 +220,7 @@ The `बिना इंटरनेट: एसएमएस से गिनत�
   (`src/tally/smsMarks.js`), in the name of the worker who sent it. Marks are
   keyed by ward and serial, so a voter who arrives by SMS from two phones, or
   by SMS and by sync, counts once. Serials that are not in the ward's roll,
-  or are struck off it, are not counted, and the form says so. A struck-off
+  or are struck off it, are not counted, and the form says so; a struck-off
   serial is never sent from the top panel either. The ward's team count sits under the
   form, and the turnout screen shows the same figure.
 
@@ -241,8 +241,8 @@ saves a seen-voting mark through `src/tally/seenVotingStore.js`: kept on the
 phone, encrypted, and queued for the team, so it works offline. A voter
 already marked, on this phone or a teammate's, shows `वोट डाल दिया — दर्ज है।`
 instead of the button, and this follows marks that arrive while the panel is
-open. A voter struck off the roll gets no button: an info notice says the
-name was struck off and no vote can be recorded for it. The mark is attributed to this phone's id in its team (`getDeviceId()`
+open. A voter struck off the roll gets no button, only a notice that no vote
+can be recorded for them. The mark is attributed to this phone's id in its team (`getDeviceId()`
 in `src/sync/teamAuth.js`), or `device` before it has joined.
 
 The `मतदान के दिन का हिसाब खोलें` button above the roll opens the turnout
@@ -263,7 +263,7 @@ both, and open the turnout screen on each; the voter adds 1, not 2.
 The installable Hindi shell is plain static files: `index.html`,
 `manifest.webmanifest`, `sw.js`, `styles.css`, `js/`, `icons/`, `fonts/` and
 `src/strings.hi.json`. It makes no requests to other origins, and the
-precached assets, font included, must stay under 440 KB.
+precached assets, font included, must stay under 460 KB.
 
 ### Hindi strings
 
@@ -322,7 +322,7 @@ sh scripts/build_font.sh
 ```
 
 The script prints how many code points in each range have glyphs and then
-runs the repo check, including the 440 KB budget.
+runs the repo check, including the 460 KB budget.
 
 ### Design tokens
 

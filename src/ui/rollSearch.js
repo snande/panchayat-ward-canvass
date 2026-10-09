@@ -127,10 +127,8 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (typeof screen.root.scrollIntoView === 'function') screen.root.scrollIntoView();
     return screen;
   }
-  // Live roll serials as text, so 5 and '5' are one voter. A struck-off
-  // serial is not one: a tally SMS naming it is told it is outside the roll.
-  const rollSerials = new Set(entries.filter((entry) => entry && entry.struck !== true)
-    .map((entry) => String(entry.serial)));
+  // Live roll serials as text, so 5 and '5' are one voter.
+  const rollSerials = new Set(entries.filter((e) => e.struck !== true).map((e) => String(e.serial)));
   async function openSmsTally() {
     if (!canSms) return null;
     leaveHost();

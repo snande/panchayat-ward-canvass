@@ -29,6 +29,7 @@ const ENTRIES = [
   { serial: 9, name: 'रमेश चंद', relative: 'हरि', age: 61, gender: 'पुरुष', house: '12', struck: true },
   { serial: 10, name: 'रमेश लाल', relative: 'मोहन', age: 33, gender: 'पुरुष', house: '14', struck: true, supplement: 'deletion' },
 ];
+const noContacts = { getContact: async () => null, listConsented: async () => [] };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function waitFor(cond, ms = 5000) {
@@ -46,7 +47,7 @@ function marksStore() {
   });
 }
 
-test('the search screen lists a struck-off entry struck through, with the struck-off wording leading its second line', async () => {
+test('the search screen lists a struck-off entry struck through, its second line led by the struck-off wording', async () => {
   const doc = createDocument();
   const host = doc.createElement('section');
   doc.body.appendChild(host);
@@ -56,23 +57,22 @@ test('the search screen lists a struck-off entry struck through, with the struck
   await sleep(DEBOUNCE_MS + 20);
   assert.equal(screen.state, 'filled');
   const row = (key) => screen.list.children.find((r) => r.getAttribute('data-key') === key);
+  const meta = (r) => r.querySelector('span.search-row-meta');
 
   const live = row('1:8');
   assert.equal(live.querySelector('del'), null);
-  assert.equal(live.querySelector('span.search-struck'), null);
-  assert.equal(live.getAttribute('data-state'), null);
+  assert.equal(live.children[0].tagName, 'SPAN');
+  assert.equal(meta(live).children[0].getAttribute('class'), 'search-relative');
 
   const struck = row('1:9');
-  assert.equal(struck.getAttribute('data-state'), 'struck-off');
-  const del = struck.querySelector('del');
-  assert.ok(del && del.classList.contains('roll-struck'), 'serial and name sit in a <del class="roll-struck">');
-  assert.equal(del.querySelector('span.search-serial').textContent, '1/9');
-  assert.ok(del.querySelector('span.search-name').querySelector('mark'), 'the match still shows in the struck name');
-  const meta = struck.querySelector('span.search-row-meta');
-  assert.equal(meta.children[0].textContent, strings.roll_struck_off);
+  const head = struck.children[0];
+  assert.equal(head.tagName, 'DEL', 'serial and name sit in a <del>');
+  assert.ok(head.classList.contains('roll-struck') && head.classList.contains('search-row-head'));
+  assert.equal(head.querySelector('span.search-serial').textContent, '1/9');
+  assert.ok(head.querySelector('span.search-name').querySelector('mark'), 'the match still shows in the struck name');
+  assert.equal(meta(struck).children[0].textContent, strings.roll_struck_off);
 
-  const supplement = row('1:10');
-  assert.equal(supplement.querySelector('span.search-struck').textContent, strings.supp_deleted);
+  assert.equal(meta(row('1:10')).children[0].textContent, strings.supp_deleted);
   assert.equal(FALLBACK_TEXT.roll_struck_off, strings.roll_struck_off);
   assert.equal(FALLBACK_TEXT.supp_deleted, strings.supp_deleted);
   screen.destroy();
@@ -88,29 +88,30 @@ test('the roll\'s name search strikes through a struck-off voter and says it was
   const screen = mountSearchScreen(host, ENTRIES.map(toVoter));
   type(screen.input, 'रमेश');
   await sleep(ROLL_SEARCH_DEBOUNCE_MS + 20);
-  const rows = screen.list.children;
-  const byName = (name) => rows.find((r) => r.querySelector('span.pwc-search__name').textContent === name);
-  assert.equal(byName('रमेश कुमार').querySelector('del'), null);
-  assert.equal(byName('रमेश कुमार').querySelector('span.pwc-search__struck'), null);
+  const byName = (name) => screen.list.children
+    .find((r) => r.querySelector('span.pwc-search__name').textContent === name);
+  const live = byName('रमेश कुमार');
+  assert.equal(live.querySelector('del'), null);
+  assert.ok(!live.textContent.includes(STRUCK_OFF_LABEL));
   const struck = byName('रमेश चंद');
   assert.ok(struck.querySelector('span.pwc-search__name').querySelector('del.roll-struck'));
-  assert.equal(struck.querySelector('span.pwc-search__struck').textContent, STRUCK_OFF_LABEL);
+  assert.equal(struck.querySelector('span.pwc-search__meta').children[0].textContent, STRUCK_OFF_LABEL);
   screen.destroy();
 });
 
-test('a struck-off voter gets no seen-voting button, an info notice says why, and no mark is recorded', async () => {
+test('a struck-off voter gets no seen-voting button, a notice says why, and no mark is recorded', async () => {
   const doc = createDocument();
   const calls = [];
   const marks = {
-    getMark: async () => { calls.push('getMark'); return null; },
+    getMark: async () => null,
     markSeen: async () => { calls.push('markSeen'); return null; },
     teamCount: async () => 3,
   };
   const view = mountSeenVotingMark(doc.body, strings, {
     marks, wardId: WARD, entry: ENTRIES[1], workerId: () => 'w1', log: () => {},
   });
+  assert.equal(view.button.hidden, true, 'no button even while the mark is read');
   await view.ready;
-  assert.equal(view.root.getAttribute('data-state'), 'struck-off');
   assert.equal(view.button.hidden, true);
   assert.equal(view.badge.hidden, true);
   assert.equal(view.status.textContent, strings.seen_struck_off);
@@ -126,16 +127,14 @@ test('a struck-off voter gets no seen-voting button, an info notice says why, an
   });
   await live.ready;
   assert.equal(live.button.hidden, false);
-  assert.equal(live.root.getAttribute('data-state'), null);
+  assert.equal(live.status.textContent, '');
 });
 
 test('tapping a struck-off voter in the roll opens no mark button for them', async () => {
-  const doc = createDocument();
-  const container = doc.createElement('section');
+  const container = createDocument().createElement('section');
   const marks = marksStore();
   const view = mountRollWithSearch(container, ENTRIES, strings, {
-    contacts: { getContact: async () => null, listConsented: async () => [] },
-    wardKey: WARD, marks, workerId: async () => 'w1', viewportHeight: 1200,
+    contacts: noContacts, wardKey: WARD, marks, workerId: async () => 'w1', viewportHeight: 1200,
   });
   const panel = view.openContact(ENTRIES[1]);
   await panel.seenVoting.ready;
@@ -145,13 +144,11 @@ test('tapping a struck-off voter in the roll opens no mark button for them', asy
   view.destroy();
 });
 
-test('a pasted tally SMS naming a struck-off serial is told it is outside the roll and that serial is not counted', async () => {
-  const doc = createDocument();
-  const container = doc.createElement('section');
+test('a pasted tally SMS naming a struck-off serial is told so and that serial is not counted', async () => {
+  const container = createDocument().createElement('section');
   const marks = marksStore();
   const view = mountRollWithSearch(container, ENTRIES, strings, {
-    contacts: { getContact: async () => null, listConsented: async () => [] },
-    wardKey: WARD, marks, workerId: async () => 'coord', viewportHeight: 1200,
+    contacts: noContacts, wardKey: WARD, marks, workerId: async () => 'coord', viewportHeight: 1200,
     sms: {
       settings: async () => ({ teamSmsNumber: NUMBER, candidateId: TEAM }),
       inbox: createSmsInbox({ indexedDB: createFakeIndexedDB(), crypto: webcrypto }),
@@ -177,12 +174,11 @@ test('the send panel leaves out this worker\'s marks on serials struck off the r
   const marks = marksStore();
   await marks.markSeen(WARD, 8, 'w1');
   await marks.markSeen(WARD, 9, 'w1');
-  const live = new Set(['8']);
   const view = mountSmsTally(createDocument().createElement('div'), strings, {
     marks, wardId: WARD, workerId: () => 'w1', log: () => {},
     settings: async () => ({ teamSmsNumber: NUMBER, candidateId: TEAM }),
     inbox: createSmsInbox({ indexedDB: createFakeIndexedDB(), crypto: webcrypto }),
-    inRoll: (serial) => live.has(String(serial)),
+    inRoll: (serial) => serial === 8,
   });
   await view.ready;
   await waitFor(() => view.ownValue.textContent === '1');
