@@ -166,6 +166,51 @@ header p {
   color: var(--color-on-primary);
 }
 
+/* Seat header (DESIGN.md "Seat header"): one strip under the app header, above
+   every screen, naming the loaded panchayat and ward in body text. While the
+   stored seat is read it is a blank strip of the same height (no false
+   "nothing loaded"); with no seat it is the empty state, an info-toned link
+   to the ward picker that fills the strip. */
+.seat-header {
+  min-height: var(--touch-target);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--space-4);
+}
+
+.seat-header[data-state="empty"] {
+  background: var(--color-primary-tint);
+}
+
+.seat-header-text,
+.seat-header-link {
+  display: flex;
+  align-items: center;
+  max-width: var(--content-max-width);
+  min-height: var(--touch-target);
+  margin: 0 auto;
+  padding: var(--space-2) 0;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+}
+
+.seat-header-link {
+  appearance: none;
+  width: 100%;
+  min-width: var(--touch-target);
+  padding-left: var(--space-3);
+  border-left: 4px solid var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.seat-header-link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
 main {
   width: 100%;
   max-width: var(--content-max-width);

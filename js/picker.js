@@ -2,6 +2,7 @@ import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
+import { renderSeatHeader, saveSeat, seatFromWardKey } from '../src/ui/seatHeader.js';
 import { startSync } from '../src/sync/syncEngine.js';
 import { createContactSync } from '../src/contacts/contactSync.js';
 import * as marks from '../src/tally/seenVotingStore.js';
@@ -22,6 +23,7 @@ var FALLBACK_STRINGS = {
 var container = document.getElementById('ward-picker');
 var rollContainer = document.getElementById('roll');
 var teamContainer = document.getElementById('team-join');
+var seatHeader = document.getElementById('seat-header');
 
 // Tapping a voter in the roll records their consent and number on the device,
 // encrypted, and queues it for the team; numbers teammates saved arrive with
@@ -86,6 +88,30 @@ function hideEmptyState() {
   }
 }
 
+// The seat header above every screen names the ward whose roll is on screen,
+// and keeps it (panchayat name, ward, seat type only) for the next cold start.
+// It follows the shown roll, not the pick: a pick whose download fails leaves
+// the previous seat (and its roll) in place. A roll restored before the ward
+// catalogue has loaded is named once the catalogue is there.
+var catalogue = null;
+var seatStrings = null;
+var shownWardKey = null;
+
+function showSeat() {
+  var seat = catalogue && seatFromWardKey(catalogue, shownWardKey);
+  if (!seat) {
+    return;
+  }
+  saveSeat(seat);
+  renderSeatHeader(seatHeader, seat, seatStrings || {});
+}
+
+function onRollShown(entries, wardKey) {
+  hideEmptyState();
+  shownWardKey = wardKey;
+  showSeat();
+}
+
 // Picking a ward downloads, decodes and stores its roll (src/roll/rollFlow.js);
 // at startup the last stored roll is shown again with no network request.
 function startRoll(strings) {
@@ -93,7 +119,7 @@ function startRoll(strings) {
     return null;
   }
   var roll = createRollFlow(rollContainer, Object.assign({}, FALLBACK_STRINGS, strings || {}), {
-    onShow: hideEmptyState,
+    onShow: onRollShown,
     // marks: tapping a voter offers "seen voting", and the turnout button
     // shows the ward's de-duplicated count beside the official turnout.
     // sms: with no mobile data, marks go out and come in by SMS and join the
@@ -149,6 +175,9 @@ if (container) {
       return loadJson('config/constituency.json');
     })
     .then(function (config) {
+      catalogue = config;
+      seatStrings = table;
+      showSeat();
       var picker = mountWardPicker(container, config, table, {
         onSelect: function (selection) {
           if (roll) {
