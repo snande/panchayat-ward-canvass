@@ -1,7 +1,7 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v20";
+const CACHE_VERSION = "v21";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -19,6 +19,8 @@ const PRECACHE = [
   "src/ui/wardPickerScreen.js",
   // The seat header above every screen: the loaded panchayat and ward.
   "src/ui/seatHeader.js",
+  // The SEC disclaimer footer below every screen: static, so it shows offline.
+  "src/ui/secFooter.js",
   // Roll flow: enough to reopen a stored roll offline. The decoder is
   // fetched only when a new PDF is downloaded, which needs the network anyway.
   "src/roll/fetchRoll.js",

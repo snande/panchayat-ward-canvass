@@ -95,6 +95,20 @@ if (seatHeader) {
     });
 }
 
+// The SEC disclaimer footer below every screen (src/ui/secFooter.js): data
+// source, not an official SEC app, the printed roll prevails. Static text,
+// precached by sw.js, so it shows offline.
+var secFooter = document.getElementById("sec-footer");
+if (secFooter) {
+  import("../src/ui/secFooter.js")
+    .then(function (footer) {
+      footer.renderSecFooter(secFooter);
+    })
+    .catch(function (err) {
+      console.error("SEC footer failed to load", err);
+    });
+}
+
 var primaryAction = document.getElementById("primary-action");
 if (primaryAction) {
   // The roll is loaded by picking a ward below (js/picker.js); the button
