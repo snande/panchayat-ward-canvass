@@ -518,6 +518,17 @@ select.picker-select,
   color: var(--color-text-muted);
 }
 
+/* A voter struck off the roll stays in the list: serial and name struck
+   through (in <del>) in the error tone, the same marker as the voter card. */
+.roll-row[data-state="struck-off"] .roll-name {
+  color: var(--color-danger);
+}
+
+.roll-row[data-state="struck-off"] .roll-name del {
+  text-decoration: line-through;
+  text-decoration-color: var(--color-danger);
+}
+
 /* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
    shown above the roll's search box. Rows open it, so they show they can. */
 .roll-row[tabindex],

@@ -140,11 +140,18 @@ LABEL_REL = re.compile(r"(पति|पिता|माता|पत्नी|�
 LABEL_HOUSE = re.compile(r"मकान\s+संख्या\s*:?")
 LABEL_AGE = re.compile(r"आयु\s*:?")
 LABEL_SEX = re.compile(r"लिं?ग\s*:?")
+STRUCK_MARKS = {"O", "E", "S", "R"}   # Badli's "O"; the 2026 rolls' legend letters (death, shifted, repetition)
+OTHER_MARKS = {"#"}                    # a modified entry: not struck off
+MARK_GAP = 15.0                        # a struck-off mark ends this close to the left of its serial
 
 def parse_entries(lines):
     """Entries start at a 'नाम:' label and end at the bold serial. Every value sits on the row
     (same y) of its label: name on the नाम row, relative on the 'X का नाम' row, house on the
-    मकान संख्या row, age and gender on the आयु row; the EPIC is a row of its own."""
+    मकान संख्या row, age and gender on the आयु row; the EPIC is a row of its own.
+    A struck-off mark (STRUCK_MARKS, serial font) sits on its serial's row just left of the
+    serial; it is drawn after the serial in the main list but before it in a supplement's
+    deletion list, so it is matched to the serial by position once the page is parsed.
+    A "#" (modified entry) is skipped."""
     def same_row(a, b): return abs(a["y"] - b["y"]) < 2.0
     def finish(block, serial):
         e, labels = {"serial": serial, "deleted": False}, {}
@@ -170,39 +177,55 @@ def parse_entries(lines):
             else:
                 e.setdefault("extra", []).append(t)
         return e
-    entries, block = [], []
+    entries, marks, block = [], [], []
     for ln in lines:
         t = ln["text"]
         if LABEL_NAME.fullmatch(t): block = [ln]; continue
         if "serial" in ln["fonts"] and re.fullmatch(r"\d+", t) and block:
-            e = finish(block, int(t)); e["_serial_y"] = ln["y"]; entries.append(e); block = []; continue
-        if "serial" in ln["fonts"] and t == "O" and entries and abs(entries[-1].get("_serial_y", 1e9) - ln["y"]) < 2.0:
-            entries[-1]["deleted"] = True; continue
+            e = finish(block, int(t)); e["_serial_x"] = ln["x"]; e["_serial_y"] = ln["y"]; entries.append(e); block = []; continue
+        if "serial" in ln["fonts"] and t in STRUCK_MARKS: marks.append(ln); continue
+        if "serial" in ln["fonts"] and t in OTHER_MARKS: continue
         if block: block.append(ln)
+    for mark in marks:
+        near = [e for e in entries if abs(e["_serial_y"] - mark["y"]) < 2.0 and 0 < e["_serial_x"] - mark["x"] <= MARK_GAP]
+        if near: min(near, key=lambda e: e["_serial_x"] - mark["x"])["deleted"] = True
     return entries
 
-if __name__ == "__main__":
-    pdf, table_path, out_dir = sys.argv[1], sys.argv[2], sys.argv[3]
-    table = json.load(open(table_path))["glyphs"]
-    reader = pypdf.PdfReader(pdf)
-    all_entries, unmatched = [], []
-    for idx in range(len(reader.pages)):
-        lines, um = page_lines(reader, idx, table, out_dir, debug_codes=(idx == 2)); unmatched += um
-        with open(f"{out_dir}/page{idx+1:02d}.txt", "w") as fh:
-            for ln in lines: fh.write(f"{''.join(sorted(ln['fonts']))}\t{ln['x']:.1f}\t{ln['y']:.1f}\t{ln['text']}" + (f"\t{ln['raw']}" if idx == 2 and "लिग" in ln["text"] else "") + "\n")
+def roll_entries(pages):
+    """Entries of a whole roll from each page's lines (pages[i] is page i+1), one per serial.
+    The cover and summary pages (the first two) are skipped. The supplement's deletion list
+    repeats entries already in the original list: the first record (and its page) is kept,
+    and a repeat that is struck off marks it deleted."""
+    all_entries = []
+    for idx, lines in enumerate(pages):
         if idx >= 2:
             ents = parse_entries(lines)
             for e in ents: e["page"] = idx + 1
             all_entries += ents
-    # the supplement's deletion list repeats entries already in the original list: keep one per serial
     seen, deduped = set(), []
     for e in all_entries:
-        e.pop("_serial_y", None)
+        e.pop("_serial_x", None); e.pop("_serial_y", None)
         if e["serial"] in seen:
             prev = next(x for x in deduped if x["serial"] == e["serial"])
             prev["deleted"] = prev["deleted"] or e["deleted"]; continue
         seen.add(e["serial"]); deduped.append(e)
-    all_entries = sorted(deduped, key=lambda e: e["serial"])
+    return sorted(deduped, key=lambda e: e["serial"])
+
+def decode_pdf(pdf, table, out_dir):
+    """Decode a roll PDF: (entries, unmatched glyphs). Writes a per-page text dump to out_dir."""
+    reader = pypdf.PdfReader(pdf)
+    pages, unmatched = [], []
+    for idx in range(len(reader.pages)):
+        lines, um = page_lines(reader, idx, table, out_dir, debug_codes=(idx == 2)); unmatched += um
+        with open(f"{out_dir}/page{idx+1:02d}.txt", "w") as fh:
+            for ln in lines: fh.write(f"{''.join(sorted(ln['fonts']))}\t{ln['x']:.1f}\t{ln['y']:.1f}\t{ln['text']}" + (f"\t{ln['raw']}" if idx == 2 and "लिग" in ln["text"] else "") + "\n")
+        pages.append(lines)
+    return roll_entries(pages), unmatched
+
+if __name__ == "__main__":
+    pdf, table_path, out_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+    table = json.load(open(table_path))["glyphs"]
+    all_entries, unmatched = decode_pdf(pdf, table, out_dir)
     json.dump(all_entries, open(f"{out_dir}/entries.json", "w"), ensure_ascii=False, indent=1)
     print("deleted:", sum(1 for e in all_entries if e["deleted"]), "remaining:", sum(1 for e in all_entries if not e["deleted"]))
     print("unmatched glyphs:", unmatched or "none")

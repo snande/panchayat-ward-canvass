@@ -42,3 +42,38 @@ wrong (serials 103 and 320, both missing a reph fused into the i-matra
 glyph) were corrected in the decoder, and the pass was re-run and
 re-compared; no other entry changed. The reference decoder now matches
 this file on 297 of 297 records.
+
+# SEC rolls: expected entries for five districts
+
+`fixtures/sec/` holds 77 ward roll PDFs from five districts
+(`fixtures/sec/manifest.json`). Five of them, one per district directory,
+have a committed `<roll>.expected.json` that `test/secFixtures.test.js`
+compares `decodeRoll` against line for line: serial order, name, relative,
+age, gender, house and the `struck` flag.
+
+| district | roll | entries | struck off |
+|---|---|---|---|
+| bharatpur | `ARAUDA-ward-001` (Final) | 298 | 26 |
+| bhilwara | `ALMAS-ward-001-supp-2` | 376 | 6 |
+| bikaner | `BHOLASAR-ward-001-supp-2` | 425 | 8 |
+| jodhpur | `ASHAPURA-ward-005-supp-2` | 200 | 16 |
+| udaipur | `AMARPURA-ward-001-supp-2` | 425 | 2 |
+
+Each file is `tools/reference-decoder/expected.py`'s output format.
+These rolls mark a struck-off entry with the legend letter E, S or R (not
+Badli's "O"), drawn left of the serial; the supplement's deletion list
+("घटक 2: विलोपन सूची") repeats it, and an entry in the modification list
+("घटक 3: संशोधन सूची") carries a "#" and is not struck off. In Almas ward 1
+the six struck-off serials (81, 186, 220, 244, 258, 308) are the six EPIC
+numbers repeated in a deletion list; serial 7, repeated in the modification
+list, is not struck off.
+
+How these five files were made: `pypdf` and `fontTools` could not be
+installed where they were generated, so `decode.py`'s own `roll_entries`
+(entry parsing, struck-off marks, de-duplication) and `expected.py`'s
+`project` were run on each page's text lines as assembled by
+`src/decoder/decodeRoll.js` `pageLines` (the port of `decode.py`'s
+`page_lines`, which matches it on Badli ward 1). Regenerate them with the
+full reference decoder, as `expected.py` runs it, where `pypdf` and
+`fontTools` are available, and commit any difference.
+

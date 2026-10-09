@@ -5,7 +5,7 @@
 //
 // The card shows whatever the entry and booth carry. A v1 rollStore entry has
 // no relation or EPIC, and the booth arrives later from the roll decoder, so
-// any field that is missing reads "—". An entry flagged `deleted` (struck off
+// any field that is missing reads "—". An entry flagged `struck` (struck off
 // the roll) carries the error badge and a struck-through name, never the look
 // of a live voter.
 
@@ -48,7 +48,7 @@ function wardOf(ward) {
 
 /**
  * The card's fields as [key, text] pairs, in VOTER_CARD_LABELS order.
- * @param {object} [entry] a roll entry: serial, name, relation, relative, age, gender, house, epic, deleted
+ * @param {object} [entry] a roll entry: serial, name, relation, relative, age, gender, house, epic, struck
  * @param {string|number|{ward?: string|number}} [ward]
  * @param {{name?: string, address?: string}} [booth]
  * @returns {Array<[string, string]>}
@@ -81,7 +81,7 @@ export function voterCardFields(entry, ward, booth) {
  * @returns {Element} the card, not attached anywhere
  */
 export function renderVoterCard(entry, ward, booth, doc = globalThis.document) {
-  const struck = Boolean(entry && entry.deleted);
+  const struck = Boolean(entry && entry.struck);
   const fields = voterCardFields(entry, ward, booth);
   const name = fields[0][1];
 

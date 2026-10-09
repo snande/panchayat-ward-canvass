@@ -183,12 +183,65 @@ test('restore() with a record that fails to decrypt neither crashes nor shows a 
   assert.equal(s.shown.length, 1);
 });
 
+test('the stored roll keeps the struck-off entries, flagged, and the list shows every serial', async () => {
+  const s = setup({ fetchRoll: async () => pdfBuffer() });
+  await s.flow.open(SELECTION);
+  const list = s.shown[0];
+  assert.deepEqual(list.map((e) => e.serial), Array.from({ length: 326 }, (_, i) => i + 1));
+  assert.equal(list.filter((e) => !e.struck).length, expected.length);
+  assert.equal(list.find((e) => e.serial === 9).struck, true);
+  assert.equal(countLine(s.container), `${strings.roll_count}: 326`);
+  assert.deepEqual(await s.store.loadStored('17/125/6313/1'), list);
+});
+
+test('an old-version stored roll is decoded again, not misread', async () => {
+  const idb = createFakeIndexedDB();
+  const online = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await online.flow.open(SELECTION);
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  rolls.set('17/125/6313/1', { ...rolls.get('17/125/6313/1'), v: 1 });
+
+  const s = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  // restore() has no PDF address: it shows nothing rather than the old copy
+  assert.equal(await s.flow.restore(), null);
+  assert.equal(s.calls.length, 0);
+  // picking the ward downloads and decodes it again and stores the current shape
+  await s.flow.open(SELECTION);
+  assert.equal(s.calls.length, 1);
+  assert.deepEqual(s.shown, online.shown);
+  assert.equal(rolls.get('17/125/6313/1').v, 2);
+  assert.deepEqual(s.errors, []);
+});
+
+test('a stored roll of an unknown version is reported and decoded again', async () => {
+  const idb = createFakeIndexedDB();
+  const online = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await online.flow.open(SELECTION);
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  rolls.set('17/125/6313/1', { ...rolls.get('17/125/6313/1'), v: 99 });
+
+  const s = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await s.flow.open(SELECTION);
+  assert.equal(s.errors.length, 1);
+  assert.match(s.errors[0][0], /unknown record version 99/);
+  assert.equal(s.errors[0][1].name, 'RollRecordVersionError');
+  assert.equal(s.calls.length, 1);
+  assert.deepEqual(s.shown, online.shown);
+  assert.equal(rolls.get('17/125/6313/1').v, 2);
+});
+
 test('a PDF that decodes to no entries is an error with retry, and is not stored', async () => {
   const s = setup({ fetchRoll: async () => pdfBuffer(), decode: async () => [] });
   await s.flow.open(SELECTION);
   assert.equal(s.container.querySelector('p.roll-message').textContent, strings.roll_failed);
   assert.ok(s.container.querySelector('button.roll-retry'));
   assert.equal(await s.store.loadStored('17/125/6313/1'), null);
+
+  // nor does one whose every entry is struck off
+  const allStruck = setup({ fetchRoll: async () => pdfBuffer(), decode: async () => [{ serial: 1, name: 'क', struck: true }] });
+  await allStruck.flow.open(SELECTION);
+  assert.equal(allStruck.container.querySelector('p.roll-message').textContent, strings.roll_failed);
+  assert.equal(await allStruck.store.loadStored('17/125/6313/1'), null);
 });
 
 test('rollFlow reaches the decoder only through dynamic imports (offline startup)', () => {

@@ -8,9 +8,16 @@
 //
 // restore(): at startup, show the last stored ward with no network request,
 // so the app opens offline once a roll has been fetched.
+//
+// A stored copy of an older record version reads as "not stored", so open()
+// downloads and decodes the roll again and stores it in the current shape. A
+// record version the store does not know is logged as such and treated the
+// same way; it is never read. restore() has no PDF address to fetch from, so
+// it shows nothing for either and the roll is decoded again when the ward is
+// picked.
 
 import { fetchRoll as defaultFetchRoll, RollFetchError } from './fetchRoll.js';
-import { createRollStore, minimiseEntries, wardKeyFor } from './rollStore.js';
+import { createRollStore, minimiseEntries, wardKeyFor, RollRecordVersionError } from './rollStore.js';
 import { el } from '../ui/dom.js';
 import { mountRollWithSearch } from '../ui/rollSearch.js';
 
@@ -89,7 +96,11 @@ export function createRollFlow(container, strings, deps = {}) {
       return await getStore().loadStored(wardKey);
     } catch (err) {
       // An unreadable copy (e.g. storage cleared under us) is refetched.
-      log('stored roll could not be read', err);
+      if (err instanceof RollRecordVersionError) {
+        log(`stored roll has unknown record version ${JSON.stringify(err.version)}; decoding it again`, err);
+      } else {
+        log('stored roll could not be read', err);
+      }
       return null;
     }
   }
@@ -108,8 +119,8 @@ export function createRollFlow(container, strings, deps = {}) {
       if (!current()) return null;
       const decoded = await decode(bytes);
       if (!current()) return null;
-      // A PDF that decodes to nothing is not a roll: fail so the user can retry.
-      if (minimiseEntries(decoded).length === 0) throw new Error('decoder returned no entries');
+      // A PDF that decodes to no live entry is not a roll: fail so the user can retry.
+      if (!minimiseEntries(decoded).some((e) => !e.struck)) throw new Error('decoder returned no entries');
       let entries;
       try {
         entries = await getStore().encryptAndStore(wardKey, decoded);

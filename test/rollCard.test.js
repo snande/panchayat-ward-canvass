@@ -101,7 +101,7 @@ test('a ward can be passed as a seat-like object', () => {
 });
 
 test('a struck-off entry carries the हटाया गया badge and a struck-through name', () => {
-  const card = render({ ...expected[1], deleted: true }, '1', BOOTH);
+  const card = render({ ...expected[1], struck: true }, '1', BOOTH);
   assert.equal(card.getAttribute('data-state'), 'struck-off');
   const badge = card.querySelector('span.badge');
   assert.ok(badge);
@@ -115,11 +115,11 @@ test('a struck-off entry carries the हटाया गया badge and a struc
   // The rest of the roll line still shows.
   assert.equal(rows(card).epic[1], expected[1].epic);
 
-  assert.equal(render({ ...expected[1], deleted: false }, '1', BOOTH).querySelector('del'), null);
+  assert.equal(render({ ...expected[1], struck: false }, '1', BOOTH).querySelector('del'), null);
 });
 
 test('the card uses only styled classes, no inline style and no control', () => {
-  const card = render({ ...expected[0], deleted: true }, '1', BOOTH);
+  const card = render({ ...expected[0], struck: true }, '1', BOOTH);
   const nodes = [card, ...all(card)];
   const classes = new Set(nodes.flatMap((n) => n.className.split(/\s+/).filter(Boolean)));
   for (const name of classes) {
@@ -150,7 +150,7 @@ test('rendering stores, deletes and fetches nothing', () => {
   }
   try {
     render(expected[0], '1', BOOTH);
-    render({ ...expected[2], deleted: true }, '1', BOOTH);
+    render({ ...expected[2], struck: true }, '1', BOOTH);
     render({}, undefined, undefined);
   } finally {
     for (const [name, desc] of saved) {

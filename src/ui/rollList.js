@@ -7,8 +7,14 @@
 // voters therefore costs a few dozen DOM nodes, which keeps 2 GB phones
 // smooth. Text is set with textContent only and inherits the page's
 // Noto Sans Devanagari font (--font-family-base in styles.css).
+//
+// A struck-off entry (struck: true) stays in the list and can be tapped like
+// any other: its row carries data-state="struck-off", its serial and name sit
+// in <del> (struck through), and its detail line starts with the struck-off
+// marker the voter card shows.
 
 import { el } from './dom.js';
+import { STRUCK_OFF_LABEL } from '../card/voterCard.js';
 
 export const ROW_HEIGHT = 100; // px; styles.css .roll-row content fits in this
 export const OVERSCAN = 6;
@@ -33,7 +39,7 @@ function defaultFrame(fn) {
 
 /**
  * Mount the list into container (replacing its content).
- * @param {object[]} entries {serial, name, relative, age, gender, house}
+ * @param {object[]} entries {serial, name, relative, age, gender, house, struck}
  * @param {Record<string,string>} strings the Hindi string table
  * @param {{viewportHeight?: number, requestFrame?: Function, onSelect?: (entry: object) => void}} [opts]
  *   onSelect is called with the entry of a tapped row (Enter or Space on a
@@ -76,9 +82,17 @@ export function mountRollList(container, entries, strings, opts = {}) {
     row.setAttribute('aria-posinset', String(index + 1));
     shownIndex.set(row, index);
     const [name, relative, meta] = row.childNodes;
-    name.textContent = `${entry.serial}. ${entry.name}`;
+    const struck = entry.struck === true;
+    const title = `${entry.serial}. ${entry.name}`;
+    if (struck) {
+      row.setAttribute('data-state', 'struck-off');
+      name.replaceChildren(el(doc, 'del', null, title));
+    } else {
+      row.removeAttribute('data-state');
+      name.textContent = title;
+    }
     relative.textContent = entry.relative;
-    const parts = [];
+    const parts = struck ? [STRUCK_OFF_LABEL] : [];
     if (entry.age != null) parts.push(`${text('roll_age')} ${entry.age}`);
     if (entry.gender) parts.push(entry.gender);
     if (entry.house) parts.push(`${text('roll_house')} ${entry.house}`);

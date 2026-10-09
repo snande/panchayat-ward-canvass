@@ -191,16 +191,24 @@ const LABEL_AGE = /^आयु\s*:?$/;
 const LABEL_SEX = /^लिं?ग\s*:?$/;
 const GENDERS = new Set(['स्त्री', 'पुरूष', 'पुरुष', 'अन्य']);
 const DIGITS = /^\d+$/;
+const STRUCK_MARKS = new Set(['O', 'E', 'S', 'R']);
+const OTHER_MARKS = new Set(['#']); // a modified entry: not struck off
+const MARK_GAP = 15.0; // a struck-off mark ends this close to the left of its serial
 
 /**
  * Entries start at a 'नाम:' label and end at the bold serial. Every value
  * sits on the row (same y) of its label: name on the नाम row, relative on
  * the 'X का नाम' row, house on the मकान संख्या row, age and gender on the
- * आयु row; the EPIC is a row of its own. An "O" in the serial font on the
- * serial's row marks a struck-off entry. A page with no 'नाम:' label (the
- * cover and summary pages) yields no entries.
+ * आयु row; the EPIC is a row of its own. A struck-off mark in the serial
+ * font ("O" in the Badli roll; the legend letters E, S or R, deleted due to
+ * death, shifting or repetition, in the SEC's 2026 rolls) sits on its
+ * serial's row just left of the serial, and is drawn after the serial in the
+ * main list but before it in a supplement's deletion list; it marks the
+ * entry whose serial it precedes on the row, wherever it is drawn. A "#" in
+ * the serial font marks a modified entry and is skipped. A page with no
+ * 'नाम:' label (the cover and summary pages) yields no entries.
  * @param {{x: number, y: number, text: string, fonts: Set<string>}[]} lines
- * @returns {object[]} raw entries {serial, deleted, name, rel, relation, ...} plus _serialY
+ * @returns {object[]} raw entries {serial, deleted, name, rel, relation, ...} plus _serialX, _serialY
  */
 export function parseEntries(lines) {
   const sameRow = (a, b) => Math.abs(a.y - b.y) < 2.0;
@@ -239,23 +247,31 @@ export function parseEntries(lines) {
     return e;
   };
   const entries = [];
+  const marks = [];
   let block = [];
   for (const ln of lines) {
     const t = ln.text;
     if (LABEL_NAME.test(t)) { block = [ln]; continue; }
     if (ln.fonts.has('serial') && DIGITS.test(t) && block.length) {
       const e = finish(block, Number(t));
+      e._serialX = ln.x;
       e._serialY = ln.y;
       entries.push(e);
       block = [];
       continue;
     }
-    if (ln.fonts.has('serial') && t === 'O' && entries.length
-        && Math.abs((entries[entries.length - 1]._serialY ?? 1e9) - ln.y) < 2.0) {
-      entries[entries.length - 1].deleted = true;
-      continue;
-    }
+    if (ln.fonts.has('serial') && STRUCK_MARKS.has(t)) { marks.push(ln); continue; }
+    if (ln.fonts.has('serial') && OTHER_MARKS.has(t)) continue;
     if (block.length) block.push(ln);
+  }
+  for (const mark of marks) {
+    let best = null;
+    for (const e of entries) {
+      const dx = e._serialX - mark.x;
+      if (!sameRow(mark, { y: e._serialY }) || dx <= 0 || dx > MARK_GAP) continue;
+      if (!best || dx < best._serialX - mark.x) best = e;
+    }
+    if (best) best.deleted = true;
   }
   return entries;
 }
@@ -266,7 +282,7 @@ const nfc = (v) => (typeof v === 'string' ? v.normalize('NFC') : v);
  * Add one page's parsed entries to the roll, keyed by serial. The
  * supplement's deletion list repeats entries already in the original list:
  * the first record (and its page) is kept, and a repeat that is struck off
- * marks the kept record deleted.
+ * marks the kept record struck. The parser's `deleted` becomes `struck`.
  * @param {Map<number, object>} bySerial the roll so far; updated in place
  * @param {object[]} rawEntries parseEntries output for the page
  * @param {number} page 1-based PDF page number
@@ -274,7 +290,7 @@ const nfc = (v) => (typeof v === 'string' ? v.normalize('NFC') : v);
 export function addPageEntries(bySerial, rawEntries, page) {
   for (const raw of rawEntries) {
     const prev = bySerial.get(raw.serial);
-    if (prev) { prev.deleted = prev.deleted || raw.deleted; continue; }
+    if (prev) { prev.struck = prev.struck || raw.deleted === true; continue; }
     const entry = {
       serial: raw.serial,
       page,
@@ -285,7 +301,7 @@ export function addPageEntries(bySerial, rawEntries, page) {
       gender: nfc(raw.gender),
       house: nfc(raw.house),
       epic: raw.epic === undefined ? null : nfc(raw.epic),
-      deleted: raw.deleted,
+      struck: raw.deleted === true,
     };
     if (raw.extra) entry.extra = raw.extra.map(nfc);
     bySerial.set(raw.serial, entry);
@@ -294,11 +310,13 @@ export function addPageEntries(bySerial, rawEntries, page) {
 
 /**
  * Decode a roll PDF into its voter entries, one per serial, in roll order.
- * Each entry: {serial, page, name, relation, relative, age, gender, house,
- * epic, deleted} (the fields of fixtures/badli-ward1-expected.json plus page
- * and deleted) with every string NFC-normalised Unicode; `epic` is null
- * where the roll prints none (supplement entries); `deleted` marks
- * struck-off serials; `extra` lists any text the parser could not place.
+ * Every printed entry is returned, struck-off ones included. Each entry:
+ * {serial, page, name, relation, relative, age, gender, house, epic, struck}
+ * (the fields of fixtures/badli-ward1-expected.json plus page and struck)
+ * with every string NFC-normalised Unicode; `epic` is null where the roll
+ * prints none (supplement entries); `struck` is true for an entry printed as
+ * struck off and false otherwise; `extra` lists any text the parser could
+ * not place.
  * @param {Uint8Array|ArrayBuffer} pdfBytes the roll PDF
  * @param {{table?: {glyphs: Record<string, object>}}} [options] master glyph
  *   table; in the browser await glyphMap.loadMasterTable() first or pass it

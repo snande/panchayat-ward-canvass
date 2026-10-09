@@ -140,27 +140,60 @@ test('parseEntries: an "O" in the serial font marks only the entry whose serial 
   assert.deepEqual(hindiO.map((e) => [e.serial, e.deleted]), [[7, false]]);
 });
 
+test('parseEntries: the E, S and R legend marks strike off the serial just right of them, drawn before or after it', () => {
+  for (const mark of ['E', 'S', 'R']) {
+    // main list: the mark is drawn after the serial
+    const after = parseEntries([...entryLines(7, 500), line(10, 500, mark, 'serial')]);
+    assert.deepEqual(after.map((e) => [e.serial, e.deleted]), [[7, true]], mark);
+    // a supplement's deletion list: the mark is drawn before the serial, inside the open entry
+    const lines = entryLines(7, 500);
+    lines.splice(lines.length - 1, 0, line(10, 500, mark, 'serial'));
+    const before = parseEntries(lines);
+    assert.deepEqual(before.map((e) => [e.serial, e.deleted, e.extra]), [[7, true, undefined]], mark);
+  }
+});
+
+test('parseEntries: a mark on a row shared by three entries strikes off only the serial right of it', () => {
+  const at = (serial, x) => entryLines(serial, 500).map((ln) => ({ ...ln, x: ln.x + x }));
+  // the deletion list's row "E 81  E 186  220": marks drawn before their serials
+  const lines = [...at(81, 0), ...at(186, 170), ...at(220, 340)];
+  const serialAt = (serial) => lines.findIndex((ln) => ln.text === String(serial));
+  lines.splice(serialAt(81), 0, line(10, 500, 'E', 'serial'));
+  lines.splice(serialAt(186), 0, line(180, 500, 'E', 'serial'));
+  assert.deepEqual(parseEntries(lines).map((e) => [e.serial, e.deleted]), [[81, true], [186, true], [220, false]]);
+  // a mark too far left of any serial strikes off nothing
+  const far = parseEntries([...entryLines(7, 500), line(0, 500, 'E', 'serial')]);
+  assert.deepEqual(far.map((e) => [e.serial, e.deleted]), [[7, false]]);
+});
+
+test('parseEntries: a "#" (modified entry) strikes off nothing and is not unplaced text', () => {
+  const lines = entryLines(7, 500);
+  lines.splice(lines.length - 1, 0, line(10, 500, '#', 'serial'));
+  assert.deepEqual(parseEntries(lines).map((e) => [e.serial, e.deleted, e.extra]), [[7, false, undefined]]);
+});
+
 test('parseEntries: a page without a नाम label yields no entries', () => {
   assert.deepEqual(parseEntries([line(20, 500, '12', 'serial'), line(50, 500, 'कुल मतदाता')]), []);
 });
 
-test('addPageEntries: a supplement repeat keeps the first page and ORs the deleted flag', () => {
+test('addPageEntries: a supplement repeat keeps the first page and ORs the struck flag', () => {
   const bySerial = new Map();
   addPageEntries(bySerial, parseEntries(entryLines(9, 500)), 3);
+  assert.equal(bySerial.get(9).struck, false);
   addPageEntries(bySerial, parseEntries([...entryLines(9, 300), line(10, 300, 'O', 'serial')]), 16);
   assert.equal(bySerial.size, 1);
-  assert.deepEqual({ page: bySerial.get(9).page, deleted: bySerial.get(9).deleted }, { page: 3, deleted: true });
+  assert.deepEqual({ page: bySerial.get(9).page, struck: bySerial.get(9).struck }, { page: 3, struck: true });
 
-  // a later repeat that is not struck off does not un-delete the entry
+  // a later repeat that is not struck off does not un-strike the entry
   addPageEntries(bySerial, parseEntries(entryLines(9, 300)), 17);
-  assert.equal(bySerial.get(9).deleted, true);
+  assert.equal(bySerial.get(9).struck, true);
 });
 
 test('addPageEntries renames rel to relative, NFC-normalises strings and sets a missing EPIC to null', () => {
   const bySerial = new Map();
   addPageEntries(bySerial, [{ serial: 3, deleted: false, name: 'जांगिड़', rel: 'राम', relation: 'पिता', age: 1, gender: 'स्त्री', house: '1' }], 15);
   assert.deepEqual(bySerial.get(3), {
-    serial: 3, page: 15, name: 'जांगिड़', relation: 'पिता', relative: 'राम', age: 1, gender: 'स्त्री', house: '1', epic: null, deleted: false,
+    serial: 3, page: 15, name: 'जांगिड़', relation: 'पिता', relative: 'राम', age: 1, gender: 'स्त्री', house: '1', epic: null, struck: false,
   });
 });
 
@@ -172,9 +205,11 @@ test('decodeRoll decodes the Badli ward 1 roll to the expected entries', () => {
   const allSerials = JSON.parse(readFileSync(fixture('badli-ward1-all-serials.json'), 'utf8'));
   const norm = (v) => (typeof v === 'string' ? v.normalize('NFC') : v);
 
+  // every printed entry, struck-off ones included, in roll order
   assert.deepEqual(entries.map((e) => e.serial), Array.from({ length: 326 }, (_, i) => i + 1));
+  for (const e of entries) assert.equal(typeof e.struck, 'boolean', `serial ${e.serial}`);
   assert.deepEqual(
-    entries.filter((e) => e.deleted).map((e) => e.serial),
+    entries.filter((e) => e.struck).map((e) => e.serial),
     allSerials.filter((e) => e.deleted).map((e) => e.serial),
   );
   assert.deepEqual(
@@ -185,7 +220,7 @@ test('decodeRoll decodes the Badli ward 1 roll to the expected entries', () => {
   // every field of the expected file is present, under the same name
   for (const key of Object.keys(expected[0])) assert.ok(Object.hasOwn(entries[0], key), key);
 
-  const live = new Map(entries.filter((e) => !e.deleted).map((e) => [e.serial, e]));
+  const live = new Map(entries.filter((e) => !e.struck).map((e) => [e.serial, e]));
   const matched = expected.filter((want) => {
     const got = live.get(want.serial);
     return got && Object.keys(want).every((k) => norm(got[k]) === norm(want[k]));
@@ -199,11 +234,11 @@ test('decodeRoll decodes the Badli ward 1 roll to the expected entries', () => {
   }
   // struck-off entries keep the page of the original list, not the supplement's repeat
   assert.equal(entries.find((e) => e.serial === 9).page, 3);
-  assert.ok(entries.filter((e) => e.deleted).every((e) => e.page < 15));
+  assert.ok(entries.filter((e) => e.struck).every((e) => e.page < 15));
   // the supplement adds serials 319 to 326, without EPIC numbers
   const supplement = entries.filter((e) => e.serial >= 319);
   assert.deepEqual([...new Set(supplement.map((e) => e.page))], [15]);
-  assert.ok(supplement.every((e) => e.epic === null && !e.deleted));
+  assert.ok(supplement.every((e) => e.epic === null && !e.struck));
 });
 
 // --- no OCR, Kruti Dev table or network call -------------------------------------

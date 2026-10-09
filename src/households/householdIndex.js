@@ -2,7 +2,8 @@
 //
 // Pure and offline: no DOM, no network and no storage access. The index is
 // built in memory from the entries src/roll/rollStore.js keeps
-// ({serial, name, relative, age, gender, house}), so it adds no stored record.
+// ({serial, name, relative, age, gender, house, struck}), so it adds no stored
+// record.
 //
 // House numbers are compared after normaliseHouse(): Devanagari digits become
 // ASCII, surrounding whitespace is trimmed, whitespace around "/" and "-" is
@@ -11,7 +12,8 @@
 //
 // Entries whose house is empty, whitespace-only or missing are EXCLUDED from
 // the index: they belong to no household and are never merged with each
-// other.
+// other. Struck-off entries (struck: true) are left out too: a voter struck
+// off the roll is no longer a member of the household.
 
 import { toAsciiDigits } from '../search/voterSearch.js';
 
@@ -35,18 +37,18 @@ function bySerial(a, b) {
 /**
  * Group a ward's entries into households.
  *
- * @param {object[]} entries {serial, name, relative, age, gender, house}
+ * @param {object[]} entries {serial, name, relative, age, gender, house, struck}
  * @param {*} ward the ward the entries belong to, carried on each household
  * @returns {Map<string, {ward: *, key: string, house: string, members: object[]}>}
  *   keyed by normalised house number; `house` is the first spelling seen and
  *   `members` are the original entries in ascending serial order. Entries
- *   with an empty or missing house are left out.
+ *   with an empty or missing house, and struck-off entries, are left out.
  */
 export function buildHouseholdIndex(entries, ward) {
   if (!Array.isArray(entries)) throw new TypeError('entries must be an array');
   const index = new Map();
   for (const entry of entries) {
-    if (!entry || typeof entry !== 'object') continue;
+    if (!entry || typeof entry !== 'object' || entry.struck === true) continue;
     const key = normaliseHouse(entry.house);
     if (key === '') continue;
     let household = index.get(key);

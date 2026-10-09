@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { mountRollList, visibleRange, ROW_HEIGHT, OVERSCAN } from '../src/ui/rollList.js';
+import { STRUCK_OFF_LABEL } from '../src/card/voterCard.js';
 import { createDocument } from './helpers/fakeDom.js';
 
 const strings = JSON.parse(readFileSync(new URL('../src/strings.hi.json', import.meta.url), 'utf8'));
@@ -82,6 +83,50 @@ test('a row shows serial, name, relative, age, gender and house in Hindi', () =>
   assert.equal(view.root.querySelector('p.roll-count').textContent, `${strings.roll_count}: 1`);
   assert.equal(view.viewport.getAttribute('role'), 'list');
   assert.equal(view.viewport.getAttribute('aria-label'), strings.roll_list_label);
+});
+
+test('a struck-off entry stays in the list with its serial and name struck through', () => {
+  const list = [
+    { serial: 1, name: 'किशनादेवी', relative: 'सत्यनारायण', age: 57, gender: 'स्त्री', house: '1', struck: false },
+    { serial: 2, name: 'हटाया गया नाम', relative: 'कोई', age: 40, gender: 'पुरूष', house: '2', struck: true },
+  ];
+  const selected = [];
+  const doc = createDocument();
+  const view = mountRollList(doc.body, list, strings, {
+    viewportHeight: VIEWPORT, requestFrame: () => {}, onSelect: (e) => selected.push(e.serial),
+  });
+  assert.equal(view.root.querySelector('p.roll-count').textContent, `${strings.roll_count}: 2`);
+  const [live, struck] = rows(view);
+  assert.equal(struck.getAttribute('aria-posinset'), '2');
+  assert.equal(struck.getAttribute('data-state'), 'struck-off');
+  const del = struck.children[0].querySelectorAll('del');
+  assert.equal(del.length, 1);
+  assert.equal(del[0].textContent, '2. हटाया गया नाम');
+  assert.ok(struck.children[2].textContent.startsWith(STRUCK_OFF_LABEL));
+  assert.equal(live.getAttribute('data-state'), null);
+  assert.equal(live.querySelectorAll('del').length, 0);
+  // still reachable: tapping it selects it like any other row
+  struck.dispatchEvent({ type: 'click' });
+  assert.deepEqual(selected, [2]);
+});
+
+test('a recycled row loses the struck-off state of the entry it showed before', () => {
+  const list = entries(3000).map((e) => ({ ...e, struck: e.serial <= 30 }));
+  const { view, flush } = mount(list);
+  assert.equal(rows(view).filter((r) => r.getAttribute('data-state') === 'struck-off').length, rows(view).length);
+  view.viewport.scrollTop = 1500 * ROW_HEIGHT;
+  view.viewport.dispatchEvent({ type: 'scroll' });
+  flush();
+  for (const row of rows(view)) {
+    assert.equal(row.getAttribute('data-state'), null);
+    assert.equal(row.querySelectorAll('del').length, 0);
+  }
+});
+
+test('styles.css strikes through a struck-off row in the error tone', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  assert.match(css, /\.roll-row\[data-state="struck-off"\] \.roll-name\s*\{[^}]*color:\s*var\(--color-danger\)/);
+  assert.match(css, /\.roll-row\[data-state="struck-off"\] \.roll-name del\s*\{[^}]*text-decoration:\s*line-through/);
 });
 
 test('resize re-renders for the new height and destroy() removes the listener', () => {
