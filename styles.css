@@ -72,7 +72,8 @@
 
 /* Dark theme: an explicit data-theme="dark" on <html>, or the phone's dark
    setting unless the page is pinned to data-theme="light". Body text stays
-   at least 7:1 and each feedback tone at least 4.5:1 on its background. */
+   at least 7:1 and each feedback tone at least 4.5:1 on its background.
+   The two blocks must stay identical (test/design.test.js checks). */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --color-primary: #2dd4bf;
@@ -238,10 +239,6 @@ main {
 .btn-primary[hidden],
 .btn-secondary[hidden] {
   display: none;
-}
-
-.status-retry {
-  margin-top: var(--space-3);
 }
 
 /* While the ward picker only holds its loading or failure notice, the notice
@@ -502,9 +499,6 @@ select.picker-select,
 /* Panel (DESIGN.md): the card every voter-level surface sits in, e.g. the
    contact panel, the voter card and the seen-voting control. */
 .panel {
-  appearance: none;
-  min-width: var(--touch-target);
-  min-height: var(--touch-target);
   margin: 0 0 var(--space-4);
   padding: var(--space-5);
   background: var(--color-surface);
@@ -531,14 +525,6 @@ select.picker-select,
 
 .card[hidden] {
   display: none;
-}
-
-/* A panel or card made focusable (tabindex) to move focus to it, e.g. when
-   it opens, shows the same ring as a control. */
-.panel:focus-visible,
-.card:focus-visible {
-  outline: var(--focus-ring-width) solid var(--color-focus);
-  outline-offset: var(--focus-ring-offset);
 }
 
 /* Buttons set display, which would otherwise override [hidden]. */
@@ -703,12 +689,6 @@ select.picker-select,
   color: var(--color-danger);
 }
 
-/* A notice focused to announce an error (tabindex="-1") shows the ring. */
-.notice:focus-visible {
-  outline: var(--focus-ring-width) solid var(--color-focus);
-  outline-offset: var(--focus-ring-offset);
-}
-
 /* Alert: a block that asks before something is deleted. */
 .alert {
   margin-top: var(--space-3);
@@ -750,7 +730,7 @@ select.picker-select,
   min-height: var(--touch-target);
   margin-top: var(--space-2);
   padding: var(--space-2) var(--space-5);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
   color: var(--color-primary-strong);
@@ -766,8 +746,13 @@ select.picker-select,
 
 .btn-secondary:hover,
 .btn-secondary:active {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-strong);
   background: var(--color-primary-tint);
+}
+
+/* After .btn-secondary, so the retry under a notice gets the larger gap. */
+.status-retry {
+  margin-top: var(--space-3);
 }
 
 .btn-primary:disabled {
@@ -843,7 +828,9 @@ select.picker-select,
 
 .btn-danger:focus-visible,
 .btn-quiet:focus-visible,
-.btn-quiet-danger:focus-visible {
+.btn-quiet-danger:focus-visible,
+.card:focus-visible,
+.notice:focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus);
   outline-offset: var(--focus-ring-offset);
 }
@@ -961,20 +948,68 @@ select.picker-select,
   background: var(--color-success-bg);
 }
 
-/* The native checkbox, kept on purpose (accent-coloured); its tap target is
-   the whole 48 px .choice row it sits in. */
+/* The checkbox itself is a 48 px tap target; the 24 px box is drawn by
+   ::before and the tick by ::after (no glyph outside the font). The negative
+   margin keeps the row 48 px high and the box at the row's padding edge. */
 .choice-input {
-  appearance: auto;
-  width: var(--space-5);
-  height: var(--space-5);
-  margin: 0;
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
-  accent-color: var(--color-primary);
+  width: var(--touch-target);
+  height: var(--touch-target);
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  margin: calc(-1 * var(--space-3)) 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-3));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-surface);
+  cursor: pointer;
 }
 
-.choice:focus-within {
+.choice-input::before {
+  content: "";
+  width: var(--space-5);
+  height: var(--space-5);
+  border: 2px solid var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.choice-input:checked::before {
+  border-color: var(--color-success);
+  background: var(--color-success);
+}
+
+.choice-input:checked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--space-2);
+  height: var(--space-3);
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -60%) rotate(45deg);
+}
+
+.choice-input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: calc(var(--focus-ring-offset) - var(--space-3));
+}
+
+/* A row focused directly (tabindex) shows the ring; a row whose box has
+   keyboard focus marks its edge in the focus colour. */
+.choice:focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus);
   outline-offset: var(--focus-ring-offset);
+}
+
+.choice:has(.choice-input:focus-visible) {
+  border-color: var(--color-focus);
 }
 
 /* Polling-day turnout screen (src/ui/turnoutScreen.js): the official turnout

@@ -53,8 +53,9 @@ in both themes, so it reads in direct sun.
 - Layout: `--touch-target` (48 px), `--content-max-width`, `--shadow-card`,
   `--focus-ring-width` (3 px) and `--focus-ring-offset` (2 px).
 
-Every colour, font size and space in a rule outside `:root` is a `var()` of
-one of these tokens. Only hairline and accent border widths are literal.
+Every colour, font size and space in a rule outside the token blocks is a
+`var()` of one of these tokens, or a `calc()` of them. Only border widths
+(hairlines, accent edges, drawn ticks) are literal.
 
 ### Font
 
@@ -84,14 +85,14 @@ three lines still fit its fixed height.
 | Panel | `.panel` | The card every voter-level surface sits in (contact panel, voter card, seen-voting control, call list): surface, hairline border, `--radius-lg`, card shadow, `--space-5` padding. |
 | Panel header | `.panel-header`, `.panel-title`, `.panel-subtitle` | Title (who or what), a muted subtitle line (relative · age · house), and the close action as a quiet button on the right, above a hairline. Built by `panelHeader()` in `src/ui/dom.js`. |
 | Primary button | `.btn-primary` | The one main action of a surface. Full width, pill, filled teal. |
-| Secondary button | `.btn-secondary` | Other actions (retry, add, keep). Outlined. |
+| Secondary button | `.btn-secondary` | Other actions (retry, add, keep). Outlined in `--color-primary`, `--color-primary-strong` text. |
 | Quiet button | `.btn-quiet` | Text-only: close, dismiss. |
 | Quiet danger button | `.btn-quiet-danger` | Starts a destructive flow (revoke consent) without competing with the primary action; red text under a hairline. Never deletes on its own: it opens an alert. |
 | Danger button | `.btn-danger` | The filled red "yes, delete" inside an alert. The only filled red. |
 | Text input | `.field-input` | Label above, 48 px input on the surface, `--radius-md`; dashed border when disabled. Phone numbers add `.field-phone`: larger, tabular, spaced digits. |
 | Select | `.field-select` | The text input's look with a CSS-drawn chevron (the native one is removed). |
 | Field (older names) | `.picker-field`, `.picker-label`, `.picker-select` | The label wrapper, the label and the input/select the existing screens use. `.picker-select` looks like `.field-input` (plus the chevron on a `<select>`). New screens use `.field-input` and `.field-select`. |
-| Checkbox / toggle | `.choice`, `.choice-input` | A tappable 48 px row holding a checkbox and its sentence; turns green when checked. The box keeps the native look (`appearance: auto`, accent-coloured), and the whole row is its tap target. |
+| Checkbox / toggle | `.choice`, `.choice-input` | A tappable 48 px row holding a checkbox and its sentence; turns green when checked. The checkbox is itself 48 px; its 24 px box and tick are drawn in CSS. |
 | List row | `.list-row` | One tappable line of a list: at least 48 px, a hairline below, tint on hover, the focus ring drawn inside the row. |
 | Card | `.card` | The panel's surface for anything that is not voter-level, e.g. a summary or a settings group. |
 | Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record" or "marked" in place of the seen-voting button; the success tone draws a tick. |
@@ -99,9 +100,12 @@ three lines still fit its fixed height.
 | Status banner (notice) | `.notice` (+ `data-tone="info"`, `"success"` or `"error"`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. A 48 px banner with a toned left edge and tint. |
 | Alert | `.alert` (+ `data-tone="error"`) | A block that asks before something is deleted: the consequence in body text, then the danger button and a secondary "no". |
 
-Every control above sets an explicit `appearance` (`none` unless stated),
-draws the focus ring on `:focus-visible`, and is at least `--touch-target`
-(48 px) high and wide.
+The controls `.btn-primary`, `.btn-secondary`, `.btn-quiet`,
+`.btn-quiet-danger`, `.btn-danger`, `.field-input`, `.field-select`,
+`.picker-select`, `.choice`, `.choice-input`, `.list-row`, `.card` and
+`.notice` each set an explicit `appearance: none`, draw the focus ring on
+`:focus-visible`, and are at least `--touch-target` (48 px) high and wide.
+`test/design.test.js` checks all three.
 
 ## States every surface carries
 
