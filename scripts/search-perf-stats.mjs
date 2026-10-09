@@ -137,7 +137,8 @@ export function percentile(samples, p) {
   return sorted[Math.min(sorted.length, Math.max(1, rank)) - 1];
 }
 
-const ms = (v) => `${v.toFixed(2)} ms`;
+/** A duration for the report and the console: ms(12.345) is "12.35 ms". */
+export const ms = (v) => `${v.toFixed(2)} ms`;
 
 /**
  * The markdown report. `byKind` maps a query kind to { count, p95 } for the

@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import puppeteer from 'puppeteer';
 
-import { WARDS, makeQueries, makeRoll, percentile, renderReport } from './search-perf-stats.mjs';
+import { WARDS, makeQueries, makeRoll, ms, percentile, renderReport } from './search-perf-stats.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REPORT = join(ROOT, 'reports/search-perf.md');
@@ -134,7 +134,7 @@ const result = {
   buildMs: run.buildMs,
   empty: run.timed.filter((t) => t.hits === 0).length,
   byKind: Object.fromEntries(
-    Object.entries(byKind).map(([kind, ms]) => [kind, { count: ms.length, p95: percentile(ms, 95) }]),
+    Object.entries(byKind).map(([kind, kindMs]) => [kind, { count: kindMs.length, p95: percentile(kindMs, 95) }]),
   ),
   threshold: THRESHOLD_MS,
 };
@@ -152,7 +152,7 @@ console.log(JSON.stringify({
   max: round(result.max),
 }));
 if (!result.pass) {
-  console.error(`search-perf: p95 ${round(result.p95)} ms is not under ${THRESHOLD_MS} ms; see ${REPORT}`);
+  console.error(`search-perf: p95 ${ms(result.p95)} is not under ${ms(THRESHOLD_MS)}; see ${REPORT}`);
   process.exit(1);
 }
 if (result.empty === result.queries) {

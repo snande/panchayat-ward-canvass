@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { parseWardSerial } from '../src/search/voterSearch.js';
-import { QUERY_KINDS, WARDS, makeQueries, makeRoll, percentile, renderReport } from './search-perf-stats.mjs';
+import { QUERY_KINDS, WARDS, makeQueries, makeRoll, ms, percentile, renderReport } from './search-perf-stats.mjs';
 
 const oneTo100 = Array.from({ length: 100 }, (_, i) => i + 1);
 
@@ -20,6 +20,11 @@ test('percentile does not reorder its input', () => {
   const samples = [5, 1, 4, 2, 3];
   percentile(samples, 95);
   assert.deepEqual(samples, [5, 1, 4, 2, 3]);
+});
+
+test('ms formats a duration to two decimals', () => {
+  assert.equal(ms(12.345), '12.35 ms');
+  assert.equal(ms(200), '200.00 ms');
 });
 
 test('the roll is 10,000 deterministic voters over several wards with Devanagari text', () => {
