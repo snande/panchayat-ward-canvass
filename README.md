@@ -119,8 +119,9 @@ Tests in `test/searchScreen.test.js` run with `npm test` (and in CI) against a s
 
 ## Household index
 
-`src/households/householdIndex.js` groups a ward's stored entries
-(`serial, name, relative, age, gender, house`) into households:
+`src/households/householdIndex.js` groups a ward's stored entries (the
+`serial, name, relative, age, gender, house` that `src/roll/rollStore.js`
+keeps) into households:
 
 ```js
 import { buildHouseholdIndex, findHousehold } from './src/households/householdIndex.js';
@@ -138,7 +139,7 @@ findHousehold(index, '१२ / ३'); // the "12/3" household, or null
 - Entries with an empty or missing house are left out of the index. They are
   never merged into a shared household.
 - The index is built in memory only. It adds no stored record and makes no
-  network request, so it works offline.
+  network request, so it works offline. `src/roll/rollStore.js` is unchanged.
 
 Tests are in `test/householdIndex.test.js`.
 
