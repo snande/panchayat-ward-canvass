@@ -44,7 +44,6 @@ const PRECACHE = [
   "src/ui/rollSearch.js",
   "src/ui/searchScreen.js",
   "src/ui/contactPanel.js",
-  "src/ui/voterCard.js",
   // Team join: the join screen and the stored sync credentials.
   "src/sync/teamAuth.js",
   "src/sync/syncEngine.js",

@@ -1,14 +1,14 @@
 // The voter route (issue #139): `#/voter/<ward>/<serial>` shows one voter's
 // card, the same card wherever the voter is opened from. js/app.js starts it;
-// it is the only caller of renderVoterCard() (src/card/voterCard.js).
+// it is the only caller of renderVoterCard() (src/card/voterCard.js), and the
+// only voter card in the app.
 //
 // The route names a ward of the loaded panchayat, the one this phone holds a
 // roll for: the ward key of the last stored roll ("district/samiti/panchayat/
 // ward", src/roll/rollStore.js) with the route's ward swapped in. A ward of
 // another panchayat is not looked up; it reads as not stored (the empty
-// state), and the line on top names the panchayat that was searched.
-// Entries come from the encrypted store on the phone, so the route works
-// offline with no network request, and it writes nothing.
+// state). Entries come from the encrypted store on the phone, so the route
+// works offline with no network request, and it writes nothing.
 //
 // One `state` at a time (DESIGN.md): loading (progress bar, info notice),
 // empty (not stored, or a malformed voter address: go back to search, call
@@ -88,14 +88,15 @@ export function findEntry(entries, serial) {
 }
 
 /**
- * Read one voter from the store: { entry } when found, { entry: null } when
- * the ward or serial is not stored. A failed read or decryption rejects.
+ * Read one voter from the store: { entry, lastKey } with entry null when the
+ * ward or serial is not stored. A failed read or decryption rejects.
  * @param {{loadStored: Function, lastWardKey: Function}} store
  */
 export async function lookupVoter(store, route) {
-  const wardKey = resolveWardKey(await store.lastWardKey(), route.ward);
-  if (!wardKey) return { entry: null };
-  return { entry: findEntry(await store.loadStored(wardKey), route.serial) };
+  const lastKey = await store.lastWardKey();
+  const wardKey = resolveWardKey(lastKey, route.ward);
+  if (!wardKey) return { entry: null, lastKey: null };
+  return { entry: findEntry(await store.loadStored(wardKey), route.serial), lastKey };
 }
 
 /**
@@ -147,12 +148,19 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
 
   // The seat header's own line (seatLabel), "पंचायत: बडली · वार्ड: 3", for the
   // loaded panchayat and the route's ward; blank for a malformed address.
-  function seatLine(route) {
+  // The stored seat names the panchayat only when it is the seat of the roll
+  // the lookup searched (the last stored ward key), so the line never names
+  // another panchayat; otherwise, and until that key is read, it names the
+  // ward alone.
+  function seatLine(route, lastKey) {
     if (!route) return '';
     let panchayat = '';
     try {
       const s = seat();
-      if (s && typeof s.panchayat === 'string') panchayat = s.panchayat.trim();
+      const lastWard = typeof lastKey === 'string' ? lastKey.split('/').pop() : null;
+      if (s && typeof s.panchayat === 'string' && lastWard !== null && wardPart(String(s.ward)) === wardPart(lastWard)) {
+        panchayat = s.panchayat.trim();
+      }
     } catch (err) {
       log('stored seat could not be read', err);
     }
@@ -188,7 +196,7 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
   }
 
   async function run(route, token) {
-    where.textContent = seatLine(route);
+    where.textContent = seatLine(route, null);
     if (!route) {
       setState('empty', renderEmpty());
       return state;
@@ -204,6 +212,7 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
       return state;
     }
     if (token !== current) return latest;
+    where.textContent = seatLine(route, found.lastKey);
     if (found.entry) {
       // The booth is not stored with the roll yet, so its fields read "—".
       setState('card', [renderVoterCard(found.entry, route.ward, null, doc)]);
@@ -244,8 +253,13 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
  * hides the other screens; any other hash hides it again and leaves the other
  * screens as they were. The first sync reads the hash as it is when this
  * starts, so an app opened at (or moved to) a voter address before the module
- * loaded still opens it. Back goes to the screen the voter was opened from
- * (history.back()); with no history it drops the hash and closes the route.
+ * loaded still opens it.
+ *
+ * Back goes to the screen the voter was opened from with history.back(), but
+ * only when this app moved to the voter address (a hashchange from another
+ * screen of the app). Opened straight at a voter address, the previous
+ * history entry may be another site, so back drops the hash in place
+ * (history.replaceState) and the app's own screens show.
  * @param {Element} container the #voter-route section
  * @param {Record<string,string>|null} strings
  * @param {{window: Window, main?: Element, store?: object, seat?: Function, log?: Function}} opts
@@ -255,13 +269,15 @@ export function createVoterRouteScreen(container, strings, opts = {}) {
 export function startVoterRoute(container, strings, opts) {
   const win = opts.window;
   const main = opts.main || null;
+  // Whether the route was entered from another screen of this app.
+  let enteredInApp = false;
   const screen = createVoterRouteScreen(container, strings, {
     store: opts.store,
     seat: opts.seat,
     log: opts.log,
     onBack() {
       const history = win.history;
-      if (history && history.length > 1 && typeof history.back === 'function') {
+      if (enteredInApp && history && typeof history.back === 'function') {
         history.back();
       } else if (history && typeof history.replaceState === 'function') {
         // No bare "#" left behind; replaceState fires no hashchange, so sync here.
@@ -273,20 +289,31 @@ export function startVoterRoute(container, strings, opts) {
     },
   });
 
+  const currentHash = () => (win.location && win.location.hash) || '';
+  let lastHash = currentHash();
+
   function sync() {
-    const hash = win.location && win.location.hash;
+    const hash = currentHash();
+    lastHash = hash;
     const shown = isVoterHash(hash);
     container.hidden = !shown;
     if (main) {
       if (shown) main.setAttribute('data-route', 'voter');
       else main.removeAttribute('data-route');
     }
-    if (!shown) return Promise.resolve(null);
+    if (!shown) {
+      enteredInApp = false;
+      return Promise.resolve(null);
+    }
     if (typeof container.scrollIntoView === 'function') container.scrollIntoView();
     return screen.open(parseVoterRoute(hash));
   }
 
   let settled = sync();
-  win.addEventListener('hashchange', () => { settled = sync(); });
+  win.addEventListener('hashchange', () => {
+    // Moving from one of the app's screens onto a voter: back can return there.
+    if (!isVoterHash(lastHash) && isVoterHash(currentHash())) enteredInApp = true;
+    settled = sync();
+  });
   return { screen, sync, get settled() { return settled; } };
 }

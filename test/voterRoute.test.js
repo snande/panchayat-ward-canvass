@@ -1,10 +1,11 @@
 // Voter route (issue #139): `#/voter/<ward>/<serial>` opens one voter's card
 // from the encrypted roll stored on the phone, with loading, empty and error
-// states, a back button over browser history, and no network request.
+// states, a back button over browser history, and no network request. It is
+// the app's only voter card.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { webcrypto } from 'node:crypto';
 import vm from 'node:vm';
@@ -14,14 +15,17 @@ import {
   FALLBACK_TEXT, VOTER_ROUTE_STATES,
 } from '../src/ui/voterRoute.js';
 import { createRollStore } from '../src/roll/rollStore.js';
+import { mountRollWithSearch } from '../src/ui/rollSearch.js';
+import { createContactStore } from '../src/contacts/contactStore.js';
 import { saveSeat, SEAT_STORAGE_KEY } from '../src/ui/seatHeader.js';
-import { createDocument } from './helpers/fakeDom.js';
+import { createDocument, type } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
 const table = JSON.parse(read('src/strings.hi.json'));
 const appUrl = new URL('../js/app.js', import.meta.url);
 
+const WARD_1 = '17/125/6313/1';
 const WARD_3 = '17/125/6313/3';
 const ENTRIES = [
   { serial: 145, name: 'नन्दकिशोर', relative: 'सत्यनारायण', age: 38, gender: 'पुरूष', house: '7' },
@@ -41,6 +45,14 @@ function deferred() {
   let reject;
   const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
   return { promise, resolve, reject };
+}
+
+async function waitFor(cond, ms = 5000) {
+  const until = Date.now() + ms;
+  while (!cond()) {
+    if (Date.now() > until) throw new Error('timed out');
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
 }
 
 // A window with a settable location.hash that fires hashchange, like a browser.
@@ -82,6 +94,7 @@ function mount(hash, opts = {}) {
 const state = (section) => section.querySelector('div.voter-route').getAttribute('data-state');
 const message = (section) => section.querySelector('p.voter-route-message');
 const contactLine = (section) => section.querySelector('p.voter-route-contact');
+const seatLine = (section) => section.querySelector('p.voter-route-seat').textContent;
 
 // Any fetch while a voter opens fails the test.
 function noNetwork(t) {
@@ -104,7 +117,7 @@ test('the route parses #/voter/<ward>/<serial> and builds it back', () => {
 });
 
 test('the ward resolves in the loaded panchayat, the one of the last stored roll', () => {
-  assert.equal(resolveWardKey('17/125/6313/1', '3'), WARD_3);
+  assert.equal(resolveWardKey(WARD_1, '3'), WARD_3);
   assert.equal(resolveWardKey(null, '3'), null);
   assert.equal(resolveWardKey('broken', '3'), null);
 });
@@ -125,7 +138,7 @@ test('setting location.hash to a stored ward/serial renders the voter card, with
   assert.ok(card, 'the renderVoterCard panel');
   assert.equal(section.querySelector('h2.panel-title').textContent, 'नन्दकिशोर');
   assert.ok(card.textContent.includes('145'));
-  assert.equal(section.querySelector('p.voter-route-seat').textContent, 'पंचायत: बडली · वार्ड: 3');
+  assert.equal(seatLine(section), 'पंचायत: बडली · वार्ड: 3');
   assert.deepEqual(fetches, []);
 });
 
@@ -145,6 +158,28 @@ test('an unknown serial and an unknown ward each render the Hindi empty state wi
   assert.equal(await route.settled, 'empty');
   assert.equal(message(section).textContent, table.voter_route_empty);
   assert.deepEqual(fetches, []);
+});
+
+test('a ward of another panchayat is not looked up there: the route searches the loaded panchayat only', async () => {
+  // Ward 3 of panchayat 6313 is stored, then ward 3 of panchayat 7000 is the
+  // last roll stored: "3/145" now means ward 3 of 7000, which has no 145.
+  const { store } = await storedRoll();
+  await store.encryptAndStore('17/125/7000/3', [{ serial: 1, name: 'राधा', age: 30 }]);
+  const seen = [];
+  const spy = { lastWardKey: store.lastWardKey, loadStored: (k) => { seen.push(k); return store.loadStored(k); } };
+  const { section, route } = mount('#/voter/3/145', { store: spy, seat: () => ({ seatType: 'ward', panchayat: 'दूसरी', ward: '3' }) });
+  assert.equal(await route.settled, 'empty');
+  assert.deepEqual(seen, ['17/125/7000/3']);
+  assert.equal(seatLine(section), 'पंचायत: दूसरी · वार्ड: 3');
+});
+
+test('the seat line names the panchayat only when the stored seat is the searched roll\'s, else the ward alone', async () => {
+  const { store } = await storedRoll();
+  // The stored seat is ward 8 while the last stored roll is ward 3: the two
+  // stores disagree, so the line does not name the seat's panchayat.
+  const { section, route } = mount('#/voter/3/145', { store, seat: () => ({ seatType: 'ward', panchayat: 'दूसरी', ward: '8' }) });
+  assert.equal(await route.settled, 'card');
+  assert.equal(seatLine(section), 'वार्ड: 3');
 });
 
 test('with no roll stored at all, and for a malformed voter address, the screen is the empty state', async () => {
@@ -219,17 +254,24 @@ test('a lookup overtaken by a newer one resolves to the newer one\'s final state
   assert.equal(container.querySelector('section.voter-roll-card'), null);
 });
 
-test('back goes back in browser history, or with none drops the hash and closes the route', async () => {
+test('back returns in browser history to the app screen the voter was opened from', async () => {
   const { store } = await storedRoll();
-  const opened = mount('#/voter/3/145', { store });
+  const opened = mount('#roll', { store });
+  opened.win.go('#/voter/3/145');
   await opened.route.settled;
   const back = opened.section.querySelector('button.voter-route-back');
   assert.ok(back.classList.contains('btn-secondary'), 'a shared 48 px control');
+  assert.equal(back.getAttribute('type'), 'button');
   assert.equal(back.textContent, table.voter_route_back);
   back.dispatchEvent({ type: 'click' });
   assert.equal(opened.win.backs, 1);
+  assert.deepEqual(opened.win.replaced, []);
+});
 
-  const direct = mount(null, { store, window: fakeWindow('#/voter/3/145', 1) });
+test('opened straight at a voter address, back stays in the app: it drops the hash and closes the route', async () => {
+  const { store } = await storedRoll();
+  // Other sites before this one in the tab: history.length says nothing about the app.
+  const direct = mount(null, { store, window: fakeWindow('#/voter/3/145', 5) });
   await direct.route.settled;
   direct.section.querySelector('button.voter-route-back').dispatchEvent({ type: 'click' });
   assert.equal(direct.win.backs, 0);
@@ -253,19 +295,47 @@ test('the fallback copies match the string table, which carries every key the ro
   for (const [key, value] of Object.entries(FALLBACK_TEXT)) assert.equal(table[key], value, key);
 });
 
-test('renderVoterCard has one caller in the app: the voter route', () => {
-  const callers = [];
+// Every app module: src/ and js/, tests aside.
+function appModules() {
+  const out = [];
   const walk = (dir) => {
     for (const entry of readdirSync(new URL('../' + dir, import.meta.url), { withFileTypes: true })) {
       const rel = `${dir}/${entry.name}`;
       if (entry.isDirectory()) walk(rel);
-      else if (entry.name.endsWith('.js') && !entry.name.endsWith('.test.js')
-        && /renderVoterCard\(/.test(read(rel)) && rel !== 'src/card/voterCard.js') callers.push(rel);
+      else if (entry.name.endsWith('.js') && !entry.name.endsWith('.test.js')) out.push(rel);
     }
   };
   walk('src');
   walk('js');
+  return out;
+}
+
+test('the voter route is the only code path that shows a voter card', () => {
+  const callers = appModules().filter((rel) => rel !== 'src/card/voterCard.js' && /renderVoterCard\(/.test(read(rel)));
   assert.deepEqual(callers, ['src/ui/voterRoute.js']);
+  // The old consent "voter card" of the roll search (src/ui/voterCard.js) is gone.
+  assert.equal(existsSync(new URL('../src/ui/voterCard.js', import.meta.url)), false);
+  for (const rel of appModules()) {
+    assert.doesNotMatch(read(rel), /ui\/voterCard\.js|from '\.\/voterCard\.js'|mountVoterCard/, rel);
+  }
+  assert.doesNotMatch(read('sw.js'), /"src\/ui\/voterCard\.js"/);
+});
+
+test('selecting a roll search result opens the contact panel, not a second voter card', async () => {
+  const doc = createDocument();
+  const contacts = createContactStore({ indexedDB: createFakeIndexedDB(), crypto: webcrypto, storage: null });
+  const hosts = [];
+  const view = mountRollWithSearch(doc.body, ENTRIES, table, {
+    viewportHeight: 600, requestFrame: () => {}, contacts, wardKey: WARD_3, onHostChange: (v) => hosts.push(v),
+  });
+  assert.equal(view.openVoterCard, undefined);
+  type(view.search.input, 'नन्दकिशोर');
+  await waitFor(() => view.search.list.querySelectorAll('li').length === 1);
+  view.search.list.querySelector('li').dispatchEvent({ type: 'click' });
+  assert.ok(view.contactHost.querySelector('section.contact-panel'));
+  assert.equal(view.contactHost.querySelector('section.voter-roll-card'), null);
+  assert.deepEqual(hosts, ['contact']);
+  view.destroy();
 });
 
 test('index.html has the route slot inside <main>, and sw.js precaches the route and its card', () => {
@@ -278,14 +348,6 @@ test('index.html has the route slot inside <main>, and sw.js precaches the route
   assert.match(sw, /"src\/card\/voterCard\.js"/);
   assert.match(read('styles.css'), /#app\[data-route="voter"\] > :not\(#voter-route\)/);
 });
-
-async function waitFor(cond, ms = 5000) {
-  const until = Date.now() + ms;
-  while (!cond()) {
-    if (Date.now() > until) throw new Error('timed out');
-    await new Promise((resolve) => setTimeout(resolve, 5));
-  }
-}
 
 // vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER arrived in Node 20.12 and 21.7.
 const canImport = Boolean(vm.constants && vm.constants.USE_MAIN_CONTEXT_DEFAULT_LOADER);
@@ -300,7 +362,7 @@ test('opening the app directly at #/voter/3/145 shows the card from the default 
     setItem: (k, v) => { storage.set(k, String(v)); },
     removeItem: (k) => { storage.delete(k); },
   };
-  saveSeat({ seatType: 'ward', panchayat: 'बडली', ward: '1' }, localStorage);
+  saveSeat({ seatType: 'ward', panchayat: 'बडली', ward: '3' }, localStorage);
   assert.ok(storage.has(SEAT_STORAGE_KEY));
   const saved = {
     indexedDB: Object.getOwnPropertyDescriptor(globalThis, 'indexedDB'),
@@ -342,8 +404,9 @@ test('opening the app directly at #/voter/3/145 shows the card from the default 
   assert.deepEqual(errors, []);
   assert.equal(section.hidden, false);
   assert.equal(main.getAttribute('data-route'), 'voter');
+  assert.equal(section.querySelector('div.voter-route').getAttribute('data-state'), 'card');
   assert.equal(section.querySelector('h2.panel-title').textContent, 'नन्दकिशोर');
-  assert.equal(section.querySelector('p.voter-route-seat').textContent, 'पंचायत: बडली · वार्ड: 3');
+  assert.equal(seatLine(section), 'पंचायत: बडली · वार्ड: 3');
   // The shell's string table is the only request; opening the voter makes none.
   assert.deepEqual(fetched, ['src/strings.hi.json']);
 });

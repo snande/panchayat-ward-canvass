@@ -163,7 +163,10 @@ test('tapping a roll row or a search result opens the panel for that voter', asy
   type(view.search.input, 'मोहन');
   await waitFor(() => view.search.list.querySelectorAll('li').length === 1);
   view.search.list.querySelector('li').dispatchEvent({ type: 'click' });
-  assert.equal(view.contactHost.querySelector('h2').textContent, 'मोहन लाल');
+  // A search result opens the same contact panel as a row; the voter card is
+  // the voter route's alone (src/ui/voterRoute.js).
+  assert.ok(view.contactHost.querySelector('section.contact-panel'));
+  assert.equal(view.contactHost.querySelector('h2').textContent, '8. मोहन लाल');
   view.destroy();
 });
 
