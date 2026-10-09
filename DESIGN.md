@@ -33,7 +33,9 @@ look of its own.
 | `--color-danger-bg` | Background of error notices, alerts and danger hover |
 | `--color-on-danger` | Text on `--color-danger` |
 
-Each feedback text colour on its own background is at least 4.5:1.
+Each feedback text colour on its own background is at least 4.5:1. Body
+text (`--color-text`) is at least 7:1 on `--color-bg` and `--color-surface`
+in both themes, so it reads in direct sun.
 
 ### Space, radius, type, layout
 
@@ -44,10 +46,36 @@ Each feedback text colour on its own background is at least 4.5:1.
 - Type: `--font-family-base` (self-hosted Noto Sans Devanagari),
   `--font-size-sm` (16 px, labels and helper text), `--font-size-body`,
   `--font-size-lg` (titles, phone numbers), `--font-size-xl` (app title);
-  `--line-height-body`, `--line-height-heading`. Headings are weight 400: the
+  `--line-height-body`, `--line-height-heading`, `--tracking-digits` (the
+  letter-spacing of phone numbers). Headings and numerals are weight 400: the
   Devanagari face ships one weight and a synthesised bold looks smeared.
   Symbols outside the font subset (ticks, crosses) are drawn in CSS, not typed.
-- Layout: `--touch-target` (48 px), `--content-max-width`, `--shadow-card`.
+- Layout: `--touch-target` (48 px), `--content-max-width`, `--shadow-card`,
+  `--focus-ring-width` (3 px) and `--focus-ring-offset` (2 px).
+
+Every colour, font size and space in a rule outside `:root` is a `var()` of
+one of these tokens. Only hairline and accent border widths are literal.
+
+### Font
+
+The body face is `fonts/noto-sans-devanagari-subset.woff2`, committed to the
+repo and loaded by the `@font-face` rule at the top of `styles.css`. Nothing
+is fetched from another origin. `--font-family-base` lists the locally
+installed fallbacks (Mangal, Nirmala UI, the system UI face, sans-serif),
+which are used until the subset loads or for a glyph outside it.
+
+### Themes and text size
+
+`:root` is the light theme. The dark theme overrides only the colour tokens
+and `--shadow-card`. It applies when `<html>` has `data-theme="dark"`, or when
+the phone asks for `prefers-color-scheme: dark` and `<html>` is not pinned
+with `data-theme="light"`. Components never branch on the theme. They read
+the same tokens.
+
+Body text is at least 16 px (`--font-size-sm` is the smallest size). Setting
+`data-text-size="large"` on `<html>` raises the type scale: body 20 px,
+titles 22 px, app title 28 px. Small text grows to 17 px, so a roll row's
+three lines still fit its fixed height.
 
 ## Shared controls
 
@@ -60,12 +88,20 @@ Each feedback text colour on its own background is at least 4.5:1.
 | Quiet button | `.btn-quiet` | Text-only: close, dismiss. |
 | Quiet danger button | `.btn-quiet-danger` | Starts a destructive flow (revoke consent) without competing with the primary action; red text under a hairline. Never deletes on its own: it opens an alert. |
 | Danger button | `.btn-danger` | The filled red "yes, delete" inside an alert. The only filled red. |
-| Field | `.picker-field`, `.picker-label`, `.picker-select` | Label above, 48 px input. Phone numbers add `.field-phone`: larger, tabular, spaced digits. |
-| Choice | `.choice`, `.choice-input` | A tappable row holding a checkbox and its sentence; turns green when checked. |
+| Text input | `.field-input` | Label above, 48 px input on the surface, `--radius-md`; dashed border when disabled. Phone numbers add `.field-phone`: larger, tabular, spaced digits. |
+| Select | `.field-select` | The text input's look with a CSS-drawn chevron (the native one is removed). |
+| Field (older names) | `.picker-field`, `.picker-label`, `.picker-select` | The label wrapper, the label and the input/select the existing screens use. `.picker-select` looks like `.field-input` (plus the chevron on a `<select>`). New screens use `.field-input` and `.field-select`. |
+| Checkbox / toggle | `.choice`, `.choice-input` | A tappable 48 px row holding a checkbox and its sentence; turns green when checked. The box keeps the native look (`appearance: auto`, accent-coloured), and the whole row is its tap target. |
+| List row | `.list-row` | One tappable line of a list: at least 48 px, a hairline below, tint on hover, the focus ring drawn inside the row. |
+| Card | `.card` | The panel's surface for anything that is not voter-level, e.g. a summary or a settings group. |
 | Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record" or "marked" in place of the seen-voting button; the success tone draws a tick. |
 | Count line | `.seen-voting-count` | A muted label with a `--font-size-lg` numeral on the right, above a hairline: context under the action, never a second action. Shows a muted placeholder while counting or when the count cannot be read. |
-| Notice | `.notice` (+ `data-tone`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. |
+| Status banner (notice) | `.notice` (+ `data-tone="info"`, `"success"` or `"error"`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. A 48 px banner with a toned left edge and tint. |
 | Alert | `.alert` (+ `data-tone="error"`) | A block that asks before something is deleted: the consequence in body text, then the danger button and a secondary "no". |
+
+Every control above sets an explicit `appearance` (`none` unless stated),
+draws the focus ring on `:focus-visible`, and is at least `--touch-target`
+(48 px) high and wide.
 
 ## States every surface carries
 

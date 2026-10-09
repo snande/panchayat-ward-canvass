@@ -10,10 +10,16 @@
   unicode-range: U+0020-007E, U+00A0, U+0900-097F, U+200C-200D, U+20B9, U+25CC, U+A8E0-A8FF;
 }
 
-/* Design tokens. Every later screen (picker, search, canvass, tally) reuses
-   these; components must not hard-code colours. */
+/* Design tokens (DESIGN.md). Every screen (picker, search, canvass, tally)
+   reuses these; components never hard-code a colour, font size or space.
+   This block is the light theme; the dark theme and the larger-text setting
+   below only override tokens. The body face is the self-hosted subset above,
+   with locally installed Devanagari faces as its fallback stack. */
 :root {
-  /* Colour: calm teal on a warm off-white. */
+  color-scheme: light;
+
+  /* Colour: calm teal on a warm off-white. Body text is 13.5:1 on --color-bg
+     and 14.8:1 on --color-surface (at least 7:1 for outdoor reading). */
   --color-primary: #0f766e;
   --color-primary-strong: #115e59;
   --color-on-primary: #ffffff;
@@ -54,11 +60,71 @@
   --font-size-xl: 1.5rem;
   --line-height-body: 1.7;
   --line-height-heading: 1.45;
+  --tracking-digits: 0.06em;
 
   /* Layout. */
   --touch-target: 48px;
   --content-max-width: 40rem;
   --shadow-card: 0 1px 2px rgba(31, 41, 51, 0.08);
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+}
+
+/* Dark theme: an explicit data-theme="dark" on <html>, or the phone's dark
+   setting unless the page is pinned to data-theme="light". Body text stays
+   at least 7:1 and each feedback tone at least 4.5:1 on its background. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-primary: #2dd4bf;
+  --color-primary-strong: #5eead4;
+  --color-on-primary: #042f2e;
+  --color-bg: #11181c;
+  --color-surface: #1a2329;
+  --color-text: #e6ebee;
+  --color-text-muted: #a3b1bb;
+  --color-border: #34434d;
+  --color-focus: #fbbf24;
+  --color-primary-tint: #12302d;
+  --color-success: #6ee7a0;
+  --color-success-bg: #0f2a1c;
+  --color-danger: #fca5a5;
+  --color-danger-strong: #f87171;
+  --color-danger-bg: #2e1414;
+  --color-on-danger: #2a0a0a;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-primary: #2dd4bf;
+    --color-primary-strong: #5eead4;
+    --color-on-primary: #042f2e;
+    --color-bg: #11181c;
+    --color-surface: #1a2329;
+    --color-text: #e6ebee;
+    --color-text-muted: #a3b1bb;
+    --color-border: #34434d;
+    --color-focus: #fbbf24;
+    --color-primary-tint: #12302d;
+    --color-success: #6ee7a0;
+    --color-success-bg: #0f2a1c;
+    --color-danger: #fca5a5;
+    --color-danger-strong: #f87171;
+    --color-danger-bg: #2e1414;
+    --color-on-danger: #2a0a0a;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Larger text: data-text-size="large" on <html> scales the type scale up.
+   --font-size-sm grows least so a roll row's three lines still fit the fixed
+   ROW_HEIGHT in src/ui/rollList.js. */
+:root[data-text-size="large"] {
+  --font-size-sm: 1.0625rem;
+  --font-size-body: 1.25rem;
+  --font-size-lg: 1.375rem;
+  --font-size-xl: 1.75rem;
 }
 
 * {
@@ -136,10 +202,12 @@ main {
 }
 
 .btn-primary {
+  appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   padding: var(--space-3) var(--space-5);
   border: 0;
@@ -158,8 +226,8 @@ main {
 }
 
 .btn-primary:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .status {
@@ -206,7 +274,9 @@ main {
 }
 
 .picker-select {
+  appearance: none;
   width: 100%;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
@@ -217,6 +287,74 @@ main {
   font-size: var(--font-size-body);
 }
 
+/* Text input (DESIGN.md): label above, a 48 px field. .picker-select is the
+   older name for the same field and stays for the screens that use it. */
+.field-input {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+}
+
+/* Select (DESIGN.md): the field look, with a chevron drawn in CSS because
+   appearance: none drops the native one. */
+.field-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-6) var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+  cursor: pointer;
+}
+
+select.picker-select,
+.field-select {
+  padding-right: var(--space-6);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-text-muted) 50%),
+    linear-gradient(135deg, var(--color-text-muted) 50%, transparent 50%);
+  background-position:
+    right calc(var(--space-4) + var(--space-1)) center,
+    right var(--space-4) center;
+  background-size: var(--space-1) var(--space-1);
+  background-repeat: no-repeat;
+}
+
+.field-input:disabled,
+.field-select:disabled {
+  color: var(--color-text-muted);
+  background-color: var(--color-bg);
+  border-style: dashed;
+}
+
+.field-input:focus,
+.field-select:focus {
+  border-color: var(--color-primary);
+}
+
+.field-input:focus-visible,
+.field-select:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .picker-select:disabled {
   color: var(--color-text-muted);
   background: var(--color-bg);
@@ -224,13 +362,13 @@ main {
 }
 
 .picker-select:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .picker-message {
   margin: 0;
-  min-height: 1.5rem;
+  min-height: var(--space-5);
   color: var(--color-text);
   font-size: var(--font-size-sm);
 }
@@ -273,8 +411,8 @@ main {
 }
 
 .roll-viewport:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .roll-spacer {
@@ -324,19 +462,83 @@ main {
 
 .roll-row[tabindex]:focus-visible,
 .pwc-search__row[tabindex]:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: -3px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+/* List row (DESIGN.md): one tappable line of a list, e.g. a voter or a worker.
+   The ring sits inside the row so the next row does not cover it. */
+.list-row {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-heading);
+  text-align: start;
+  cursor: pointer;
+}
+
+.list-row:hover,
+.list-row:active {
+  background: var(--color-primary-tint);
+}
+
+.list-row:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 /* Panel (DESIGN.md): the card every voter-level surface sits in, e.g. the
    contact panel, the voter card and the seen-voting control. */
 .panel {
+  appearance: none;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
   margin: 0 0 var(--space-4);
   padding: var(--space-5);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+}
+
+/* Card (DESIGN.md): the same surface as a panel for anything that is not a
+   voter-level surface, e.g. a summary or a settings group. */
+.card {
+  appearance: none;
+  display: block;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card[hidden] {
+  display: none;
+}
+
+/* A panel or card made focusable (tabindex) to move focus to it, e.g. when
+   it opens, shows the same ring as a control. */
+.panel:focus-visible,
+.card:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Buttons set display, which would otherwise override [hidden]. */
@@ -452,17 +654,22 @@ main {
 .badge[data-tone="success"]::before {
   content: "";
   flex: none;
-  width: 0.375rem;
-  height: 0.75rem;
-  margin: 0 var(--space-1) 0.2rem;
+  width: var(--space-2);
+  height: var(--space-3);
+  margin: 0 var(--space-1) var(--space-1);
   border: solid currentColor;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
-/* Notice: the one feedback line of a surface, tinted by its tone. Empty
-   notices take no space. */
+/* Notice: the one feedback line of a surface (DESIGN.md "Status banner"),
+   tinted by its tone: info, success or error. Empty notices take no space. */
 .notice {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
   margin: var(--space-3) 0 0;
   padding: var(--space-2) var(--space-3);
   border-left: 4px solid var(--color-primary);
@@ -478,6 +685,12 @@ main {
   display: none;
 }
 
+.notice[data-tone="info"] {
+  border-left-color: var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-text);
+}
+
 .notice[data-tone="success"] {
   border-left-color: var(--color-success);
   background: var(--color-success-bg);
@@ -488,6 +701,12 @@ main {
   border-left-color: var(--color-danger);
   background: var(--color-danger-bg);
   color: var(--color-danger);
+}
+
+/* A notice focused to announce an error (tabindex="-1") shows the ring. */
+.notice:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Alert: a block that asks before something is deleted. */
@@ -514,7 +733,7 @@ main {
 .field-phone {
   font-size: var(--font-size-lg);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-digits);
 }
 
 .picker-select:focus {
@@ -522,10 +741,12 @@ main {
 }
 
 .btn-secondary {
+  appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   margin-top: var(--space-2);
   padding: var(--space-2) var(--space-5);
@@ -539,8 +760,8 @@ main {
 }
 
 .btn-secondary:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .btn-secondary:hover,
@@ -557,10 +778,12 @@ main {
 
 /* Danger: the one filled button that deletes data, after an alert asks. */
 .btn-danger {
+  appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   padding: var(--space-3) var(--space-5);
   border: 0;
@@ -581,10 +804,12 @@ main {
 /* Quiet: a text-only action, e.g. a panel's close. */
 .btn-quiet,
 .btn-quiet-danger {
+  appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   padding: var(--space-2) var(--space-3);
   border: 0;
@@ -619,8 +844,8 @@ main {
 .btn-danger:focus-visible,
 .btn-quiet:focus-visible,
 .btn-quiet-danger:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .call-list {
@@ -671,8 +896,8 @@ main {
 }
 
 .call-btn:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* A voter with no stored number: shown, but not tappable. */
@@ -694,8 +919,8 @@ main {
 }
 
 .call-assign:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Call list screen (src/ui/callListFlow.js), opened from the roll view. */
@@ -714,9 +939,11 @@ main {
 /* Voter card (src/ui/voterCard.js): a panel whose consent choice gates the
    phone field. */
 .choice {
+  appearance: none;
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   margin-bottom: var(--space-4);
   padding: var(--space-3) var(--space-4);
@@ -734,17 +961,20 @@ main {
   background: var(--color-success-bg);
 }
 
+/* The native checkbox, kept on purpose (accent-coloured); its tap target is
+   the whole 48 px .choice row it sits in. */
 .choice-input {
-  width: 1.5rem;
-  height: 1.5rem;
+  appearance: auto;
+  width: var(--space-5);
+  height: var(--space-5);
   margin: 0;
   flex: none;
   accent-color: var(--color-primary);
 }
 
 .choice:focus-within {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Polling-day turnout screen (src/ui/turnoutScreen.js): the official turnout
@@ -789,7 +1019,7 @@ main {
 .turnout-value {
   margin: 0;
   font-size: calc(var(--font-size-xl) * 1.75);
-  font-weight: 700;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
   line-height: var(--line-height-heading);
   color: var(--color-primary-strong);
