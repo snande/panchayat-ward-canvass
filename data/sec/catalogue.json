@@ -1,0 +1,5163 @@
+{
+ "generated_at": "2026-10-09T12:13:07+00:00",
+ "source_page": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
+ "ward_pdf_url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf",
+ "notes": [
+  "Counts: 41 districts; 817 entries in the second dropdown (457 rural panchayat samitis, 309 urban bodies, 51 other, e.g. zilla parishads); 0 gram panchayats across 0 walked samitis.",
+  "INCOMPLETE: walking every samiti needed 498 posts, over the cap of 450; panchayat lists were not fetched.",
+  "Only rural panchayat samitis are walked for gram panchayats. Urban bodies (nagar palika, nagar parishad, nagar nigam) list municipal wards in the third dropdown and zilla parishad entries are not samitis; both keep an empty panchayats list.",
+  "kind is read from the portal's Latin name: 'urban' for nagar palika / parishad / nigam, 'rural' for panchayat samiti, 'unknown' otherwise.",
+  "Ward lists are not stored. A panchayat's wards are found by requesting ward 001, 002, ... from ward_pdf_url_template until one answers 302 (a 173-byte HTML error page). PANCHAYAT_NAME is the panchayat's name exactly as listed here, upper-cased, with spaces percent-encoded.",
+  "Requests: 42 to sec.rajasthan.gov.in (41 form posts), at most one per 1 s."
+ ],
+ "districts": [
+  {
+   "id": "1",
+   "name": "AJMER",
+   "samitis": [
+    {
+     "id": "11401",
+     "name": "AJMER NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "296",
+     "name": "AJMER RURAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30001",
+     "name": "AJMER ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "1",
+     "name": "ARAIN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "353",
+     "name": "BADLYA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "2",
+     "name": "BHINAY PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11403",
+     "name": "KEKRI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "4",
+     "name": "KEKRI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11402",
+     "name": "KISHANGARH NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "5",
+     "name": "KISHANGARH (SILORA) PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10047",
+     "name": "NASIRABAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12003",
+     "name": "PEESANGAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "7",
+     "name": "PISANGAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10002",
+     "name": "PUSHKAR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11404",
+     "name": "SARWAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "249",
+     "name": "SARWAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12001",
+     "name": "SAWAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "344",
+     "name": "SAWAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "8",
+     "name": "SRINAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12002",
+     "name": "TANTOTI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "name": "ALWAR",
+   "samitis": [
+    {
+     "id": "10003",
+     "name": "ALWAR NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30002",
+     "name": "ALWAR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12008",
+     "name": "BAHADURPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12005",
+     "name": "BARODAMEV NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "297",
+     "name": "GOVINDGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12004",
+     "name": "GOVINDGARH-RAMBAS NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12009",
+     "name": "KATHUMAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11",
+     "name": "KATHUMAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "354",
+     "name": "KHEDLI-SONKHAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11408",
+     "name": "KHERLI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11543",
+     "name": "LAXMANGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "14",
+     "name": "LAXMANGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12007",
+     "name": "MALAKHEDA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "298",
+     "name": "MALAKHEDA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "355",
+     "name": "MUBARIKPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12006",
+     "name": "NAU GAON NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11409",
+     "name": "RAJGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "18",
+     "name": "RAJGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11544",
+     "name": "RAMGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "19",
+     "name": "RAMGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "17",
+     "name": "RENI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10048",
+     "name": "THANAGAZI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "20",
+     "name": "THANAGAZI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "22",
+     "name": "UMREN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "34",
+   "name": "BALOTRA",
+   "samitis": [
+    {
+     "id": "10009",
+     "name": "BALOTRA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "38",
+     "name": "BALOTRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30034",
+     "name": "BALOTRA ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12012",
+     "name": "DHORIMANNA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "42",
+     "name": "DHORIMANNA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "254",
+     "name": "GIRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12011",
+     "name": "GUDAMALANI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "260",
+     "name": "GUDHAMALANI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12086",
+     "name": "JASOL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "256",
+     "name": "KALYANPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "438",
+     "name": "PADROO PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "439",
+     "name": "PANYLA KLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "255",
+     "name": "PATODI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12085",
+     "name": "SAMDARI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "259",
+     "name": "SAMDARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12087",
+     "name": "SINDHARI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "44",
+     "name": "SINDHARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12088",
+     "name": "SIWANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "45",
+     "name": "SIWANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "name": "BANSWARA",
+   "samitis": [
+    {
+     "id": "23",
+     "name": "ANANDPURI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "251",
+     "name": "ARTHUNA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "24",
+     "name": "BAGIDORA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10005",
+     "name": "BANSWARA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "25",
+     "name": "BANSWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30003",
+     "name": "BANSWARA ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "357",
+     "name": "CHHOTI SARWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "26",
+     "name": "CHHOTI SARWAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "358",
+     "name": "DOONGRA CHHOTA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "250",
+     "name": "GANGAR TALAI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "359",
+     "name": "GANODHA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "27",
+     "name": "GARHI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "28",
+     "name": "GHATOL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11412",
+     "name": "KUSHALGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "29",
+     "name": "KUSHALGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "360",
+     "name": "NAHARPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10049",
+     "name": "PARTAPPUR GADHI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30",
+     "name": "SAJJANGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "361",
+     "name": "SAREDI BADI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "252",
+     "name": "TALWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "name": "BARAN",
+   "samitis": [
+    {
+     "id": "11413",
+     "name": "ANTA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "31",
+     "name": "ANTA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11546",
+     "name": "ATRU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "32",
+     "name": "ATRU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11414",
+     "name": "BARAN NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "33",
+     "name": "BARAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30004",
+     "name": "BARAN ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "10006",
+     "name": "CHHABRA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "34",
+     "name": "CHHABRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "35",
+     "name": "CHHIPABAROD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "362",
+     "name": "KELWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "36",
+     "name": "KISHANGANJ PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10007",
+     "name": "MANGROL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "299",
+     "name": "MANGROL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "363",
+     "name": "NAHARGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "37",
+     "name": "SHAHBAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12010",
+     "name": "SISWALI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "name": "BARMER",
+   "samitis": [
+    {
+     "id": "300",
+     "name": "AADEL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10008",
+     "name": "BARMER NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "39",
+     "name": "BARMER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "301",
+     "name": "BARMER RURAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30005",
+     "name": "BARMER ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "364",
+     "name": "BATADOO PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "40",
+     "name": "BAYTOO PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "365",
+     "name": "BHIYAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "366",
+     "name": "BISHALA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12013",
+     "name": "CHOHTAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "41",
+     "name": "CHOHTAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "257",
+     "name": "DHANAU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "367",
+     "name": "DOOGERO KA TALA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "302",
+     "name": "FAGLIYA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "261",
+     "name": "GADRA ROAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "368",
+     "name": "LEELSAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "369",
+     "name": "MANGTA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "253",
+     "name": "RAMSAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "258",
+     "name": "SEDWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "43",
+     "name": "SHEO PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "35",
+   "name": "BEAWAR",
+   "samitis": [
+    {
+     "id": "440",
+     "name": "BADNOR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10001",
+     "name": "BEAWAR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30035",
+     "name": "BEAWAR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11515",
+     "name": "JAITARAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "194",
+     "name": "JAITARAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "3",
+     "name": "JAWAJA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "6",
+     "name": "MASOODA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12089",
+     "name": "MASUDA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "442",
+     "name": "NARBADKHERA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "443",
+     "name": "RAAS PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12090",
+     "name": "RAIPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "197",
+     "name": "RAIPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11405",
+     "name": "VIJAYNAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "name": "BHARATPUR",
+   "samitis": [
+    {
+     "id": "11423",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11419",
+     "name": "BAYANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "46",
+     "name": "BAYANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10010",
+     "name": "BHARATPUR NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30006",
+     "name": "BHARATPUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11421",
+     "name": "BHUSAWAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "304",
+     "name": "BHUSAWAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11422",
+     "name": "NADBAI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "50",
+     "name": "NADBAI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10050",
+     "name": "ROOPWAS NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "52",
+     "name": "RUPBAS PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "53",
+     "name": "SEWAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "305",
+     "name": "UCHAIN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11548",
+     "name": "UCHHAIN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11420",
+     "name": "VEIR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "54",
+     "name": "WEIR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "name": "BHILWARA",
+   "samitis": [
+    {
+     "id": "11424",
+     "name": "ASIND NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "55",
+     "name": "ASIND PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12015",
+     "name": "BANERA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "56",
+     "name": "BANERA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11425",
+     "name": "BHILWARA NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30007",
+     "name": "BHILWARA ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12014",
+     "name": "BIGOD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12016",
+     "name": "BIJOLIYA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "263",
+     "name": "BIJOLIYA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11426",
+     "name": "GANGAPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11427",
+     "name": "GULABPURA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12017",
+     "name": "HAMIRGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "57",
+     "name": "HURDA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11428",
+     "name": "JAHAZPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "58",
+     "name": "JAHAZPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "306",
+     "name": "KAREDA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "370",
+     "name": "KHAJURI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "59",
+     "name": "KOTRI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "60",
+     "name": "MANDAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11429",
+     "name": "MANDALGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "61",
+     "name": "MANDALGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "371",
+     "name": "PHOOLIYA KALAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "62",
+     "name": "RAIPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "63",
+     "name": "SAHARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11430",
+     "name": "SHAHPURA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "64",
+     "name": "SHAHPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "457",
+     "name": "SHAMBHUGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "65",
+     "name": "SUWANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "name": "BIKANER",
+   "samitis": [
+    {
+     "id": "307",
+     "name": "BAJJU KHALSA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "458",
+     "name": "BEETHNOK PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10011",
+     "name": "BIKANER NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "66",
+     "name": "BIKANER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30008",
+     "name": "BIKANER ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "372",
+     "name": "CHHATARGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11431",
+     "name": "DESHNOK NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "373",
+     "name": "HADAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "374",
+     "name": "JASRASAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12019",
+     "name": "KHAJUWALA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "68",
+     "name": "KHAJUWALA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "69",
+     "name": "KOLAYAT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12020",
+     "name": "LUNKARANSAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "70",
+     "name": "LUNKARANSAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12018",
+     "name": "NAPASAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11432",
+     "name": "NOKHA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "71",
+     "name": "NOKHA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "264",
+     "name": "PANCHOO PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "308",
+     "name": "POOGAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "375",
+     "name": "REEDEE PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "376",
+     "name": "ROONIYA HQ BIKANER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11433",
+     "name": "SHRIDUNGARGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "67",
+     "name": "SRI DUNGARGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "name": "BUNDI",
+   "samitis": [
+    {
+     "id": "11439",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11434",
+     "name": "BUNDI NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "72",
+     "name": "BUNDI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30009",
+     "name": "BUNDI ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "377",
+     "name": "DABLANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12103",
+     "name": "DEI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12021",
+     "name": "HINDOLI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "73",
+     "name": "HINDOLI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11435",
+     "name": "INDARGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11436",
+     "name": "KAPREN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "74",
+     "name": "KESHORAIPATAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11437",
+     "name": "KESHWARAIPATAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "378",
+     "name": "KHATKAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11438",
+     "name": "LAKHERI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "379",
+     "name": "LAKHERI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12102",
+     "name": "NAINWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "75",
+     "name": "NAINWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "76",
+     "name": "TALERA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "name": "CHITTORGARH",
+   "samitis": [
+    {
+     "id": "11440",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12022",
+     "name": "AAKOLA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12105",
+     "name": "BADI SADRI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "77",
+     "name": "BARI SADRI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11441",
+     "name": "BEGUN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "78",
+     "name": "BEGUN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "79",
+     "name": "BHADESAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "80",
+     "name": "BHAINSRORGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "81",
+     "name": "BHOPALSAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10012",
+     "name": "CHITTORGARH NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "82",
+     "name": "CHITTORGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30010",
+     "name": "CHITTORGARH ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "83",
+     "name": "DUNGLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "84",
+     "name": "GANGRAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11442",
+     "name": "KAPASAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "85",
+     "name": "KAPASAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10013",
+     "name": "NIMBAHERA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "86",
+     "name": "NIMBAHERA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "87",
+     "name": "RASHMI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10014",
+     "name": "RAWATBHATA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "name": "CHURU",
+   "samitis": [
+    {
+     "id": "11450",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "381",
+     "name": "BHANIPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11443",
+     "name": "BIDASAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "265",
+     "name": "BIDASAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "382",
+     "name": "CHANDGOTHI HQ RAJGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11444",
+     "name": "CHHAPAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10015",
+     "name": "CHURU NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "383",
+     "name": "CHURU NORTH HQ CHURU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "88",
+     "name": "CHURU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30011",
+     "name": "CHURU ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11445",
+     "name": "RAJALDESAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10016",
+     "name": "RAJGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "89",
+     "name": "RAJGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11447",
+     "name": "RATAN NAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11446",
+     "name": "RATANGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "90",
+     "name": "RATANGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12023",
+     "name": "SAHAWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "384",
+     "name": "SARDARSHAHAR EAST PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11448",
+     "name": "SARDARSHAHAR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "91",
+     "name": "SARDARSHAHAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "385",
+     "name": "SIDDHMUKH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11449",
+     "name": "SUJANGARH NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "92",
+     "name": "SUJANGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "93",
+     "name": "TARANAGAR EAST PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12104",
+     "name": "TARANAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "380",
+     "name": "TARANAGAR WEST(BHALERI) HQ TARANAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "name": "DAUSA",
+   "samitis": [
+    {
+     "id": "309",
+     "name": "BAIJUPADA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11451",
+     "name": "BANDIKUI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "94",
+     "name": "BANDIKUI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12028",
+     "name": "BASWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "310",
+     "name": "BASWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12024",
+     "name": "BHANDAREJ NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11452",
+     "name": "DAUSA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "95",
+     "name": "DAUSA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30012",
+     "name": "DAUSA ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11453",
+     "name": "LALSOT NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "96",
+     "name": "LALSOT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12029",
+     "name": "LAWAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "266",
+     "name": "LAWAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10051",
+     "name": "MAHWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "97",
+     "name": "MAHWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12026",
+     "name": "MANDAWAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "386",
+     "name": "MANDAWAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11549",
+     "name": "MANDAWARI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "387",
+     "name": "MANOHARPUR KHEDLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "311",
+     "name": "NANGAL RAJAWATAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "312",
+     "name": "RAMGARH PACHWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12027",
+     "name": "RAMGARH PANCHWARA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "388",
+     "name": "SHIVSINGHPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "313",
+     "name": "SIKANDARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "98",
+     "name": "SIKRAI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12025",
+     "name": "SIKRAY NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "36",
+   "name": "DEEDWANA-KUCHAMAN",
+   "samitis": [
+    {
+     "id": "12092",
+     "name": "BORAWAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30036",
+     "name": "DEEDWANA-KUCHAMAN ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "10032",
+     "name": "DIDWANA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "181",
+     "name": "DIDWANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "444",
+     "name": "ITAWA BAMNIYA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12091",
+     "name": "KHATU KHURD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11505",
+     "name": "KUCHAMAN CITY NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "184",
+     "name": "KUCHAMAN CITY PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11507",
+     "name": "LADNU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "185",
+     "name": "LADNU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10033",
+     "name": "MAKRANA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "186",
+     "name": "MAKRANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "285",
+     "name": "MOLASAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11511",
+     "name": "NAWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "286",
+     "name": "NAWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11512",
+     "name": "PARBATSAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "190",
+     "name": "PARBATSAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "445",
+     "name": "PEELWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "37",
+   "name": "DEEG",
+   "samitis": [
+    {
+     "id": "11417",
+     "name": "BRIJNAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "51",
+     "name": "BRIJNAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11416",
+     "name": "DEEG NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "47",
+     "name": "DEEG PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30037",
+     "name": "DEEG ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11418",
+     "name": "KAMAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "48",
+     "name": "KAMAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11415",
+     "name": "KUMHER NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "49",
+     "name": "KUMHER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12093",
+     "name": "PAHARI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "262",
+     "name": "PAHARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11547",
+     "name": "SIKRI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "name": "DHOLPUR",
+   "samitis": [
+    {
+     "id": "11454",
+     "name": "BARI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "99",
+     "name": "BARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11551",
+     "name": "BASERI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "100",
+     "name": "BASERI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "101",
+     "name": "DHAULPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11455",
+     "name": "DHOLPUR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30013",
+     "name": "DHOLPUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12030",
+     "name": "MANIYA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11456",
+     "name": "RAJAKHEDA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "102",
+     "name": "RAJAKHERA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12031",
+     "name": "SAIPAU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "267",
+     "name": "SAIPAU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "314",
+     "name": "SARAMATHURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11550",
+     "name": "SARMATHURA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "name": "DUNGARPUR",
+   "samitis": [
+    {
+     "id": "103",
+     "name": "ASPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "389",
+     "name": "BHANDARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "104",
+     "name": "BICHIWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "270",
+     "name": "CHIKHALI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "272",
+     "name": "DOVADA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11457",
+     "name": "DUNGARPUR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "105",
+     "name": "DUNGARPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30014",
+     "name": "DUNGARPUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "269",
+     "name": "GALIYAKOAT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "390",
+     "name": "GAMDI AHARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "271",
+     "name": "JOTHARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "391",
+     "name": "PADAWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "392",
+     "name": "PALDEVAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "268",
+     "name": "SABLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11458",
+     "name": "SAGWARA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "106",
+     "name": "SAGWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "107",
+     "name": "SIMALWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "name": "GANGANAGAR",
+   "samitis": [
+    {
+     "id": "11559",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11459",
+     "name": "ANOOPGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "108",
+     "name": "ANUPGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11460",
+     "name": "GAJSINGHPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10017",
+     "name": "GANGANAGAR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30015",
+     "name": "GANGANAGAR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12032",
+     "name": "GHARSANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "109",
+     "name": "GHARSANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "110",
+     "name": "KARANPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11462",
+     "name": "KESRISINGHPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11463",
+     "name": "PADAMPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "111",
+     "name": "PADAMPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11464",
+     "name": "RAISINGHNAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "112",
+     "name": "RAISINGHNAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "393",
+     "name": "RAJIYASAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11465",
+     "name": "SADULSHAHAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "113",
+     "name": "SADULSHAHAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11461",
+     "name": "SHRIKARANPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11466",
+     "name": "SHRIVIJAYNAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "114",
+     "name": "SRI GANGANAGAR NORTH HQ SRI GANGANAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "394",
+     "name": "SRI GANGANAGAR SOUTH HQ SRI GANGANAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10018",
+     "name": "SURATGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "115",
+     "name": "SURATGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "273",
+     "name": "VIJAINAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "name": "HANUMANGARH",
+   "samitis": [
+    {
+     "id": "11467",
+     "name": "BHADRA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "116",
+     "name": "BHADRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12034",
+     "name": "GOLUWALA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "395",
+     "name": "HANUMANGARH JUNCTION PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10020",
+     "name": "HANUMANGARH NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "117",
+     "name": "HANUMANGARH TOWN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30016",
+     "name": "HANUMANGARH ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11468",
+     "name": "NOHAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "118",
+     "name": "NOHAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "396",
+     "name": "PALLU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11469",
+     "name": "PILIBANGA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "119",
+     "name": "PILIBANGA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "397",
+     "name": "RAJPURA 8 BHD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11470",
+     "name": "RAWATSAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "120",
+     "name": "RAWATSAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "121",
+     "name": "SANGARIA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11471",
+     "name": "SANGARIYA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12033",
+     "name": "TIBBI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "122",
+     "name": "TIBBI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "17",
+   "name": "JAIPUR",
+   "samitis": [
+    {
+     "id": "10053",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "459",
+     "name": "AMARSAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "123",
+     "name": "AMBER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "315",
+     "name": "ANDHI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11472",
+     "name": "BAGRU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11552",
+     "name": "BASSI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "124",
+     "name": "BASSI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11473",
+     "name": "CHAKSU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "125",
+     "name": "CHAKSU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11474",
+     "name": "CHOMU NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "398",
+     "name": "CHOMU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12042",
+     "name": "DUDU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "126",
+     "name": "DUDU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "127",
+     "name": "GOVINDGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10019",
+     "name": "JAIPUR NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30017",
+     "name": "JAIPUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "275",
+     "name": "JALSU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "128",
+     "name": "JAMWA RAMGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12041",
+     "name": "JAMWARAMGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "129",
+     "name": "JHOTWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11475",
+     "name": "JOBNER NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "316",
+     "name": "JOBNER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12038",
+     "name": "KALADERA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12043",
+     "name": "KANOTA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12036",
+     "name": "KHEJROLI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11476",
+     "name": "KISHANGARH RENWAL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "317",
+     "name": "KISHANGARH RENWAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "346",
+     "name": "KOTKHAWADA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "318",
+     "name": "MADHORAJPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12039",
+     "name": "MANOHARPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "319",
+     "name": "MAUZAMABAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12035",
+     "name": "NARAYANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12037",
+     "name": "PHAGI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "131",
+     "name": "PHAGI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11478",
+     "name": "PHULERA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "399",
+     "name": "RAMPURA DABARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11479",
+     "name": "SAMBHAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "133",
+     "name": "SAMBHAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "134",
+     "name": "SANGANER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11480",
+     "name": "SHAHPURA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "132",
+     "name": "SHAHPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "320",
+     "name": "TUNGA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12040",
+     "name": "VATIKA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "name": "JAISALMER",
+   "samitis": [
+    {
+     "id": "321",
+     "name": "BHANIYANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "322",
+     "name": "FATHEGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10021",
+     "name": "JAISALMER NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "136",
+     "name": "JAISALMER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30018",
+     "name": "JAISALMER ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "137",
+     "name": "KHUHADI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "323",
+     "name": "MOHANGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "324",
+     "name": "NACHANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11482",
+     "name": "POKARAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "460",
+     "name": "RAJMATHAI HQ FALSUND PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "400",
+     "name": "RAMDEVRA HQ POKHRAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "461",
+     "name": "RAMGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "138",
+     "name": "SANKRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "19",
+   "name": "JALORE",
+   "samitis": [
+    {
+     "id": "12045",
+     "name": "AAHOR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "139",
+     "name": "AHORE PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "347",
+     "name": "BAGODA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "401",
+     "name": "BHADRAJUN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "402",
+     "name": "BHADRUNA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10022",
+     "name": "BHINMAL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "140",
+     "name": "BHINMAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "141",
+     "name": "CHITALWANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10023",
+     "name": "JALORE NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "142",
+     "name": "JALORE PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30019",
+     "name": "JALORE ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "143",
+     "name": "JASWANTPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "144",
+     "name": "RANIWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11483",
+     "name": "SANCHORE NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "145",
+     "name": "SANCHORE PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "325",
+     "name": "SARNAU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "403",
+     "name": "SARWANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12044",
+     "name": "SAYLA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "146",
+     "name": "SAYLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "404",
+     "name": "UMMEDABAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "name": "JHALAWAR",
+   "samitis": [
+    {
+     "id": "11484",
+     "name": "AKLERA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "277",
+     "name": "AKLERA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "147",
+     "name": "BAKANI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11485",
+     "name": "BHAWANI MANDI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "276",
+     "name": "BHAWANI MANDI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12047",
+     "name": "DAG NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "148",
+     "name": "DAG PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11487",
+     "name": "JHALAWAR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30020",
+     "name": "JHALAWAR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11486",
+     "name": "JHALRAPATAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "149",
+     "name": "JHALRAPATAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12048",
+     "name": "KHANPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "150",
+     "name": "KHANPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12046",
+     "name": "MANOHARTHANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "151",
+     "name": "MANOHARTHANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "152",
+     "name": "PIRAWA (SUNEL) PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11488",
+     "name": "PIRAWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "21",
+   "name": "JHUNJHUNU",
+   "samitis": [
+    {
+     "id": "153",
+     "name": "ALSISAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "405",
+     "name": "BABAAI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11489",
+     "name": "BAGAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10024",
+     "name": "BISAU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12052",
+     "name": "BUHANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "154",
+     "name": "BUHANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11490",
+     "name": "CHIRAWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "155",
+     "name": "CHIRAWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12055",
+     "name": "DUNDLOD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "406",
+     "name": "GOTHADA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "407",
+     "name": "GUDHA GAUDJI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12049",
+     "name": "JAKHAL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10025",
+     "name": "JHUNJHUNU NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "156",
+     "name": "JHUNJHUNU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30021",
+     "name": "JHUNJHUNU ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11491",
+     "name": "KHETDI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "157",
+     "name": "KHETRI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12051",
+     "name": "MALSISAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11492",
+     "name": "MANDAWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "350",
+     "name": "MANDAWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12050",
+     "name": "MANDRELA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11493",
+     "name": "MUKUNDGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11494",
+     "name": "NAWALGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "158",
+     "name": "NAWALGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10026",
+     "name": "PILANI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "351",
+     "name": "PILANI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12054",
+     "name": "SINGHANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "326",
+     "name": "SINGHANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12053",
+     "name": "SULTANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11495",
+     "name": "SURAJGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "159",
+     "name": "SURAJGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11496",
+     "name": "UDAIPURWATI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "160",
+     "name": "UDAIPURWATI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11497",
+     "name": "VIDYAVIHAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "22",
+   "name": "JODHPUR",
+   "samitis": [
+    {
+     "id": "10054",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "462",
+     "name": "AAGOLAI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "408",
+     "name": "AASOP PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "161",
+     "name": "BALESAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12056",
+     "name": "BALESAR SATTAH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "163",
+     "name": "BAWADI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11554",
+     "name": "BHOPALGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "164",
+     "name": "BHOPALGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11498",
+     "name": "BILADA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "165",
+     "name": "BILARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "463",
+     "name": "CHABA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "328",
+     "name": "CHAMU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "329",
+     "name": "DHAWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "409",
+     "name": "HATUNDI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "410",
+     "name": "JHANWAR HQ PAL ROAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10027",
+     "name": "JODHPUR NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30022",
+     "name": "JODHPUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "411",
+     "name": "KAPARDA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "331",
+     "name": "KERU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "166",
+     "name": "LUNI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "167",
+     "name": "MANDOR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12058",
+     "name": "MATHANIYA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "168",
+     "name": "OSIAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "283",
+     "name": "PEEPAD SAHAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11499",
+     "name": "PIPADCITY NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "412",
+     "name": "SALWAKHURD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "413",
+     "name": "SAMRAU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "278",
+     "name": "SEKHALA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "170",
+     "name": "SHERGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "280",
+     "name": "TINWARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12057",
+     "name": "TIWARI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "414",
+     "name": "UMMEDNAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "23",
+   "name": "KARAULI",
+   "samitis": [
+    {
+     "id": "415",
+     "name": "BALGHAT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "171",
+     "name": "HINDAUN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11501",
+     "name": "HINDAUNCITY NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11500",
+     "name": "KARAULI NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "172",
+     "name": "KARAULI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30023",
+     "name": "KARAULI ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "416",
+     "name": "KUDGAON PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12060",
+     "name": "MANDRAYAL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "284",
+     "name": "MANDRAYAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "332",
+     "name": "MASALPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "173",
+     "name": "NADAUTI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11555",
+     "name": "SAPOTRA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "174",
+     "name": "SAPOTRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "417",
+     "name": "SHERPUR-SUROTH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "333",
+     "name": "SHRI MAHAVEER JI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12059",
+     "name": "SUROTH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11502",
+     "name": "TODABHIM NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "175",
+     "name": "TODABHIM PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "38",
+   "name": "KHAIRTHAL-TIJARA",
+   "samitis": [
+    {
+     "id": "10004",
+     "name": "BHIWADI NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11407",
+     "name": "KHAIRTHAL NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30038",
+     "name": "KHAIRTHAL-TIJARA ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12",
+     "name": "KISHANGARH BAS PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11410",
+     "name": "KISHANGARHBAS NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12095",
+     "name": "KOTKASIM NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "13",
+     "name": "KOTKASIM PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "15",
+     "name": "MANDAWAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12094",
+     "name": "MUNDAWAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12096",
+     "name": "TAPUKADA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "446",
+     "name": "TAPUKADA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "447",
+     "name": "TATARPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11411",
+     "name": "TIJARA NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "21",
+     "name": "TIJARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "24",
+   "name": "KOTA",
+   "samitis": [
+    {
+     "id": "10055",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "10029",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "418",
+     "name": "CHECHAT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11503",
+     "name": "ITAWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "176",
+     "name": "ITAWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "177",
+     "name": "KHAIRABAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10030",
+     "name": "KOTA NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30024",
+     "name": "KOTA ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "178",
+     "name": "LADPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11504",
+     "name": "RAMGANJMANDI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10031",
+     "name": "SANGOD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "179",
+     "name": "SANGOD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12061",
+     "name": "SUKET NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11556",
+     "name": "SULTANPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "180",
+     "name": "SULTANPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "39",
+   "name": "KOTPUTLI-BEHROR",
+   "samitis": [
+    {
+     "id": "11545",
+     "name": "BANSUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "9",
+     "name": "BANSUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12099",
+     "name": "BARDOD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11406",
+     "name": "BEHROR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10",
+     "name": "BEHROR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11477",
+     "name": "KOTPUTLI NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "130",
+     "name": "KOTPUTLI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30039",
+     "name": "KOTPUTLI-BEHROR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "448",
+     "name": "MAID KUNDLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12098",
+     "name": "MANDHAN NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12097",
+     "name": "NARAYANPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "456",
+     "name": "NARAYANPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12100",
+     "name": "NEEMRANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "16",
+     "name": "NEEMRANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "274",
+     "name": "PAOTA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11553",
+     "name": "PAWTA PRAGPURA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11481",
+     "name": "VIRATNAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "449",
+     "name": "VIRATNAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "25",
+   "name": "NAGAUR",
+   "samitis": [
+    {
+     "id": "12064",
+     "name": "BASNI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "352",
+     "name": "BHERUNDA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11513",
+     "name": "DEGANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "182",
+     "name": "DEGANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "419",
+     "name": "DEH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12063",
+     "name": "JAYAL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "183",
+     "name": "JAYAL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "287",
+     "name": "KHINVSAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11506",
+     "name": "KUCHERA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11508",
+     "name": "MERTA CITY NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "187",
+     "name": "MERTA CITY PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "420",
+     "name": "MERTA ROAD - GOTAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12062",
+     "name": "MERTAROAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11509",
+     "name": "MUNDWA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "188",
+     "name": "MUNDWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11510",
+     "name": "NAGAUR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "189",
+     "name": "NAGAUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30025",
+     "name": "NAGAUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "421",
+     "name": "PANCHAUDI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "191",
+     "name": "RIYANBADI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12065",
+     "name": "RIYANBARI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "422",
+     "name": "SRI BALAJI - ALAY PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "26",
+   "name": "PALI",
+   "samitis": [
+    {
+     "id": "454",
+     "name": "BAGADI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11514",
+     "name": "BALI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "192",
+     "name": "BALI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "193",
+     "name": "DESURI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11516",
+     "name": "KHUDALA FALNA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12066",
+     "name": "MARWAD JUNCTION NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "195",
+     "name": "MARWAR JUN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10034",
+     "name": "PALI NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "196",
+     "name": "PALI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30026",
+     "name": "PALI ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "198",
+     "name": "RANI STATION PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11517",
+     "name": "RANIKHURD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "199",
+     "name": "ROHAT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11518",
+     "name": "SADRI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "200",
+     "name": "SOJAT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12067",
+     "name": "SOJAT ROAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11519",
+     "name": "SOJATCITY NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10035",
+     "name": "SUMERPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "201",
+     "name": "SUMERPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11520",
+     "name": "TAKHATGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "40",
+   "name": "PHALODI",
+   "samitis": [
+    {
+     "id": "327",
+     "name": "AAU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12101",
+     "name": "BAP NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "162",
+     "name": "BAP PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "281",
+     "name": "BAPINI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "279",
+     "name": "DECHU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "330",
+     "name": "GHANTIYALI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "282",
+     "name": "LOHAWAT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "451",
+     "name": "PEELWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10028",
+     "name": "PHALODI NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "169",
+     "name": "PHALODI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30040",
+     "name": "PHALODI ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "452",
+     "name": "SETRAVA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "27",
+   "name": "PRATAPGARH",
+   "samitis": [
+    {
+     "id": "12068",
+     "name": "ARNOD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "202",
+     "name": "ARNOD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "203",
+     "name": "CHHOTI SADRI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11521",
+     "name": "CHOTI SADRI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "334",
+     "name": "DALOT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "348",
+     "name": "DHAMOTAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "204",
+     "name": "DHARIAWAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12069",
+     "name": "DHARIYAWAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "205",
+     "name": "PEEPAL KHOONT PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11522",
+     "name": "PRATAPGARH NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "206",
+     "name": "PRATAPGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30027",
+     "name": "PRATAPGARH ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "335",
+     "name": "SUHAGPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "28",
+   "name": "RAJSAMAND",
+   "samitis": [
+    {
+     "id": "10042",
+     "name": "AMET NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "207",
+     "name": "AMET PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12070",
+     "name": "BHIM NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "208",
+     "name": "BHIM PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "464",
+     "name": "CHARBHUJA HQ GADHBORE PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "336",
+     "name": "DELWADA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11524",
+     "name": "DEOGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "209",
+     "name": "DEOGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "210",
+     "name": "KHAMNOR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "211",
+     "name": "KUMBHALGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10043",
+     "name": "NATHDWARA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "212",
+     "name": "RAILMAGRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11523",
+     "name": "RAJSAMAND NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "213",
+     "name": "RAJSAMAND PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30028",
+     "name": "RAJSAMAND ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "29",
+   "name": "S. MADHOPUR",
+   "samitis": [
+    {
+     "id": "11557",
+     "name": "BAMANWAS NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "214",
+     "name": "BAMANWAS PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12072",
+     "name": "BONLI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "215",
+     "name": "BONLI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "288",
+     "name": "CHAUTH KA BARWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11525",
+     "name": "GANGAPUR CITY NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "216",
+     "name": "GANGAPUR CITY PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12071",
+     "name": "KHANDAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "217",
+     "name": "KHANDAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "337",
+     "name": "MALARNA DUNGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30029",
+     "name": "S. MADHOPUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11526",
+     "name": "SAWAI MADHOPUR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "218",
+     "name": "SAWAI MADHOPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "423",
+     "name": "WAJEERPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12073",
+     "name": "WAZIRPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "41",
+   "name": "SALUMBER",
+   "samitis": [
+    {
+     "id": "453",
+     "name": "GEENGLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "349",
+     "name": "JAISAMAND PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "293",
+     "name": "JHALLARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "245",
+     "name": "LASADIYA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "247",
+     "name": "SALUMBAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11542",
+     "name": "SALUMBER NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30041",
+     "name": "SALUMBER ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "248",
+     "name": "SARADA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "294",
+     "name": "SEMARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "30",
+   "name": "SIKAR",
+   "samitis": [
+    {
+     "id": "338",
+     "name": "AJEETGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12075",
+     "name": "AJITGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "424",
+     "name": "BALARAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12074",
+     "name": "DANTA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "219",
+     "name": "DANTA RAMGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "425",
+     "name": "DHOD GRAMIN HQ SIKAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12077",
+     "name": "DHOD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "220",
+     "name": "DHOD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11527",
+     "name": "FATEHPUR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "221",
+     "name": "FATEHPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "426",
+     "name": "KHACHARIYAWAS PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11528",
+     "name": "KHANDELA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "222",
+     "name": "KHANDELA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10052",
+     "name": "KHATUSHYAMJI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "223",
+     "name": "LACHHMANGARH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11529",
+     "name": "LAXMANGARH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11530",
+     "name": "LOSAL NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "339",
+     "name": "NECHWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "224",
+     "name": "NEEM KA THANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10036",
+     "name": "NEEMKATHANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12076",
+     "name": "PALSANA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "340",
+     "name": "PALSANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "289",
+     "name": "PATAN PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "225",
+     "name": "PIPRALI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11531",
+     "name": "RAMGARH SHEKHAWATI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "427",
+     "name": "RAMGARH SHEKHAWATI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11532",
+     "name": "RINGUS NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11533",
+     "name": "SHRIMADHOPUR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10037",
+     "name": "SIKAR NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30030",
+     "name": "SIKAR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "226",
+     "name": "SRI MADHOPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "31",
+   "name": "SIROHI",
+   "samitis": [
+    {
+     "id": "11558",
+     "name": "",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "227",
+     "name": "ABU ROAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11534",
+     "name": "ABUROAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "428",
+     "name": "BHAVARI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "465",
+     "name": "KALANDRI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12078",
+     "name": "MANDAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "429",
+     "name": "MANDAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10038",
+     "name": "MOUNT ABU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10039",
+     "name": "PINDWARA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "228",
+     "name": "PINDWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "229",
+     "name": "REODAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "230",
+     "name": "SHEOGANJ PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10040",
+     "name": "SHIVGANJ NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "10041",
+     "name": "SIROHI NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "231",
+     "name": "SIROHI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30031",
+     "name": "SIROHI ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "32",
+   "name": "TONK",
+   "samitis": [
+    {
+     "id": "11535",
+     "name": "DEOLI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "232",
+     "name": "DEOLI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12080",
+     "name": "DIGGI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12079",
+     "name": "DOONI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "12082",
+     "name": "LAMBAHARISINGH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "11537",
+     "name": "MALPURA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "233",
+     "name": "MALPURA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11536",
+     "name": "NEWAI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "234",
+     "name": "NEWAI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "430",
+     "name": "PACHEVAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12081",
+     "name": "PEEPLU NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "341",
+     "name": "PEEPLU PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11538",
+     "name": "TODARAISINGH NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "235",
+     "name": "TODARAISINGH PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10044",
+     "name": "TONK NAGAR PARISHAD",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "236",
+     "name": "TONK PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "30032",
+     "name": "TONK ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "11539",
+     "name": "UNIARA NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "237",
+     "name": "UNIARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  },
+  {
+   "id": "33",
+   "name": "UDAIPUR",
+   "samitis": [
+    {
+     "id": "238",
+     "name": "BARGAON PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11540",
+     "name": "BHINDER NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "239",
+     "name": "BHINDER PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "431",
+     "name": "DEVLA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "11541",
+     "name": "FATEHNAGAR SANWAD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "455",
+     "name": "GHASA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "240",
+     "name": "GIRWA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "241",
+     "name": "GOGUNDA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "242",
+     "name": "JHADOL PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "432",
+     "name": "KALYANPUR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10045",
+     "name": "KANOD NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "243",
+     "name": "KHERWARA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "244",
+     "name": "KOTRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "295",
+     "name": "KURABAD PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "12083",
+     "name": "MAVLI NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "246",
+     "name": "MAVLI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "434",
+     "name": "NAAI PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "342",
+     "name": "NAYAGAON PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "435",
+     "name": "OGANA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "292",
+     "name": "PHALASIYA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "290",
+     "name": "RISHBHDEO PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "291",
+     "name": "SAYRA PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "436",
+     "name": "SULAV PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    },
+    {
+     "id": "10046",
+     "name": "UDAIPUR NAGAR NIGAM",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "30033",
+     "name": "UDAIPUR ZILLA PARISHAD ZILLA PARISHAD",
+     "kind": "unknown",
+     "panchayats": []
+    },
+    {
+     "id": "12084",
+     "name": "VALLABHNAGAR NAGAR PALIKA",
+     "kind": "urban",
+     "panchayats": []
+    },
+    {
+     "id": "343",
+     "name": "VALLABHNAGAR PANCHAYAT SAMITI",
+     "kind": "rural",
+     "panchayats": []
+    }
+   ]
+  }
+ ]
+}
