@@ -1,0 +1,7 @@
+[
+ {"pdf": "fixtures/sec/bharatpur/ARAUDA-ward-001.pdf", "expected": "fixtures/sec/bharatpur/ARAUDA-ward-001.expected.json"},
+ {"pdf": "fixtures/sec/bhilwara/ALMAS-ward-001-supp-2.pdf", "expected": "fixtures/sec/bhilwara/ALMAS-ward-001-supp-2.expected.json"},
+ {"pdf": "fixtures/sec/bikaner/BHOLASAR-ward-002-supp-2.pdf", "expected": "fixtures/sec/bikaner/BHOLASAR-ward-002-supp-2.expected.json"},
+ {"pdf": "fixtures/sec/jodhpur/ASHAPURA-ward-002-supp-2.pdf", "expected": "fixtures/sec/jodhpur/ASHAPURA-ward-002-supp-2.expected.json"},
+ {"pdf": "fixtures/sec/udaipur/AMARPURA-ward-001-supp-2.pdf", "expected": "fixtures/sec/udaipur/AMARPURA-ward-001-supp-2.expected.json"}
+]

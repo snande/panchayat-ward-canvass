@@ -42,3 +42,18 @@ wrong (serials 103 and 320, both missing a reph fused into the i-matra
 glyph) were corrected in the decoder, and the pass was re-run and
 re-compared; no other entry changed. The reference decoder now matches
 this file on 297 of 297 records.
+
+# SEC ward rolls: `sec/`
+
+`sec/` holds 77 ward roll PDFs from five districts, byte for byte as served
+(`sec/manifest.json` records each URL, size and SHA-256). For one ward per
+district, listed in `sec/expected-fixtures.json`, a `.expected.json` beside
+the PDF lists every serial in serial order, one line each, with `serial,
+name, relative, age, gender, house` and `struck`, the struck-off flag (an
+`O`, `E`, `S` or `R` beside the serial; struck-off entries are included, not
+left out). They are written by `tools/reference-decoder/decode.py --expected`
+and nothing in them is hand-edited. They were generated on 2026-10-09 on a
+networked machine (the decoder needs pypdf and fonttools from PyPI), after the
+same decoder scored Badli ward 1 at 297 of 297; the JavaScript decoder is to be
+held to them line for line. Blank fields in them are fields the roll leaves
+blank (11 house numbers across Almas and Ashapura).
