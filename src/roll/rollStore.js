@@ -5,11 +5,11 @@
 //   struck off (src/roll/applySupplements.js); never the PDF, EPIC numbers or
 //   pages.
 // - In the clear beside the ciphertext, the supplement state (no voter data):
-//   `supplement` (SUPPLEMENT_STATES: 'none' when the ward has no
-//   supplementary roll, 'merged' when every listed one was merged, 'failed'
-//   when one could not be downloaded or decoded) and `supplementUrls`, the
-//   public SEC URLs of the supplementary rolls merged so far, so one the
-//   catalogue lists later, or one that failed, is fetched again.
+//   `supplement` (SUPPLEMENT_STATES: 'none' when no supplementary roll is
+//   merged, 'merged' when every listed one was merged, 'failed' when one
+//   could not be downloaded or decoded) and `supplementUrls`, the public SEC
+//   URLs of the supplementary rolls merged so far, in publication order, so
+//   the rest are fetched later in that order.
 // - Record version RECORD_VERSION. An older one reads as null (decode
 //   again); an unknown one throws RollRecordVersionError.
 // - AES-GCM (fresh 12-byte IV, ward key as additional data) under the shared
@@ -20,6 +20,7 @@ import {
   DB_NAME, KEYS_STORE, ROLLS_STORE, META_STORE, complete, createDbOpener, readValue,
 } from '../storage/deviceDb.js';
 import { createDeviceKeyLoader } from '../crypto/deviceKey.js';
+import { SUPPLEMENT_KINDS, urlList } from './supplementTags.js';
 
 export { DB_NAME, KEYS_STORE, ROLLS_STORE, META_STORE };
 const LAST_WARD = 'last-ward';
@@ -30,10 +31,7 @@ export const STALE_RECORD_VERSIONS = Object.freeze([1, 2]);
 export const STORED_FIELDS = Object.freeze(['serial', 'name', 'relative', 'age', 'gender', 'house', 'struck']);
 /** Kept, after STORED_FIELDS, only on an entry a supplementary roll changed. */
 export const SUPPLEMENT_FIELD = 'supplement';
-const SUPPLEMENT_KINDS = Object.freeze(['addition', 'deletion']);
 export const SUPPLEMENT_STATES = Object.freeze(['none', 'merged', 'failed']);
-
-const urlList = (urls) => (Array.isArray(urls) ? urls.filter((u) => typeof u === 'string' && u) : []);
 
 export class RollRecordVersionError extends Error {
   constructor(version) {

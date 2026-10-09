@@ -1,18 +1,12 @@
-// The supplementary-deletions toggle above the ward roll (issue #127).
-//
-// Entries a supplementary roll strikes off (supplement: 'deletion', see
-// src/roll/applySupplements.js) are hidden unless this is on. It renders one
-// state at a time (DESIGN.md "States every surface carries"), with shared
-// controls only:
-//   filled  the ward has supplementary rolls: a .choice row (the DESIGN.md
-//           "Checkbox / toggle", 48 px) holding a .choice-input checkbox and
-//           its sentence, with the number of supplementary deletions
-//   empty   the ward has no supplementary roll: an info notice saying no
-//           supplementary deletions are published; not an error
-//   error   a supplementary roll could not be downloaded or decoded (the roll
-//           itself still shows): an error notice saying to retry, a line
-//           saying whom to call and a secondary retry button
-// The toggle only hides and shows rows; it deletes nothing.
+// The supplementary-deletions toggle above the ward roll: entries tagged
+// supplement: 'deletion' are hidden unless it is on. One state at a time
+// (DESIGN.md "States every surface carries"), shared controls only:
+//   filled  a .choice row (DESIGN.md "Checkbox / toggle", 48 px) with the
+//           number of supplementary deletions
+//   empty   info notice: no supplementary roll is published; not an error
+//   error   a supplement failed (the roll still shows): error notice to
+//           retry, whom to call, and a secondary retry
+// It only hides and shows rows; it deletes nothing.
 
 import { el, textFrom } from './dom.js';
 

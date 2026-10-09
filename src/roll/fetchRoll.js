@@ -11,6 +11,8 @@
 //                   which only fetches URLs listed in config/constituency.json
 //                   (relay/rollRelay.mjs)
 
+import { urlList } from './supplementTags.js';
+
 export const ROLL_TRANSPORT = 'relay-required';
 export const TRANSPORTS = Object.freeze(['direct-fetch', 'relay-required']);
 export const RELAY_PATH = '/roll';
@@ -72,10 +74,9 @@ export async function fetchRoll(selection, { fetch = globalThis.fetch, transport
   return downloadPdf(selection.pdfUrl, fetch, transport);
 }
 
-/** The supplementary roll URLs a selection lists (selection.supplementPdfUrls). */
+/** The supplementary roll URLs a selection lists (selection.supplementPdfUrls), in publication order. */
 export function supplementUrls(selection) {
-  const urls = selection && Array.isArray(selection.supplementPdfUrls) ? selection.supplementPdfUrls : [];
-  return urls.filter((url) => typeof url === 'string' && url);
+  return urlList(selection && selection.supplementPdfUrls);
 }
 
 /**

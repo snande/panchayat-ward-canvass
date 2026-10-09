@@ -32,9 +32,10 @@ const PRECACHE = [
   "src/roll/fetchRoll.js",
   "src/roll/rollStore.js",
   "src/roll/rollFlow.js",
-  // The supplementary-deletions toggle and its setting. The merge
-  // (src/roll/applySupplements.js) is fetched, like the decoder, only after a
-  // supplementary roll is downloaded.
+  // The supplementary-deletions toggle, its setting and the shared tags. The
+  // merge (src/roll/applySupplements.js) is fetched, like the decoder, only
+  // after a supplementary roll is downloaded.
+  "src/roll/supplementTags.js",
   "src/roll/rollSettings.js",
   "src/ui/deletionsToggle.js",
   // The device database and key shared by the roll, contact and assignment stores.

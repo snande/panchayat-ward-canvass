@@ -2,6 +2,8 @@
 // bundled per-installation config (config/constituency.json), so anything not
 // listed there resolves to null and can never produce a fetch URL.
 
+import { urlList } from '../roll/supplementTags.js';
+
 const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
 function findChild(list, id) {
@@ -51,7 +53,7 @@ export function resolveWard(config, sel) {
 /**
  * { district, samiti, panchayat, ward, pdfUrl, supplementPdfUrls? } (ids) or
  * null; supplementPdfUrls, present when the ward's catalogue entry lists any,
- * are the ward's supplementary roll PDFs.
+ * are the ward's supplementary roll PDFs in publication order.
  */
 export function selectionFor(config, sel) {
   const pdfUrl = resolveWard(config, sel);
@@ -64,7 +66,7 @@ export function selectionFor(config, sel) {
     pdfUrl,
   };
   const listed = path(config, sel).ward.supplementPdfUrls;
-  if (Array.isArray(listed)) selection.supplementPdfUrls = listed.filter((u) => typeof u === 'string' && u);
+  if (Array.isArray(listed)) selection.supplementPdfUrls = urlList(listed);
   return selection;
 }
 
