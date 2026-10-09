@@ -14,6 +14,7 @@ import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
+const strings = JSON.parse(read('src/strings.hi.json'));
 const css = read('styles.css');
 const design = read('DESIGN.md');
 const WARD = '17/125/6313/1';
@@ -24,6 +25,8 @@ const ENTRIES = [
   { serial: 3, name: 'अन्य', relative: 'कोई', age: 50, gender: 'पुरुष', house: '4' },
 ];
 const HOUSE = findHousehold(buildHouseholdIndex(ENTRIES, WARD), '12');
+// The sentences the precached string table has no room for.
+const MODULE_ONLY = ['household_loading', 'household_empty', 'household_failed'];
 
 const deferred = () => {
   let resolve;
@@ -45,6 +48,7 @@ function mount(household, overrides = {}) {
   const container = doc.createElement('div');
   const opened = [];
   const view = renderHouseholdCard(container, household, {
+    strings,
     contacts: { getContact: async (ward, serial) => (serial === 7 ? { phone: '9876543210', consentAt: 'x' } : null) },
     getMemberStatus: async (ward, serial) => (serial === 7 ? { tag: 'समर्थक', visit: 'मिल लिए' } : serial === 9 ? { tag: 'अनिश्चित' } : null),
     onOpenMember: (member) => opened.push(member),
@@ -54,10 +58,12 @@ function mount(household, overrides = {}) {
   return { doc, container, view, opened };
 }
 
-test('the card\'s copy is Hindi text with no Latin letters', () => {
+test('the card\'s copy is Hindi; every label matches src/strings.hi.json, only its three sentences are not in it', () => {
   for (const [key, value] of Object.entries(HOUSEHOLD_TEXT)) {
     assert.match(value, /[ऀ-ॿ]/, key);
     assert.doesNotMatch(value, /[A-Za-z]/, key);
+    if (MODULE_ONLY.includes(key)) assert.equal(strings[key], undefined, key);
+    else assert.equal(strings[key], value, key);
   }
 });
 
@@ -89,6 +95,14 @@ test('success: one card headed by house number and member count, one row per mem
   assert.equal(fieldValue(first, 'household-member-visit'), 'मिल लिए');
   assert.ok(classes(first.querySelector('span.household-member-tag')).includes('badge'));
   assert.ok(classes(first.querySelector('span.household-member-visit')).includes('badge'));
+});
+
+test('without a string table the card shows the same copy', async () => {
+  const { view } = mount(HOUSE, { strings: undefined });
+  await view.ready;
+  assert.equal(view.root.querySelector('h2.panel-title').textContent, 'मकान नं. 12');
+  assert.equal(view.root.querySelector('p.panel-subtitle').textContent, '3 सदस्य');
+  assert.equal(rowsOf(view)[0].querySelector('span.household-member-serial').textContent, 'क्रम 7');
 });
 
 test('a field with no value reads "—", never blank or undefined', async () => {
@@ -158,6 +172,7 @@ test('loading: an info notice and aria-busy until every member\'s data settles',
   assert.equal(tone(view.message), 'info');
   assert.ok(classes(view.message).includes('notice'));
   assert.equal(view.list.hidden, true);
+  assert.equal(view.retryButton.hidden, true);
   assert.equal(rowsOf(view).length, 0);
   pending.resolve({ tag: 'समर्थक', visit: 'मिल लिए' });
   await view.ready;
@@ -178,6 +193,7 @@ test('empty: a null household shows Hindi copy saying no such house in the loade
   assert.match(view.message.textContent, /जाँचें/);
   assert.equal(view.list.hidden, true);
   assert.equal(view.retryButton.hidden, true);
+  assert.equal(view.root.querySelector('p.household-contact').hidden, true);
 });
 
 test('error: a dependency that throws shows what to do and whom to call, and a retry reads again', async () => {
@@ -196,9 +212,10 @@ test('error: a dependency that throws shows what to do and whom to call, and a r
     const contact = view.root.querySelector('p.household-contact');
     assert.equal(contact.hidden, false);
     assert.ok(classes(contact).includes('roll-contact'));
-    assert.equal(contact.textContent, HOUSEHOLD_TEXT.household_error_contact);
+    assert.equal(contact.textContent, strings.roll_error_contact);
     assert.match(contact.textContent, /समन्वयक/);
     assert.equal(view.retryButton.hidden, false);
+    assert.equal(view.retryButton.textContent, strings.roll_retry);
     assert.ok(classes(view.retryButton).includes('btn-secondary'));
     assert.equal(view.list.hidden, true);
     assert.equal(view.root.getAttribute('aria-busy'), null);
