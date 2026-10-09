@@ -93,7 +93,8 @@ function devanagariDigit(ch) {
   return n >= 0 && n <= 9 ? String(n) : null;
 }
 
-function toAsciiDigits(str) {
+/** Map Devanagari digits (U+0966-U+096F) to ASCII 0-9; other characters are kept. */
+export function toAsciiDigits(str) {
   return str.replace(/[०-९]/g, (d) => devanagariDigit(d));
 }
 

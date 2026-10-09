@@ -117,6 +117,31 @@ const screen = mountSearchScreen(document.body, voters); // voters: [{ id, seria
 
 Tests in `test/searchScreen.test.js` run with `npm test` (and in CI) against a small in-process fake DOM (`test/helpers/fakeDom.js`), not jsdom or a browser, so no extra dependencies are needed. The timing bound and the `lang`/`inputmode` attributes are therefore verified in that test DOM environment, not on a real Android Chrome device.
 
+## Household index
+
+`src/households/householdIndex.js` groups a ward's stored entries
+(`serial, name, relative, age, gender, house`) into households:
+
+```js
+import { buildHouseholdIndex, findHousehold } from './src/households/householdIndex.js';
+
+const index = buildHouseholdIndex(entries, ward); // Map: normalised house -> { ward, key, house, members }
+findHousehold(index, '१२ / ३'); // the "12/3" household, or null
+```
+
+- House numbers are compared after `normaliseHouse`: Devanagari digits become
+  ASCII, surrounding whitespace is trimmed, spaces around `/` and `-` are
+  removed and Latin letters are lowercased. So `१२/३`, ` 12 / 3 ` and `12/3`
+  are one house, and `12A` matches `12a`. Any other difference keeps houses
+  separate.
+- Members are listed in ascending serial order.
+- Entries with an empty or missing house are left out of the index. They are
+  never merged into a shared household.
+- The index is built in memory only. It adds no stored record and makes no
+  network request, so it works offline.
+
+Tests are in `test/householdIndex.test.js`.
+
 ## Tally by SMS
 
 `src/tally/smsCodec.js` packs a worker's "seen voting" roll serials into SMS
