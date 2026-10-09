@@ -45,6 +45,11 @@
     <section id="roll" class="roll-section" aria-live="polite" hidden></section>
     <!-- Search over every loaded ward (src/ui/voterSearchScreen.js), from the nav bar. -->
     <section id="voter-search" class="roll-section search-section" hidden></section>
+    <!-- One voter's card at #/voter/<ward>/<serial> (src/ui/voterRoute.js,
+         started by js/app.js): loading, empty, error or the card, with a back
+         button. While it shows, #app has data-route="voter" and the other
+         screens are hidden. -->
+    <section id="voter-route" class="roll-section voter-route-section" hidden></section>
     <p id="status" class="notice status" aria-live="polite"></p>
     <button type="button" class="btn-secondary status-retry" id="status-retry" data-i18n="roll_retry" hidden>फिर से कोशिश करें</button>
   </main>

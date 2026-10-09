@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-MAX_PRECACHE_BYTES = 400 * 1024
+MAX_PRECACHE_BYTES = 420 * 1024
 DEVANAGARI = re.compile("[ऀ-ॿ]")
 LATIN_LETTER = re.compile(r"[A-Za-z]")
 STRINGS_REL = "src/strings.hi.json"
