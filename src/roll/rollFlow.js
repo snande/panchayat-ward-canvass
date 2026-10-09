@@ -7,9 +7,9 @@
 // to the caller.
 //
 // What shows is the ward-roll screen's state (src/ui/wardRollScreen.js):
-// loading while the copy is read, downloaded or decoded, filled once a list
-// shows, error on a failure. deps.screen passes the screen; by default the
-// flow makes its own over the container.
+// loading while the stored copy is opened, downloaded or decoded, filled once
+// a list shows, error on a failure. deps.screen passes the screen; by default
+// the flow makes its own over the container.
 //
 // restore(): at startup, show the last stored ward with no network request,
 // so the app opens offline once a roll has been fetched.
@@ -83,11 +83,12 @@ export function createRollFlow(container, strings, deps = {}) {
     const current = () => mine === generation;
     try {
       const wardKey = wardKeyFor(selection);
-      screen.setState('loading', { phase: 'download' });
+      screen.setState('loading', { phase: 'open' });
       const stored = await storedEntries(wardKey);
       if (!current()) return null;
       if (stored) return showList(stored, wardKey);
 
+      screen.setState('loading', { phase: 'download' });
       const bytes = await fetchRoll(selection);
       if (!current()) return null;
       screen.setState('loading', { phase: 'decode' });

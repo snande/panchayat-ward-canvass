@@ -107,9 +107,21 @@ function onRollShown(entries, wardKey) {
 
 // The ward-roll screen (src/ui/wardRollScreen.js): empty until a ward is
 // picked or a stored roll is restored, then loading, filled or error. The
-// "not loaded yet" card shows only in its empty state.
+// "not loaded yet" card shows only in its empty state, which replaces the old
+// hideEmptyState() here.
 var rollScreen = null;
+// The bottom navigation bar (src/ui/appFrame.js), once mounted.
 var frame = null;
+
+// The nav bar marks what is open: a new roll state shows the roll itself, and
+// the roll view reports the call list, polling-day count or SMS tally opening
+// over it, or closing (src/ui/rollSearch.js onHostChange).
+var NAV_FOR_VIEW = { calls: 'calls', turnout: 'turnout', sms: 'sms' };
+function markNav(id) {
+  if (frame) {
+    frame.select(id);
+  }
+}
 
 // Picking a ward downloads, decodes and stores its roll (src/roll/rollFlow.js);
 // at startup the last stored roll is shown again with no network request.
@@ -120,12 +132,8 @@ function startRoll(strings) {
   var table = Object.assign({}, FALLBACK_STRINGS, strings || {});
   rollScreen = createWardRollScreen(rollContainer, table, {
     emptyCard: document.querySelector('.empty-state'),
-    // A new state replaces whatever was open over the roll, so the nav bar
-    // marks the ward roll as current again.
     onState: function () {
-      if (frame) {
-        frame.select('roll');
-      }
+      markNav('roll');
     },
   });
   rollScreen.setState('empty');
@@ -136,7 +144,12 @@ function startRoll(strings) {
     // shows the ward's de-duplicated count beside the official turnout.
     // sms: with no mobile data, marks go out and come in by SMS and join the
     // same de-duplicated count.
-    listOptions: { contacts: contacts, marks: marks, workerId: workerId, sms: { settings: smsSettings, teamNumber: teamNumber } },
+    listOptions: {
+      contacts: contacts, marks: marks, workerId: workerId, sms: { settings: smsSettings, teamNumber: teamNumber },
+      onHostChange: function (view) {
+        markNav(NAV_FOR_VIEW[view] || 'roll');
+      },
+    },
   });
   roll.restore();
   return roll;
@@ -157,9 +170,10 @@ function showRollScreen() {
   }
 }
 
-// The bottom navigation bar (src/ui/appFrame.js) reaches every screen. The
-// call list, polling-day count and SMS tally belong to a loaded ward, so they
-// open over the roll on screen; with none, the entry leads to the ward picker.
+// The bottom navigation bar reaches every screen. The call list, polling-day
+// count and SMS tally belong to a loaded ward, so they open over the roll on
+// screen; with none, the entry leads to the ward picker and the roll stays
+// the current entry.
 function navigate(id) {
   var list = rollScreen && rollScreen.state === 'filled' ? rollScreen.list : null;
   var openers = list ? { calls: list.openCallList, turnout: list.openTurnout, sms: list.openSmsTally } : {};

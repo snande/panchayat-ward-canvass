@@ -4,20 +4,21 @@
 // every surface carries"), with shared controls only:
 //   empty   no ward loaded: an info notice telling the user to pick a ward;
 //           opts.emptyCard (index.html's "not loaded yet" card) shows only here
-//   loading the roll is being read, downloaded or decoded: a progress bar and
-//           a Hindi status line (detail.phase 'download' or 'decode')
+//   loading the roll is being opened from the phone, downloaded or decoded: a
+//           progress bar and a Hindi status line (detail.phase 'open',
+//           'download' or 'decode')
 //   filled  the roll is loaded: detail.render(container) mounts the list
 //           (src/ui/rollSearch.js, whose rows are .list-row lines showing
 //           serial, name, relative, age, gender and house)
 //   error   the download or decode failed (detail.fetchFailed tells which):
 //           an error notice saying what to do, a line saying whom to call and
 //           a secondary retry button that calls detail.retry
-// src/roll/rollFlow.js drives the field from its fetchRoll and decode steps.
-// The whom-to-call line is opts.support (config/constituency.json's
+// src/roll/rollFlow.js drives the field from its stored read, fetchRoll and
+// decode steps. The whom-to-call line is opts.support (config/constituency.json's
 // supportContact, set by js/picker.js) or the neutral "contact your
 // coordinator" line; no phone number is made up here.
 
-import { el } from './dom.js';
+import { el, textFrom } from './dom.js';
 
 export const ROLL_STATES = Object.freeze(['empty', 'loading', 'filled', 'error']);
 
@@ -25,6 +26,7 @@ export const ROLL_STATES = Object.freeze(['empty', 'loading', 'filled', 'error']
 // table; test/wardRollScreen.test.js fails if they drift.
 export const FALLBACK_TEXT = {
   roll_pick_ward: 'मतदाता सूची देखने के लिए ऊपर अपना ज़िला, पंचायत और वार्ड चुनें।',
+  roll_opening: 'मतदाता सूची खोली जा रही है…',
   roll_loading: 'मतदाता सूची डाउनलोड हो रही है…',
   roll_decoding: 'मतदाता सूची पढ़ी जा रही है…',
   roll_progress_label: 'मतदाता सूची लोड हो रही है',
@@ -33,6 +35,8 @@ export const FALLBACK_TEXT = {
   roll_error_contact: 'फिर भी न खुले तो अपने समन्वयक से संपर्क करें।',
   roll_retry: 'फिर से कोशिश करें',
 };
+
+const PHASE_TEXT = { open: 'roll_opening', download: 'roll_loading', decode: 'roll_decoding' };
 
 /**
  * @param {Element} container the roll section the states render into
@@ -43,11 +47,10 @@ export const FALLBACK_TEXT = {
  */
 export function createWardRollScreen(container, strings, opts = {}) {
   const doc = container.ownerDocument;
-  const has = (table, key) => Boolean(table) && Object.prototype.hasOwnProperty.call(table, key) && table[key];
-  const text = (key) => (has(strings, key) ? strings[key] : FALLBACK_TEXT[key] || '');
+  const text = textFrom(strings, FALLBACK_TEXT);
   let state = null;
   let list = null;
-  let support = typeof opts.support === 'string' ? opts.support.trim() : '';
+  let support = '';
 
   function unmountList() {
     if (list && typeof list.destroy === 'function') list.destroy();
@@ -72,7 +75,7 @@ export function createWardRollScreen(container, strings, opts = {}) {
     progress.setAttribute('aria-label', text('roll_progress_label'));
     progress.appendChild(el(doc, 'span', 'progress-bar'));
     box.appendChild(progress);
-    box.appendChild(notice('roll-message', detail.phase === 'decode' ? 'roll_decoding' : 'roll_loading', 'info', 'status'));
+    box.appendChild(notice('roll-message', PHASE_TEXT[detail.phase] || 'roll_loading', 'info', 'status'));
     return [box];
   }
 
@@ -108,13 +111,16 @@ export function createWardRollScreen(container, strings, opts = {}) {
     return list;
   }
 
+  /** The whom-to-call line of the error state; blank keeps the neutral line. */
+  function setSupport(value) {
+    support = typeof value === 'string' ? value.trim() : '';
+  }
+  setSupport(opts.support);
+
   return {
     get state() { return state; },
     get list() { return list; },
     setState,
-    /** The whom-to-call line of the error state; blank keeps the neutral line. */
-    setSupport(value) {
-      support = typeof value === 'string' ? value.trim() : '';
-    },
+    setSupport,
   };
 }

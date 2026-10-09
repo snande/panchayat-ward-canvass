@@ -6,16 +6,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { webcrypto } from 'node:crypto';
 
 import { createWardRollScreen, FALLBACK_TEXT, ROLL_STATES } from '../src/ui/wardRollScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
 import { RollFetchError } from '../src/roll/fetchRoll.js';
+import { createRollStore } from '../src/roll/rollStore.js';
 import { mountRollList } from '../src/ui/rollList.js';
 import { createDocument } from './helpers/fakeDom.js';
+import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
 const strings = JSON.parse(readFileSync(new URL('../src/strings.hi.json', import.meta.url), 'utf8'));
 const ENTRY = { serial: 7, name: 'सुनीता देवी', relative: 'रामलाल', age: 41, gender: 'स्त्री', house: '12' };
 const SELECTION = { district: '17', samiti: '125', panchayat: '6313', ward: '1', pdfUrl: 'https://example.invalid/w1.pdf' };
+const WARD_KEY = '17/125/6313/1';
 
 // Every class DESIGN.md names as a shared control a native control may carry.
 const SHARED_CONTROLS = ['btn-primary', 'btn-secondary', 'btn-quiet', 'btn-quiet-danger', 'btn-danger',
@@ -43,6 +47,11 @@ function assertSharedControls(root) {
 }
 
 const notice = (root) => root.querySelector('p.notice');
+const memoryStore = (stored = null) => ({
+  loadStored: async () => stored,
+  encryptAndStore: async (key, entries) => entries,
+  lastWardKey: async () => (stored ? WARD_KEY : null),
+});
 
 test('the fallback copies match the string table', () => {
   for (const [key, value] of Object.entries(FALLBACK_TEXT)) assert.equal(value, strings[key], key);
@@ -67,20 +76,22 @@ test('empty: an info notice tells the user to pick a ward, with the "not loaded"
   assertSharedControls(s.container);
 });
 
-test('loading: a progress bar and a Hindi status line, for download then decode', () => {
+test('loading: a progress bar and a Hindi status line, for opening, download and decode', () => {
   const s = setup();
   s.screen.setState('empty');
-  s.screen.setState('loading', { phase: 'download' });
+  s.screen.setState('loading', { phase: 'open' });
   const progress = s.container.querySelector('div.progress');
   assert.ok(progress, 'progress indicator');
   assert.equal(progress.getAttribute('role'), 'progressbar');
   assert.equal(progress.getAttribute('aria-label'), strings.roll_progress_label);
   assert.ok(progress.querySelector('span.progress-bar'));
-  assert.equal(notice(s.container).textContent, strings.roll_loading);
+  assert.equal(notice(s.container).textContent, strings.roll_opening);
   assert.equal(notice(s.container).getAttribute('data-tone'), 'info');
   assert.equal(notice(s.container).getAttribute('role'), 'status');
   assert.equal(s.emptyCard.hidden, true, 'one state at a time');
 
+  s.screen.setState('loading', { phase: 'download' });
+  assert.equal(notice(s.container).textContent, strings.roll_loading);
   s.screen.setState('loading', { phase: 'decode' });
   assert.equal(notice(s.container).textContent, strings.roll_decoding);
   assertSharedControls(s.container);
@@ -146,43 +157,64 @@ test('leaving the filled state unmounts the list', () => {
   assert.equal(s.screen.list, null);
 });
 
-test('rollFlow drives the field: loading (download, decode) then filled, or loading then error', async () => {
-  const ok = setup();
-  const flow = createRollFlow(ok.container, strings, {
-    screen: ok.screen,
+test('rollFlow drives the field: opening, download, decode, then filled', async () => {
+  const s = setup();
+  const flow = createRollFlow(s.container, strings, {
+    screen: s.screen,
     fetchRoll: async () => new ArrayBuffer(8),
     decode: async () => [ENTRY],
-    store: { loadStored: async () => null, encryptAndStore: async (key, entries) => entries, lastWardKey: async () => null },
+    store: memoryStore(),
     mountList: () => ({ destroy() {} }),
     log: () => {},
   });
-  ok.screen.setState('empty');
+  s.screen.setState('empty');
+  const phases = [];
+  const setState = s.screen.setState;
+  s.screen.setState = (state, detail) => { phases.push(detail && detail.phase); return setState(state, detail); };
   await flow.open(SELECTION);
-  assert.deepEqual(ok.seen, ['empty', 'loading', 'loading', 'filled']);
-  assert.equal(ok.screen.state, 'filled');
+  assert.deepEqual(s.seen, ['empty', 'loading', 'loading', 'loading', 'filled']);
+  assert.deepEqual(phases.slice(0, 3), ['open', 'download', 'decode']);
+  assert.equal(s.screen.state, 'filled');
+});
 
-  const bad = setup();
+test('a stored ward opens with no "downloading" line: opening, then filled', async () => {
+  const s = setup();
+  const lines = [];
+  const flow = createRollFlow(s.container, strings, {
+    screen: s.screen,
+    fetchRoll: async () => { throw new Error('no network expected'); },
+    store: { ...memoryStore([ENTRY]), loadStored: async () => { lines.push(notice(s.container).textContent); return [ENTRY]; } },
+    mountList: () => ({ destroy() {} }),
+    log: () => {},
+  });
+  await flow.open(SELECTION);
+  assert.deepEqual(lines, [strings.roll_opening]);
+  assert.deepEqual(s.seen, ['loading', 'filled']);
+});
+
+test('a failed download is the error state; its retry reaches filled', async () => {
+  const s = setup();
   let fail = true;
-  const failing = createRollFlow(bad.container, strings, {
-    screen: bad.screen,
+  const flow = createRollFlow(s.container, strings, {
+    screen: s.screen,
     fetchRoll: async () => {
       if (fail) throw new RollFetchError('roll download failed: HTTP 503', { status: 503 });
       return new ArrayBuffer(8);
     },
     decode: async () => [ENTRY],
-    store: { loadStored: async () => null, encryptAndStore: async (key, entries) => entries, lastWardKey: async () => null },
+    store: memoryStore(),
     mountList: () => ({ destroy() {} }),
     log: () => {},
   });
-  await failing.open(SELECTION);
-  assert.deepEqual(bad.seen, ['loading', 'error']);
-  assert.equal(notice(bad.container).textContent, strings.roll_fetch_failed);
+  await flow.open(SELECTION);
+  assert.deepEqual(s.seen, ['loading', 'loading', 'error']);
+  assert.equal(notice(s.container).textContent, strings.roll_fetch_failed);
 
   fail = false;
-  bad.container.querySelector('button.roll-retry').dispatchEvent({ type: 'click' });
+  s.container.querySelector('button.roll-retry').dispatchEvent({ type: 'click' });
   const until = Date.now() + 2000;
-  while (bad.screen.state !== 'filled' && Date.now() < until) await new Promise((r) => setTimeout(r, 5));
-  assert.equal(bad.screen.state, 'filled');
+  while (s.screen.state !== 'filled' && Date.now() < until) await new Promise((r) => setTimeout(r, 5));
+  assert.equal(s.screen.state, 'filled');
 });
 
 test('a decode failure is the error state with the generic message', async () => {
@@ -191,10 +223,45 @@ test('a decode failure is the error state with the generic message', async () =>
     screen: s.screen,
     fetchRoll: async () => new ArrayBuffer(8),
     decode: async () => { throw new Error('not a roll'); },
-    store: { loadStored: async () => null, lastWardKey: async () => null },
+    store: memoryStore(),
     log: () => {},
   });
   await flow.open(SELECTION);
-  assert.deepEqual(s.seen, ['loading', 'loading', 'error']);
+  assert.deepEqual(s.seen, ['loading', 'loading', 'loading', 'error']);
   assert.equal(notice(s.container).textContent, strings.roll_failed);
+});
+
+test('restore(): a stored roll takes the screen from empty to filled', async () => {
+  const idb = createFakeIndexedDB();
+  const store = createRollStore({ indexedDB: idb, crypto: webcrypto });
+  await store.encryptAndStore(WARD_KEY, [ENTRY]);
+  const s = setup();
+  const flow = createRollFlow(s.container, strings, {
+    screen: s.screen,
+    store,
+    fetchRoll: async () => { throw new Error('no network expected'); },
+    mountList: (target, entries) => mountRollList(target, entries, strings, { viewportHeight: 600, requestFrame: () => {} }),
+    log: () => {},
+  });
+  s.screen.setState('empty');
+  assert.ok(await flow.restore());
+  assert.deepEqual(s.seen, ['empty', 'filled']);
+  assert.equal(s.emptyCard.hidden, true);
+  assert.ok(s.container.querySelector('div.list-row').textContent.includes(ENTRY.name));
+});
+
+test('restore(): nothing stored, or a copy that cannot be read, leaves the screen empty with its notice', async () => {
+  for (const store of [
+    memoryStore(),
+    { ...memoryStore([ENTRY]), loadStored: async () => { throw new Error('cannot decrypt'); } },
+  ]) {
+    const s = setup();
+    const flow = createRollFlow(s.container, strings, { screen: s.screen, store, log: () => {} });
+    s.screen.setState('empty');
+    assert.equal(await flow.restore(), null);
+    assert.equal(s.screen.state, 'empty');
+    assert.deepEqual(s.seen, ['empty']);
+    assert.equal(notice(s.container).textContent, strings.roll_pick_ward);
+    assert.equal(s.emptyCard.hidden, false);
+  }
 });

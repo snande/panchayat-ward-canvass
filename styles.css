@@ -520,6 +520,8 @@ select.picker-select,
   color: var(--color-text-muted);
 }
 
+/* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
+   shown above the roll's search box. Rows open it, so they show they can. */
 /* A roll row is also a list row (DESIGN.md), but of the fixed height
    ROW_HEIGHT, so it keeps the tighter padding that fits its three lines; a
    row only shows it can be tapped when it can (below). */
@@ -586,10 +588,6 @@ select.picker-select,
   box-shadow: var(--shadow-card);
 }
 
-.nav-bar:empty {
-  display: none;
-}
-
 .nav-bar-items {
   display: flex;
   gap: var(--space-1);
@@ -633,8 +631,6 @@ select.picker-select,
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
-/* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
-   shown above the roll's search box. Rows open it, so they show they can. */
 .roll-row[tabindex],
 .pwc-search__row[tabindex] {
   cursor: pointer;

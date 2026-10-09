@@ -22,31 +22,43 @@ const css = read('styles.css');
 const SHARED_CONTROLS = ['btn-primary', 'btn-secondary', 'btn-quiet', 'btn-quiet-danger', 'btn-danger',
   'field-input', 'field-select', 'picker-select', 'choice-input', 'nav-item'];
 
-function mount(onNavigate) {
+function mount(onNavigate, table = strings) {
   const doc = createDocument();
   const nav = doc.createElement('nav');
   doc.body.appendChild(nav);
-  const frame = mountAppFrame(nav, strings, { onNavigate });
+  const frame = mountAppFrame(nav, table, { onNavigate });
   return { doc, nav, frame };
 }
+
+const navItems = (nav) => nav.querySelectorAll('button.nav-item');
 
 test('the fallback copies match the string table', () => {
   for (const [key, value] of Object.entries(FALLBACK_TEXT)) assert.equal(value, strings[key], key);
   for (const screen of SCREENS) assert.ok(strings[screen.key], screen.key);
 });
 
-test('index.html has the header slot, main region, bottom nav bar and footer slot, in that order', () => {
+test('index.html has the header slot, main region, bottom nav bar and footer slot', () => {
   const at = (id) => html.indexOf(`id="${id}"`);
   for (const id of Object.values(FRAME_SLOTS)) assert.equal(html.split(`id="${id}"`).length - 1, 1, id);
   assert.ok(at(FRAME_SLOTS.header) < at(FRAME_SLOTS.main), 'header slot above main');
   assert.ok(at(FRAME_SLOTS.main) < at(FRAME_SLOTS.footer), 'footer slot below main');
   assert.match(html, /<main id="app">/);
-  assert.match(html, /<nav id="nav-bar" class="nav-bar"><\/nav>/);
+  assert.match(html, /<nav id="nav-bar" class="nav-bar"/);
   // The slots this issue does not fill stay empty containers.
   assert.match(html, /<div id="seat-header" class="seat-header" data-state="pending" aria-live="polite"><\/div>/);
   assert.match(html, /<footer id="sec-footer" class="sec-footer"><\/footer>/);
   // The ward-roll screen lives in the main region.
   assert.ok(at('roll') > at(FRAME_SLOTS.main) && at('roll') < html.indexOf('</main>'));
+});
+
+test('index.html already carries one nav entry per screen, so the bar shows before the modules load', () => {
+  const nav = html.slice(html.indexOf('<nav id="nav-bar"'), html.indexOf('</nav>'));
+  const entries = [...nav.matchAll(/<button type="button" class="nav-item" data-screen="(\w+)"[^>]*data-i18n="(\w+)">([^<]*)<\/button>/g)];
+  assert.deepEqual(entries.map((m) => m[1]), SCREENS.map((s) => s.id));
+  for (const [, , key, label] of entries) assert.equal(label, strings[key], key);
+  assert.match(nav, /aria-label="([^"]+)"/);
+  assert.equal(nav.match(/aria-label="([^"]+)"/)[1], strings.nav_label);
+  assert.match(nav, /data-screen="roll" aria-current="page"/);
 });
 
 test('the nav bar is fixed to the bottom at phone width and the page leaves room for it', () => {
@@ -59,7 +71,7 @@ test('the nav bar is fixed to the bottom at phone width and the page leaves room
 
 test('one nav entry per existing screen, the call list included, the ward roll current by default', () => {
   const { nav, frame } = mount();
-  const items = nav.querySelectorAll('button.nav-item');
+  const items = navItems(nav);
   assert.deepEqual(items.map((b) => b.getAttribute('data-screen')), ['roll', 'calls', 'turnout', 'sms']);
   assert.deepEqual(items.map((b) => b.textContent), SCREENS.map((s) => strings[s.key]));
   assert.ok(items.some((b) => b.textContent === strings.nav_calls), 'the call list is reachable');
@@ -70,13 +82,18 @@ test('one nav entry per existing screen, the call list included, the ward roll c
   for (const item of items) assert.equal(item.getAttribute('type'), 'button');
 });
 
-test('tapping an entry navigates; an entry the app could not open stays not current', () => {
+test('with no string table the entries keep their Hindi labels', () => {
+  const { nav } = mount(undefined, null);
+  assert.deepEqual(navItems(nav).map((b) => b.textContent), SCREENS.map((s) => FALLBACK_TEXT[s.key]));
+});
+
+test('tapping an entry navigates; an entry the app could not open stays not current; select moves the mark', () => {
   const asked = [];
   const { nav, frame } = mount((id) => {
     asked.push(id);
     return id !== 'turnout';
   });
-  const item = (id) => nav.querySelectorAll('button.nav-item').find((b) => b.getAttribute('data-screen') === id);
+  const item = (id) => navItems(nav).find((b) => b.getAttribute('data-screen') === id);
   item('calls').dispatchEvent({ type: 'click' });
   assert.equal(frame.current(), 'calls');
   assert.equal(item('calls').getAttribute('aria-current'), 'page');
@@ -84,6 +101,9 @@ test('tapping an entry navigates; an entry the app could not open stays not curr
   item('turnout').dispatchEvent({ type: 'click' });
   assert.equal(frame.current(), 'calls');
   assert.deepEqual(asked, ['calls', 'turnout']);
+  frame.select('roll');
+  assert.equal(item('roll').getAttribute('aria-current'), 'page');
+  assert.equal(item('calls').getAttribute('aria-current'), null);
 });
 
 test('no native control in index.html or the frame lacks a shared control class', () => {
@@ -122,7 +142,9 @@ test('sw.js precaches every shell asset: the page, its links and scripts, and ev
   const listed = new Set([...precache.matchAll(/"([^"]+)"/g)].map((m) => m[1]));
   const assets = new Set(['index.html', 'js/app.js']);
   for (const m of html.matchAll(/<(?:link|script)\b[^>]*\b(?:href|src)="([^"]+)"/g)) assets.add(m[1]);
-  for (const module of startupModules()) assets.add(module);
+  const modules = startupModules();
+  assert.ok(modules.size > 20, `${modules.size} startup modules`);
+  for (const module of modules) assets.add(module);
   assert.ok(assets.has('src/ui/appFrame.js') && assets.has('src/ui/wardRollScreen.js'));
   for (const asset of assets) assert.ok(listed.has(asset), `sw.js does not precache ${asset}`);
 });

@@ -3,15 +3,18 @@
 // index.html holds the frame's four slots, found by id (FRAME_SLOTS):
 //   header  #seat-header, filled by src/ui/seatHeader.js, not by the frame
 //   main    #app, where the screens render
-//   nav     #nav-bar, the bottom navigation bar this module renders
+//   nav     #nav-bar, the bottom navigation bar
 //   footer  #sec-footer, filled by src/ui/secFooter.js, not by the frame
-// The nav bar has one .nav-item button per screen (SCREENS); the ward roll is
-// the default screen. Tapping an entry calls opts.onNavigate(id); the entry
-// becomes the current one (aria-current="page") unless onNavigate returns
-// false, e.g. because the screen needs a loaded roll and the user was sent to
-// the ward picker instead.
+// index.html carries the nav bar's entries as static markup, so the bar shows
+// before (or without) the modules; mountAppFrame renders them again, wired,
+// one .nav-item button per screen (SCREENS). The ward roll is the default
+// screen. Tapping an entry calls opts.onNavigate(id); the entry becomes the
+// current one (aria-current="page") unless onNavigate returns false, e.g.
+// because the screen needs a loaded roll and the user was sent to the ward
+// picker instead. select(id) moves the mark when a screen opens or closes
+// some other way.
 
-import { el } from './dom.js';
+import { el, textFrom } from './dom.js';
 
 export const FRAME_SLOTS = Object.freeze({ header: 'seat-header', main: 'app', nav: 'nav-bar', footer: 'sec-footer' });
 
@@ -44,8 +47,7 @@ export const FALLBACK_TEXT = {
  */
 export function mountAppFrame(nav, strings, opts = {}) {
   const doc = nav.ownerDocument;
-  const has = (key) => Boolean(strings) && Object.prototype.hasOwnProperty.call(strings, key) && strings[key];
-  const text = (key) => (has(key) ? strings[key] : FALLBACK_TEXT[key]);
+  const text = textFrom(strings, FALLBACK_TEXT);
   const items = new Map();
   let current = DEFAULT_SCREEN;
 
