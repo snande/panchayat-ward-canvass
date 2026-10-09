@@ -11,7 +11,6 @@ import { webcrypto } from 'node:crypto';
 import vm from 'node:vm';
 
 import { mountContactPanel } from '../src/ui/contactPanel.js';
-import { mountVoterCard } from '../src/ui/voterCard.js';
 import { mountCallListFlow } from '../src/ui/callListFlow.js';
 import { mountSeenVotingMark } from '../src/ui/seenVotingMark.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
@@ -301,48 +300,6 @@ test('contact panel is busy while a save is in flight', async () => {
   pending.resolve({ wardId: WARD, serial: 7, phone: null, consentAt: 'x' });
   await waitFor(() => panel.message.textContent === strings.contact_consent_done);
   assert.equal(panel.root.getAttribute('aria-busy'), null);
-});
-
-test('voter card: same panel header, consent as a choice row, toned failure', async () => {
-  const doc = createDocument();
-  const contacts = {
-    getContact: async () => null,
-    recordConsent: async () => { throw new Error('disk full'); },
-  };
-  const card = mountVoterCard(doc.body, strings, { contacts, wardId: WARD, entry: ENTRY, log: () => {} });
-  await card.ready;
-  assert.ok(classes(card.root).includes('panel'));
-  assert.ok(classes(card.closeButton).includes('btn-quiet'));
-  assert.ok(classes(card.closeButton.parentNode).includes('panel-header'));
-  assert.ok(classes(card.consentInput.parentNode).includes('choice'));
-  assert.ok(classes(card.confirmRevokeButton).includes('btn-danger'));
-  card.consentInput.checked = true;
-  card.consentInput.dispatchEvent({ type: 'change' });
-  await waitFor(() => card.message.textContent === strings.contact_failed);
-  assert.equal(tone(card.message), 'error');
-});
-
-test('voter card is busy while a save is in flight, and a bad number is an error that refocuses the field', async () => {
-  const pending = deferred();
-  const contacts = { getContact: async () => null, recordConsent: () => pending.promise };
-  const doc = createDocument();
-  const card = mountVoterCard(doc.body, strings, { contacts, wardId: WARD, entry: ENTRY, log: () => {} });
-  await card.ready;
-  card.consentInput.checked = true;
-  card.consentInput.dispatchEvent({ type: 'change' });
-  assert.equal(card.root.getAttribute('aria-busy'), 'true');
-  pending.resolve({ wardId: WARD, serial: 7, phone: null, consentAt: 'x' });
-  await waitFor(() => card.message.textContent === strings.contact_consent_done);
-  assert.equal(card.root.getAttribute('aria-busy'), null);
-  assert.equal(tone(card.message), 'success');
-
-  let focused = 0;
-  card.phoneInput.focus = () => { focused += 1; };
-  type(card.phoneInput, '123');
-  submitOf(card.saveButton.parentNode);
-  assert.equal(card.message.textContent, strings.contact_phone_invalid);
-  assert.equal(tone(card.message), 'error');
-  assert.equal(focused, 1);
 });
 
 test('call list: same panel with close in the header and an info empty state', async () => {

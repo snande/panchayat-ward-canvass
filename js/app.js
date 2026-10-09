@@ -109,6 +109,31 @@ if (secFooter) {
     });
 }
 
+// The voter route "#/voter/<ward>/<serial>" (src/ui/voterRoute.js): one
+// voter's card from the roll stored on the phone, with loading, empty and
+// error states, and a back button that goes to the screen it was opened from.
+// It is the only place the app shows the voter card, and it makes no network
+// request: the module is precached and the roll is read from the encrypted
+// store. While it is open, #app carries data-route="voter" and styles.css
+// hides the other screens; the seat header and SEC footer stay.
+// Its first look at location.hash happens once it has loaded, so an app
+// opened at (or moved to) a voter address before then still opens it.
+var voterRoute = document.getElementById("voter-route");
+if (voterRoute) {
+  import("../src/ui/voterRoute.js")
+    .then(function (route) {
+      return stringsReady.then(function () {
+        route.startVoterRoute(voterRoute, strings, {
+          window: window,
+          main: document.getElementById("app"),
+        });
+      });
+    })
+    .catch(function (err) {
+      console.error("voter route failed to load", err);
+    });
+}
+
 var primaryAction = document.getElementById("primary-action");
 if (primaryAction) {
   // The roll is loaded by picking a ward below (js/picker.js); the button

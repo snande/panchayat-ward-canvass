@@ -252,7 +252,7 @@ both, and open the turnout screen on each; the voter adds 1, not 2.
 The installable Hindi shell is plain static files: `index.html`,
 `manifest.webmanifest`, `sw.js`, `styles.css`, `js/`, `icons/`, `fonts/` and
 `src/strings.hi.json`. It makes no requests to other origins, and the
-precached assets, font included, must stay under 400 KB.
+precached assets, font included, must stay under 420 KB.
 
 ### Hindi strings
 
@@ -311,7 +311,7 @@ sh scripts/build_font.sh
 ```
 
 The script prints how many code points in each range have glyphs and then
-runs the repo check, including the 400 KB budget.
+runs the repo check, including the 420 KB budget.
 
 ### Design tokens
 

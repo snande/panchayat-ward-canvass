@@ -1459,3 +1459,49 @@ select.picker-select,
   color: var(--color-text);
   text-decoration: underline;
 }
+
+/* Voter route (src/ui/voterRoute.js): one voter's card at #/voter/<ward>/<serial>.
+   While it shows, #app has data-route="voter" and the other screens step
+   aside; the seat header and SEC footer stay. The back button sits on top,
+   then the panchayat and ward line, then one state (DESIGN.md). */
+#app[data-route="voter"] > :not(#voter-route) {
+  display: none;
+}
+
+.voter-route {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* A .btn-secondary: its 48 px tap target and focus ring come from there. */
+.voter-route-back {
+  align-self: flex-start;
+}
+
+/* The seat line is body text, like the seat header it echoes. */
+.voter-route-seat {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+}
+
+.voter-route-seat:empty {
+  display: none;
+}
+
+.voter-route-contact {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.voter-route-message {
+  margin: 0;
+}
+
+.voter-route-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

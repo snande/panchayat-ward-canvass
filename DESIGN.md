@@ -99,6 +99,7 @@ three lines still fit its fixed height.
 | Card | `.card` | The panel's surface for anything that is not voter-level, e.g. a summary or a settings group. |
 | Badge | `.badge` (+ `data-tone`) | A short state label, e.g. "consent on record" or "marked" in place of the seen-voting button; the success tone draws a tick; the error tone marks a voter struck off the roll ("हटाया गया"). |
 | Voter card fields | `.voter-roll-fields`, `.voter-roll-field`, `.voter-roll-label`, `.voter-roll-value` | The read-only roll line inside a `.panel`: one row per field, a muted `--font-size-sm` label and the value in body text; a field the entry lacks reads "—". A struck-off voter's name is struck through (`<del>`) under the error badge. No control. Built by `renderVoterCard()` in `src/card/voterCard.js`. |
+| Voter route | `.voter-route`, `.voter-route-back`, `.voter-route-seat`, `.voter-route-body`, `.voter-route-contact` | One voter at `#/voter/<ward>/<serial>`, the only place the voter card shows: a `.btn-secondary` back button on top (browser history back to the app screen it was opened from; opened straight at the address, it drops the hash and the app's screens show), a body-text line naming the panchayat and ward (the seat header's own `seatLabel()` wording), then one state, the voter card or a notice. The ward is one of the loaded panchayat's; a malformed `#/voter/` address shows the empty state. While it shows, `#app` has `data-route="voter"` and the other screens are hidden; the seat header and SEC footer stay. Built by `createVoterRouteScreen()` in `src/ui/voterRoute.js`, started by `js/app.js`. |
 | Count line | `.seen-voting-count` | A muted label with a `--font-size-lg` numeral on the right, above a hairline: context under the action, never a second action. Shows a muted placeholder while counting or when the count cannot be read. |
 | Status banner (notice) | `.notice` (+ `data-tone="info"`, `"success"` or `"error"`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. A 48 px banner with a toned left edge and tint. |
 | Seat header | `.seat-header`, `.seat-header-text`, `.seat-header-link` | One 48 px strip under the app header, above every screen, naming the seat whose roll is on screen in body text on the surface: "पंचायत: <name> · वार्ड: <n>", or "· सभी वार्ड" for a sarpanch. While the stored seat is read it is the same strip, blank (`data-state="pending"`). With no seat it is the empty state: on the info tint, an underlined link with a teal edge that fills the strip and leads to the ward picker. Built by `renderSeatHeader()` in `src/ui/seatHeader.js`. |
@@ -135,6 +136,13 @@ carries these as one `state` field: empty (info notice: pick a ward), loading
 (progress bar and info notice), filled (the roll's `.list-row` lines) and
 error (error notice saying what to do, a line saying whom to call, and a
 secondary retry).
+
+The voter route (`src/ui/voterRoute.js`) carries the same field: loading
+(progress bar and info notice while the stored roll is read), empty (info
+notice: the voter is not in the roll on this phone, go back to search, and a
+line saying to call the team coordinator), error (error notice saying what
+to do, a line saying whom to call, and a secondary retry) and card (the
+voter card). The back button shows in every state.
 
 The search screen (`src/ui/voterSearchScreen.js`) carries the same field:
 empty (info notice: load a ward's roll first), loading (progress bar and

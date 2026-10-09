@@ -1,6 +1,6 @@
-// The voter card's "seen voting" action and the live team count: a voter
-// found by search is marked from its card, the card then shows the marked
-// badge, and the count line follows the mark store (this phone's marks and
+// The "seen voting" action and the live team count: a voter found by search
+// is marked from the contact panel the result opens, which then shows the
+// marked badge, and the count line follows the mark store (this phone's marks and
 // teammates' marks from a pull). Runs on the fake DOM over the real encrypted
 // mark store and an in-memory IndexedDB, with a scripted sync engine.
 
@@ -60,15 +60,15 @@ function phone() {
   return { engine, marks, view };
 }
 
-// Search for the voter and open the card from the result.
+// Search for the voter and open their contact panel from the result.
 async function openFromSearch(view, query) {
   type(view.search.input, query);
   await waitFor(() => view.search.list.querySelectorAll('li').length === 1);
   click(view.search.list.querySelector('li'));
-  const card = view.contactHost.querySelector('section.voter-card');
-  assert.ok(card, 'the voter card opens');
+  const panel = view.contactHost.querySelector('section.contact-panel');
+  assert.ok(panel, 'the contact panel opens');
   const control = view.contactHost.querySelector('section.seen-voting');
-  assert.ok(control, 'the card carries the seen-voting control');
+  assert.ok(control, 'the panel carries the seen-voting control');
   return control;
 }
 
@@ -79,7 +79,7 @@ const parts = (control) => ({
   message: control.querySelector('p.seen-voting-message'),
 });
 
-test('the card from a search result offers "मतदान किया" and shows the team count', async () => {
+test('the panel from a search result offers "मतदान किया" and shows the team count', async () => {
   const { view } = phone();
   const control = await openFromSearch(view, 'सुनीता');
   const { button, badge, count } = parts(control);
@@ -115,7 +115,7 @@ test('marking a found voter twice makes one mark, shows "चिह्नित" 
 
     // A second tap, even straight on the hidden button, adds nothing.
     click(button);
-    await view.openVoterCard(ENTRIES[0]).seenVoting.mark();
+    await view.openContact(ENTRIES[0]).seenVoting.mark();
     const again = parts(view.contactHost.querySelector('section.seen-voting'));
     await waitFor(() => again.badge.hidden === false && again.count.textContent === String(before + 1));
     assert.equal(await marks.teamCount(), 1);

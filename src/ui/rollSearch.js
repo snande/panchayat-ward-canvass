@@ -7,14 +7,16 @@
 //
 // With opts.contacts (src/contacts/contactSync.js) and opts.wardKey, tapping
 // a voter in the list or in the search results opens the consent and phone
-// panel (src/ui/contactPanel.js) for that voter above the search box.
-// Selecting a search result opens the voter card (src/ui/voterCard.js) instead.
+// panel (src/ui/contactPanel.js) for that voter above the search box; so
+// does selecting a search result. The one voter card of the app is the voter
+// route (src/ui/voterRoute.js, `#/voter/<ward>/<serial>`); nothing here
+// shows a second one.
 // The same opts add a call-list button on top: it opens the ward's call list
 // (src/ui/callListFlow.js) in that place, with opts.assignments and
 // opts.roster defaulting to the device's assignment store and worker roster.
 //
 // With opts.marks (src/tally/seenVotingStore.js) as well, the contact panel
-// and the voter card carry the voter's "seen voting" control
+// carries the voter's "seen voting" control
 // (src/ui/seenVotingMark.js, with opts.workerId), and a turnout button on top
 // opens the polling-day screen (src/ui/turnoutScreen.js) in the same place.
 // opts.turnout defaults to the device's turnout store
@@ -32,7 +34,7 @@
 // src/decoder/sha256.js and nothing under src/decoder loads at startup.
 //
 // opts.onHostChange(view), if given, is told whenever the place above the
-// search box changes: 'contact', 'card', 'calls', 'turnout' or 'sms' when that
+// search box changes: 'contact', 'calls', 'turnout' or 'sms' when that
 // view opens there, null when the call list is closed. The navigation bar
 // (src/ui/appFrame.js) follows it, so its current entry is what is open.
 
@@ -41,7 +43,6 @@ import * as defaultRoster from '../calls/workerRoster.js';
 import { mountCallListFlow } from './callListFlow.js';
 import { mountContactPanel } from './contactPanel.js';
 import { el } from './dom.js';
-import { mountVoterCard } from './voterCard.js';
 import { mountRollList } from './rollList.js';
 import { mountSearchScreen } from './searchScreen.js';
 import { mountSeenVotingMark } from './seenVotingMark.js';
@@ -62,11 +63,11 @@ export function toVoter(entry) {
  * Same signature as mountRollList, which it wraps; opts may also carry
  * contacts, wardKey, assignments, roster, marks, workerId, turnout and sms (see above).
  * @returns {{root, search, list, contactHost, callListButton, turnoutButton, smsTallyButton,
- *   openContact: (entry) => object | null, openVoterCard: (entry) => object | null,
+ *   openContact: (entry) => object | null,
  *   openCallList: () => object | null, openTurnout: () => object | null,
  *   openSmsTally: () => Promise<object | null>, destroy: () => void}}
  *   openSmsTally resolves to null when another view opened there first
- *   openContact and openVoterCard return the panel or card, with seenVoting
+ *   openContact returns the panel, with seenVoting
  *   set to its seen-voting control when opts.marks is given
  */
 export function mountRollWithSearch(container, entries, strings, opts = {}) {
@@ -138,14 +139,6 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (typeof panel.root.scrollIntoView === 'function') panel.root.scrollIntoView();
     return panel;
   }
-  function openVoterCard(entry) {
-    if (!canCapture || !entry) return null;
-    leaveHost();
-    const card = addSeenVoting(mountVoterCard(contactHost, strings, { contacts, wardId: wardKey, entry }), entry);
-    hostChanged('card');
-    if (typeof card.root.scrollIntoView === 'function') card.root.scrollIntoView();
-    return card;
-  }
   function openTurnout() {
     if (!canTally) return null;
     leaveHost();
@@ -210,7 +203,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
 
   let list = null;
   const search = mountSearchScreen(searchHost, entries.map(toVoter), {
-    onSelect: canCapture ? (voter) => openVoterCard(bySerial.get(voter.serial)) : undefined,
+    onSelect: canCapture ? (voter) => openContact(bySerial.get(voter.serial)) : undefined,
     onRender() {
       // Re-read the box: onRender fires after every debounced render.
       const querying = (search.input.value || '').trim() !== '';
@@ -235,7 +228,6 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     turnoutButton,
     smsTallyButton,
     openContact,
-    openVoterCard,
     openCallList,
     openTurnout,
     openSmsTally,
