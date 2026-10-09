@@ -66,14 +66,21 @@ follows the current 41-district map and its newer samitis.
 To regenerate it (a networked machine, never the swarm's sandbox):
 
 ```
-python3 tools/sec-catalogue/build_catalogue.py --max-posts 520 --checkpoint /tmp/sec-checkpoint.json
+python3 tools/sec-catalogue/build_catalogue.py --skip-search --max-posts 520 --raw-dir /tmp/sec-responses
 ```
 
-`--checkpoint` lets an interrupted run resume without repeating finished
-samitis. Ward lists are deliberately never fetched by the catalogue: posting
-Search for every gram panchayat would be over ten thousand posts. A ward list
-is found at use time by requesting ward 001, 002, ... from the URL template
-until one answers 302 (section 3).
+`--skip-search` stops at the dropdowns, as the run above did. A run that hits
+`--max-posts` builds nothing and exits 3. Running it again with the same
+`--raw-dir` resumes the walk: responses already saved are not fetched again.
+At the time of this run, ward lists were not fetched: posting Search for
+every gram panchayat is over fourteen thousand posts. A ward list was found
+at use time by requesting ward 001, 002, ... from the URL template until one
+answers 302 (section 3).
+
+The generator now also writes a sharded catalogue under
+`data/sec/catalogue/` (section 8), which does list wards. Without
+`--skip-search` it posts Search once per gram panchayat, about four and a
+half hours at one post a second; `--max-posts 16000` covers the state.
 
 What the third dropdown holds for the other kinds, seen once each in Jaipur:
 an urban body lists its municipal wards in Hindi (`CHAKSU NAGAR PALIKA`, id
@@ -248,11 +255,62 @@ Badli. The relay was not changed.
 
 ## 8. Running the scripts
 
-Both scripts are standard-library Python 3 (tested with 3.9) and must run
-from a networked machine: the swarm's Engineer sandbox cannot reach the
+Both scripts are standard-library Python 3 (tested with 3.9). Fetching must
+run from a networked machine: the swarm's Engineer sandbox cannot reach the
 commission's servers. Each stops at once on a 403, 429, an unexpected
 redirect, or a response that is not the roll form, and backs off
 exponentially (2, 4, 8, 16 s) on network errors and 5xx before stopping.
 Neither accepts an `--interval` below one second. `--log FILE` appends one
 JSON line per request; `--raw-dir DIR` keeps every response body for
 inspection.
+
+`build_catalogue.py` runs in two stages. **fetch** saves every response body
+in a directory (`--raw-dir`; default a new temporary directory):
+
+- `page.html`;
+- `district-<D>.html`;
+- `samiti-<D>-<S>.html`;
+- `search-<D>-<S>-<GP>.html`.
+
+**build** reads only that directory and writes the catalogue. Without
+`--input`, the script fetches and then builds, and also rewrites
+`data/sec/catalogue.json`, which `js/picker.js` reads. With
+`--input DIR`, it builds from a saved directory and makes no request at
+all, so it runs in the sandbox and in CI:
+
+```
+python3 tools/sec-catalogue/build_catalogue.py --input fixtures/sec/portal-responses --out data/sec/catalogue
+```
+
+It writes `index.json` and one file per district. `index.json` holds
+`schemaVersion` and `districts`, and each district has `id`, `name` (as the
+district dropdown publishes it), `file` and `panchayatCount`. Each district
+file holds:
+
+- `schemaVersion`, `districtId` and `districtName`;
+- `panchayats`, each with `id`, `name` (the Hindi name from the Search
+  grid), `nameLatin` (the dropdown text), `block` (the samiti), `blockId`
+  and `wards`.
+
+Each ward has a number `ward` and a `pdfUrl` built from the Final PDF
+template. Panchayats are sorted by name and wards by number. Keys are
+sorted, the indentation is fixed and there is no timestamp, so the same
+input always gives the same bytes.
+
+The build exits 1 and prints `FAILED: district <name> (<id>), panchayat
+<name> (<id>): <reason>` when:
+
+- a panchayat's Search lists no wards;
+- a ward has no Final PDF link, so no `pdfUrl`;
+- a ward number repeats or is not a number.
+
+A failed run writes nothing. Urban bodies are skipped, and their municipal
+wards are counted. One JSON summary line goes to stdout, with these counts:
+
+- districts, panchayats and wards written;
+- urban bodies and urban wards skipped;
+- districts, samitis and panchayats that have no saved response.
+
+`fixtures/sec/portal-responses/` is the saved input for two fixture
+panchayats and one urban body; its README says how it was laid out.
+`fetch_fixtures.py` saves its Search responses under the same names.

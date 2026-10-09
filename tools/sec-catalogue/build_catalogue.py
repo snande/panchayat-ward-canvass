@@ -1,34 +1,51 @@
 #!/usr/bin/env python3
-"""Build data/sec/catalogue.json: every district, panchayat samiti / urban
-body and gram panchayat the State Election Commission of Rajasthan lists on
-its roll download page.
+"""Build the ward catalogue of every gram panchayat the State Election
+Commission of Rajasthan lists on its roll download page: data/sec/catalogue/
+holds index.json (the districts) and one JSON file per district (its gram
+panchayats and their wards' roll PDF URLs).
 
-The page (https://sec.rajasthan.gov.in/se_pdfdownload.aspx) is an ASP.NET
-WebForms form with three cascading dropdowns. Each dropdown change is a POST
-that carries the page's __VIEWSTATE and __EVENTVALIDATION back to the server,
-so the walk replays those posts:
+The run has two stages.
 
-  1 GET of the page            -> the district list
-  1 POST per district          -> that district's samitis and urban bodies
-  1 POST per walked samiti     -> that samiti's gram panchayats
+fetch walks the page (https://sec.rajasthan.gov.in/se_pdfdownload.aspx) and
+saves every response body to a directory. The page is an ASP.NET WebForms
+form with three cascading dropdowns. Each dropdown change is a POST that
+carries the page's __VIEWSTATE and __EVENTVALIDATION back to the server, so
+the walk replays those posts:
+
+  1 GET of the page              -> page.html: the district list
+  1 POST per district            -> district-<D>.html: its samitis and urban bodies
+  1 POST per walked samiti       -> samiti-<D>-<S>.html: its gram panchayats
+  1 Search POST per panchayat    -> search-<D>-<S>-<GP>.html: its ward grid
 
 Only rural panchayat samitis are walked: an urban body's third dropdown lists
-municipal wards, not gram panchayats. This script never posts Search, so no
-ward list is fetched here; a panchayat's wards are found at use time by
-probing ward numbers against the PDF URL template (a missing ward answers
-302). See docs/research/sec-statewide-catalogue.md.
+municipal wards, not gram panchayats. A ward's PDF URL is built from the
+Final PDF template (samiti id, panchayat name, ward number); see
+docs/research/sec-statewide-catalogue.md.
 
-Standard library only. It must run from a networked machine: the swarm's
-Engineer sandbox cannot reach the commission's servers.
+build reads such a directory, and nothing else, and writes the catalogue. It
+makes no network request. It stops with a non-zero exit, naming the district
+and panchayat, when a panchayat has no wards, a ward has no Final PDF link
+(so no pdfUrl) or a ward number repeats within a panchayat. Urban bodies'
+wards found in the input are skipped and counted in the summary printed to
+stdout. Every file written carries schemaVersion; keys are sorted and the
+indentation fixed, so two runs over the same input write identical bytes.
 
-    python3 tools/sec-catalogue/build_catalogue.py
-    python3 tools/sec-catalogue/build_catalogue.py --districts 17 --out /tmp/jaipur.json
+Standard library only. Live mode (no --input) fetches and then builds; it
+must run from a networked machine, since the swarm's Engineer sandbox cannot
+reach the commission's servers. It also writes the single-file
+data/sec/catalogue.json that js/picker.js still reads.
+
+    python3 tools/sec-catalogue/build_catalogue.py --input fixtures/sec/portal-responses --out data/sec/catalogue
+    python3 tools/sec-catalogue/build_catalogue.py --raw-dir /tmp/sec-responses --max-posts 16000
+    python3 tools/sec-catalogue/build_catalogue.py --districts 17 --raw-dir /tmp/jaipur --out /tmp/jaipur
 
 Politeness: one request at a time, at least --interval seconds (default 1.0)
 between the end of one request and the start of the next, a descriptive
 User-Agent, exponential backoff on network errors and 5xx, and an immediate
 stop on 403, 429, a redirect, or a response that is not the expected form
-(anything that looks like blocking or a captcha). --max-posts caps the run.
+(anything that looks like blocking or a captcha). --max-posts caps the run;
+a capped run builds nothing and resumes from its --raw-dir when run again,
+skipping every response already saved.
 """
 
 import argparse
@@ -38,6 +55,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -336,95 +354,286 @@ class RollForm:
         return self.client.request(SOURCE_PAGE, data=fields, accept_redirect=True)
 
 
-def _save_raw(raw_dir, name, raw):
-    if raw_dir:
-        os.makedirs(raw_dir, exist_ok=True)
-        with open(os.path.join(raw_dir, name), "wb") as fh:
-            fh.write(raw)
+# --- saved responses ---------------------------------------------------------
+
+SCHEMA_VERSION = 1
+NAME_COLUMN = "Grampanchayat"
+WARD_COLUMN = "Ward No."
+FINAL_COLUMN = "Final PDF"
+_TARGET_RE = re.compile(r'WebForm_PostBackOptions\("([^"]+)"|__doPostBack\(\'([^\']+)\'')
+_SAVED_RE = re.compile(r"^(?:page|district-(\w+)|samiti-(\w+)-(\w+)|search-(\w+)-(\w+)-(\w+))\.html$")
+_WARD_NUMBER_RE = re.compile(r"[0-9]+")
 
 
-def _load_checkpoint(path):
-    if path and os.path.exists(path):
-        with open(path, encoding="utf-8") as fh:
-            return json.load(fh)
-    return {"districts": {}, "samitis": {}}
+class CatalogueError(RuntimeError):
+    """The saved responses describe a panchayat the catalogue cannot list."""
+
+    def __init__(self, district, panchayat, reason):
+        super().__init__(f"district {district[1]} ({district[0]}), "
+                         f"panchayat {panchayat[1]} ({panchayat[0]}): {reason}")
 
 
-def _save_checkpoint(path, state):
-    if path:
-        tmp = path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(state, fh, ensure_ascii=False)
-        os.replace(tmp, path)
+class _OverCap(Exception):
+    """The next post would go over --max-posts."""
 
 
-def build(args):
-    client = PoliteClient(interval=args.interval, log_path=args.log)
-    form = RollForm(client)
-    state = _load_checkpoint(args.checkpoint)
-    only_districts = set(filter(None, (args.districts or "").split(",")))
-    only_samitis = set(filter(None, (args.samitis or "").split(",")))
-
-    page0, raw = form.start()
-    _save_raw(args.raw_dir, "page.html", raw)
-    districts = [(v, t) for v, t in page0.options(DISTRICT_FIELD)
-                 if not only_districts or v in only_districts]
-    print(f"{len(districts)} districts", file=sys.stderr)
-
-    district_pages = {}
-    for did, dname in districts:
-        if did in state["districts"]:
+def grid_rows(page):
+    """The Search result grid: (column headers, data rows). A row is
+    {"cells": [text], "links": {column header: postback target}}; rows whose
+    cell count differs from the header row (a pager, say) are skipped."""
+    headers = None
+    rows = []
+    for row in page.rows:
+        texts = [c["text"] for c in row]
+        if headers is None:
+            if WARD_COLUMN in texts:
+                headers = texts
             continue
-        page, raw = form.select_district(page0, did)
-        _save_raw(args.raw_dir, f"district-{did}.html", raw)
-        district_pages[did] = page
-        state["districts"][did] = {"name": dname, "samitis": page.options(PS_FIELD)}
-        _save_checkpoint(args.checkpoint, state)
-        print(f"  {dname}: {len(state['districts'][did]['samitis'])} samitis/urban bodies",
-              file=sys.stderr)
+        if len(row) != len(headers):
+            continue
+        links = {}
+        for header, cell in zip(headers, row):
+            for link in cell["links"]:
+                m = _TARGET_RE.search(link.get("href") or "")
+                if m:
+                    links[header] = m.group(1) or m.group(2)
+        rows.append({"cells": texts, "links": links})
+    return headers or [], rows
 
-    to_walk = []
-    for did, _dname in districts:
-        for sid, sname in state["districts"][did]["samitis"]:
-            if only_samitis and sid not in only_samitis:
+
+def result_grid(page):
+    """The ward rows of a Search result that carry a link and a ward number:
+    (column headers, rows), each row {"cells", "ward": int, "links"}."""
+    headers, rows = grid_rows(page)
+    out = []
+    for row in rows:
+        ward = row["cells"][headers.index(WARD_COLUMN)]
+        if row["links"] and _WARD_NUMBER_RE.fullmatch(ward):
+            out.append({"cells": row["cells"], "ward": int(ward), "links": row["links"]})
+    return headers, out
+
+
+def district_slug(name):
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+def ward_pdf_url(samiti_id, panchayat_name, ward):
+    """The Final PDF of a ward: the dropdown name upper-cased, spaces as %20."""
+    return WARD_PDF_URL_TEMPLATE.format(
+        samiti_id=samiti_id, PANCHAYAT_NAME=urllib.parse.quote(panchayat_name.upper(), safe=""),
+        ward=ward)
+
+
+class SavedResponses:
+    """A directory of response bodies saved by the fetch stage, by name."""
+
+    def __init__(self, path):
+        if not os.path.isdir(path):
+            raise UnexpectedResponse(f"{path}: not a directory")
+        self.path = path
+        self.files = 0
+        self.districts = {}
+        self.samitis = {}
+        self.searches = {}
+        for name in sorted(os.listdir(path)):
+            m = _SAVED_RE.match(name)
+            if not m:
                 continue
-            if (only_samitis or should_walk(sname)) and f"{did}/{sid}" not in state["samitis"]:
-                to_walk.append((did, sid, sname))
-    redo_districts = {did for did, _sid, _n in to_walk if did not in district_pages}
-    planned = form.posts + len(to_walk) + len(redo_districts)
-    print(f"{form.posts} posts so far; walking {len(to_walk)} samitis needs {planned} in total "
-          f"(cap {args.max_posts})", file=sys.stderr)
-    walked = planned <= args.max_posts
-    if not walked:
-        print("over the post cap: writing districts and samitis only", file=sys.stderr)
-    else:
-        for did, sid, sname in to_walk:
-            if did not in district_pages:
-                district_pages[did], _raw = form.select_district(page0, did)
-            page, raw = form.select_samiti(district_pages[did], did, sid)
-            _save_raw(args.raw_dir, f"samiti-{did}-{sid}.html", raw)
-            state["samitis"][f"{did}/{sid}"] = page.options(GP_FIELD)
-            _save_checkpoint(args.checkpoint, state)
-            print(f"  {sname}: {len(state['samitis'][f'{did}/{sid}'])} panchayats", file=sys.stderr)
+            self.files += 1
+            if m.group(1):
+                self.districts[m.group(1)] = name
+            elif m.group(2):
+                self.samitis[(m.group(2), m.group(3))] = name
+            elif m.group(4):
+                self.searches[(m.group(4), m.group(5), m.group(6))] = name
+        if not os.path.exists(os.path.join(path, "page.html")):
+            raise UnexpectedResponse(f"{path}: no page.html (the district list)")
 
+    def page(self, name):
+        with open(os.path.join(self.path, name), "rb") as fh:
+            return parse_page(fh.read(), name)
+
+    def district(self, did):
+        name = self.districts.get(did)
+        if name is None:
+            return None
+        page = self.page(name)
+        if page.selected(DISTRICT_FIELD) != did:
+            raise UnexpectedResponse(f"{name}: the response does not select district {did}")
+        return page
+
+    def samiti(self, did, sid):
+        name = self.samitis.get((did, sid))
+        if name is None:
+            return None
+        page = self.page(name)
+        if page.selected(PS_FIELD) != sid:
+            raise UnexpectedResponse(f"{name}: the response does not select samiti {sid}")
+        return page
+
+
+# --- build -------------------------------------------------------------------
+
+def read_panchayat(saved, district, samiti, panchayat):
+    """One gram panchayat from its saved Search response, validated."""
+    did, sid, gp = district[0], samiti[0], panchayat[0]
+    name = saved.searches[(did, sid, gp)]
+    page = saved.page(name)
+    selected = page.selected(GP_FIELD)
+    if selected and selected != gp:
+        raise UnexpectedResponse(f"{name}: the response selects panchayat {selected}, not {gp}")
+    headers, rows = grid_rows(page)
+    if not rows:
+        raise CatalogueError(district, panchayat, "the Search result lists zero wards")
+    if not panchayat[1]:
+        raise CatalogueError(district, panchayat, "no name in the samiti's dropdown, so no pdfUrl")
+    ward_at = headers.index(WARD_COLUMN)
+    name_at = headers.index(NAME_COLUMN) if NAME_COLUMN in headers else None
+    hindi = ""
+    wards = {}
+    for row in rows:
+        text = row["cells"][ward_at]
+        if not _WARD_NUMBER_RE.fullmatch(text) or int(text) < 1:
+            raise CatalogueError(district, panchayat, f"ward number {text!r} is not a number")
+        ward = int(text)
+        if ward in wards:
+            raise CatalogueError(district, panchayat, f"ward {ward} repeats")
+        if not row["links"].get(FINAL_COLUMN):
+            raise CatalogueError(district, panchayat,
+                                 f"ward {ward} has no pdfUrl (no {FINAL_COLUMN!r} link)")
+        if name_at is not None and not hindi:
+            hindi = row["cells"][name_at]
+        wards[ward] = {"ward": ward, "pdfUrl": ward_pdf_url(sid, panchayat[1], ward)}
+    return {
+        "id": gp,
+        "name": hindi or panchayat[1],
+        "nameLatin": panchayat[1],
+        "block": samiti[1],
+        "blockId": sid,
+        "wards": [wards[w] for w in sorted(wards)],
+    }
+
+
+def collect(saved):
+    """Every gram panchayat in the saved responses, by district:
+    (districts, summary). Raises CatalogueError on the first invalid one."""
+    summary = {"districts": 0, "panchayats": 0, "wards": 0,
+               "districtsNotFetched": 0, "districtsWithoutPanchayats": 0,
+               "samitisNotFetched": 0, "panchayatsNotSearched": 0,
+               "urbanBodiesSkipped": 0, "urbanWardsSkipped": 0, "otherEntriesSkipped": 0}
+    used = set()
+    districts = []
+    for did, dname in saved.page("page.html").options(DISTRICT_FIELD):
+        district_page = saved.district(did)
+        if district_page is None:
+            summary["districtsNotFetched"] += 1
+            continue
+        panchayats = []
+        for sid, sname in district_page.options(PS_FIELD):
+            samiti_page = saved.samiti(did, sid)
+            kind = kind_of(sname)
+            if kind != "rural":
+                # An urban body's third dropdown lists municipal wards; a
+                # zilla parishad or blank entry lists nothing to canvass.
+                used.update(k for k in saved.searches if k[:2] == (did, sid))
+                if samiti_page is not None:
+                    if kind == "urban":
+                        summary["urbanBodiesSkipped"] += 1
+                        summary["urbanWardsSkipped"] += len(samiti_page.options(GP_FIELD))
+                    else:
+                        summary["otherEntriesSkipped"] += 1
+                continue
+            if samiti_page is None:
+                summary["samitisNotFetched"] += 1
+                continue
+            for gp, gname in samiti_page.options(GP_FIELD):
+                if (did, sid, gp) not in saved.searches:
+                    summary["panchayatsNotSearched"] += 1
+                    continue
+                used.add((did, sid, gp))
+                panchayats.append(read_panchayat(saved, (did, dname), (sid, sname), (gp, gname)))
+        if not panchayats:
+            summary["districtsWithoutPanchayats"] += 1
+            continue
+        panchayats.sort(key=lambda p: (p["name"], p["id"]))
+        districts.append({"id": did, "name": dname, "panchayats": panchayats})
+        summary["districts"] += 1
+        summary["panchayats"] += len(panchayats)
+        summary["wards"] += sum(len(p["wards"]) for p in panchayats)
+    stray = sorted(saved.searches[k] for k in set(saved.searches) - used)
+    if stray:
+        raise UnexpectedResponse(f"{stray[0]}: a Search response for a panchayat that is not in "
+                                 f"its saved district and samiti dropdowns")
+    return districts, summary
+
+
+def write_json(path, obj):
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(obj, ensure_ascii=False, sort_keys=True, indent=1) + "\n")
+
+
+def write_shards(out_dir, districts):
+    """index.json plus one file per district. Files a previous index listed
+    that this run does not write are removed."""
+    os.makedirs(out_dir, exist_ok=True)
+    index_path = os.path.join(out_dir, "index.json")
+    previous = set()
+    if os.path.exists(index_path):
+        try:
+            with open(index_path, encoding="utf-8") as fh:
+                previous = {d["file"] for d in json.load(fh)["districts"]}
+        except (ValueError, KeyError, TypeError):
+            previous = set()
+    entries = []
+    taken = {"index.json"}
+    for d in sorted(districts, key=lambda d: (d["name"], d["id"])):
+        file = (district_slug(d["name"]) or f"district-{d['id']}") + ".json"
+        if file in taken:
+            file = f"{file[:-5]}-{d['id']}.json"
+        taken.add(file)
+        write_json(os.path.join(out_dir, file), {
+            "schemaVersion": SCHEMA_VERSION,
+            "districtId": d["id"],
+            "districtName": d["name"],
+            "panchayats": d["panchayats"],
+        })
+        entries.append({"id": d["id"], "name": d["name"], "file": file,
+                        "panchayatCount": len(d["panchayats"])})
+    write_json(index_path, {
+        "schemaVersion": SCHEMA_VERSION,
+        "sourcePage": SOURCE_PAGE,
+        "districts": entries,
+    })
+    for file in sorted(previous - taken):
+        path = os.path.join(out_dir, file)
+        if os.path.basename(file) == file and file.endswith(".json") and os.path.exists(path):
+            os.remove(path)
+
+
+def legacy_catalogue(saved, request_note):
+    """The single-file catalogue (districts, samitis, panchayat ids and Latin
+    names, no wards) that js/picker.js reads until it moves to the shards."""
     out_districts = []
     counts = {"districts": 0, "samitis": 0, "rural": 0, "urban": 0, "unknown": 0,
               "walked": 0, "panchayats": 0}
-    for did, dname in districts:
+    for did, dname in saved.page("page.html").options(DISTRICT_FIELD):
+        district_page = saved.district(did)
+        if district_page is None:
+            continue
         samitis = []
-        for sid, sname in state["districts"][did]["samitis"]:
+        for sid, sname in district_page.options(PS_FIELD):
             kind = kind_of(sname)
             counts["samitis"] += 1
             counts[kind] += 1
-            panchayats = state["samitis"].get(f"{did}/{sid}")
-            if panchayats is not None:
+            samiti_page = saved.samiti(did, sid) if kind == "rural" else None
+            panchayats = samiti_page.options(GP_FIELD) if samiti_page is not None else []
+            if samiti_page is not None:
                 counts["walked"] += 1
                 counts["panchayats"] += len(panchayats)
             samitis.append({"id": sid, "name": sname, "kind": kind,
-                            "panchayats": [{"id": p, "name": n} for p, n in panchayats or []]})
+                            "panchayats": [{"id": p, "name": n} for p, n in panchayats]})
         counts["districts"] += 1
         out_districts.append({"id": did, "name": dname, "samitis": samitis})
-
     notes = [
         f"Counts: {counts['districts']} districts; {counts['samitis']} entries in the second "
         f"dropdown ({counts['rural']} rural panchayat samitis, {counts['urban']} urban bodies, "
@@ -435,54 +644,168 @@ def build(args):
         "zilla parishad entries are not samitis; both keep an empty panchayats list.",
         "kind is read from the portal's Latin name: 'urban' for nagar palika / parishad / "
         "nigam, 'rural' for panchayat samiti, 'unknown' otherwise.",
-        "Ward lists are not stored. A panchayat's wards are found by requesting ward 001, 002, "
-        "... from ward_pdf_url_template until one answers 302 (a 173-byte HTML error page). "
-        "PANCHAYAT_NAME is the panchayat's name exactly as listed here, upper-cased, with "
-        "spaces percent-encoded.",
-        f"Requests: {sum(client.counts.values())} to sec.rajasthan.gov.in "
-        f"({form.posts} form posts), at most one per {args.interval:g} s.",
+        "Ward lists are not stored here; they are in the per-district files under "
+        "data/sec/catalogue/. PANCHAYAT_NAME is the panchayat's name exactly as listed here, "
+        "upper-cased, with spaces percent-encoded.",
+        request_note,
     ]
-    if not walked:
-        notes.insert(1, f"INCOMPLETE: walking every samiti needed {planned} posts, over the "
-                        f"cap of {args.max_posts}; panchayat lists were not fetched.")
-    catalogue = {
+    return {
         "generated_at": now_iso(),
         "source_page": SOURCE_PAGE,
         "ward_pdf_url_template": WARD_PDF_URL_TEMPLATE.replace("{ward:03d}", "{NNN}"),
         "notes": notes,
         "districts": out_districts,
     }
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as fh:
-        json.dump(catalogue, fh, ensure_ascii=False, indent=1)
-        fh.write("\n")
-    print(json.dumps({"counts": counts, "requests": client.counts, "posts": form.posts}),
-          file=sys.stderr)
-    return 0 if walked else 3
 
+
+# --- fetch -------------------------------------------------------------------
+
+def _saved_path(raw_dir, name):
+    return os.path.join(raw_dir, name)
+
+
+def _save_raw(raw_dir, name, raw):
+    os.makedirs(raw_dir, exist_ok=True)
+    tmp = _saved_path(raw_dir, name + ".tmp")
+    with open(tmp, "wb") as fh:
+        fh.write(raw)
+    os.replace(tmp, _saved_path(raw_dir, name))
+
+
+def _read_saved(raw_dir, name):
+    path = _saved_path(raw_dir, name)
+    if not os.path.exists(path):
+        return None
+    with open(path, "rb") as fh:
+        return parse_page(fh.read(), name)
+
+
+def fetch(args, client, form, raw_dir):
+    """Save the responses the build stage reads into raw_dir. A response
+    already saved there is not fetched again (a district or samiti page is
+    re-posted only when Search still needs its form state). Returns False
+    when --max-posts stopped the walk."""
+    only_districts = set(filter(None, (args.districts or "").split(",")))
+    only_samitis = set(filter(None, (args.samitis or "").split(",")))
+
+    def spend():
+        if form.posts >= args.max_posts:
+            raise _OverCap()
+
+    page0, raw = form.start()
+    _save_raw(raw_dir, "page.html", raw)
+    districts = [(v, t) for v, t in page0.options(DISTRICT_FIELD)
+                 if not only_districts or v in only_districts]
+    print(f"{len(districts)} districts", file=sys.stderr)
+    try:
+        for did, dname in districts:
+            live = {}
+
+            def district_page():
+                if "page" not in live:
+                    spend()
+                    live["page"], raw = form.select_district(page0, did)
+                    _save_raw(raw_dir, f"district-{did}.html", raw)
+                return live["page"]
+
+            dpage = _read_saved(raw_dir, f"district-{did}.html") or district_page()
+            samitis = [(s, n) for s, n in dpage.options(PS_FIELD)
+                       if (s in only_samitis if only_samitis else should_walk(n))]
+            print(f"  {dname}: walking {len(samitis)} samitis", file=sys.stderr)
+            for sid, sname in samitis:
+                name = f"samiti-{did}-{sid}.html"
+                spage_live = None
+                spage = _read_saved(raw_dir, name)
+                if spage is None:
+                    spend()
+                    spage_live, raw = form.select_samiti(district_page(), did, sid)
+                    _save_raw(raw_dir, name, raw)
+                    spage = spage_live
+                if args.skip_search or not should_walk(sname):
+                    continue
+                todo = [gp for gp, _n in spage.options(GP_FIELD)
+                        if not os.path.exists(_saved_path(raw_dir, f"search-{did}-{sid}-{gp}.html"))]
+                if todo and spage_live is None:
+                    spend()
+                    spage_live, _raw = form.select_samiti(district_page(), did, sid)
+                for gp in todo:
+                    spend()
+                    _result, raw = form.search(spage_live, did, sid, gp)
+                    _save_raw(raw_dir, f"search-{did}-{sid}-{gp}.html", raw)
+                print(f"    {sname}: {len(spage.options(GP_FIELD))} panchayats, "
+                      f"{len(todo)} searched now", file=sys.stderr)
+    except _OverCap:
+        return False
+    return True
+
+
+# --- main --------------------------------------------------------------------
 
 def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     repo = os.path.dirname(os.path.dirname(here))
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("--out", default=os.path.join(repo, "data", "sec", "catalogue.json"))
+    p.add_argument("--input", help="build from the saved portal responses in this directory, "
+                                   "with no network access (default: fetch them first)")
+    p.add_argument("--out", default=os.path.join(repo, "data", "sec", "catalogue"),
+                   help="directory for index.json and the per-district files")
+    p.add_argument("--legacy-out", help="also write the single-file catalogue here (live mode "
+                                        "default: data/sec/catalogue.json)")
+    p.add_argument("--raw-dir", help="live mode: save every response here and resume from it "
+                                     "(default: a new temporary directory)")
     p.add_argument("--interval", type=float, default=1.0,
                    help="minimum seconds between one request ending and the next starting")
     p.add_argument("--max-posts", type=int, default=450,
-                   help="write districts and samitis only if walking would need more posts")
-    p.add_argument("--districts", help="comma-separated district ids (default: all)")
+                   help="stop the walk before this many form posts; rerun with the same "
+                        "--raw-dir to continue")
+    p.add_argument("--districts", help="comma-separated district ids to fetch (default: all)")
     p.add_argument("--samitis", help="comma-separated samiti ids to walk, whatever their kind")
-    p.add_argument("--checkpoint", help="JSON file to resume an interrupted run from")
-    p.add_argument("--raw-dir", help="save every response body here")
+    p.add_argument("--skip-search", action="store_true",
+                   help="fetch the dropdowns only: writes the single-file catalogue, no shards")
     p.add_argument("--log", help="append one JSON line per request here")
     args = p.parse_args(argv)
     if args.interval < 1.0:
         p.error("--interval below 1.0 s is not allowed")
+    if args.input and (args.raw_dir or args.districts or args.samitis or args.skip_search):
+        p.error("--raw-dir, --districts, --samitis and --skip-search fetch; --input does not")
+
     try:
-        return build(args)
+        if args.input:
+            input_dir, legacy_out = args.input, args.legacy_out
+            request_note = "Built from saved portal responses; no requests made."
+        else:
+            input_dir = args.raw_dir or tempfile.mkdtemp(prefix="sec-responses-")
+            legacy_out = args.legacy_out or os.path.join(repo, "data", "sec", "catalogue.json")
+            print(f"saving responses in {input_dir}", file=sys.stderr)
+            client = PoliteClient(interval=args.interval, log_path=args.log)
+            form = RollForm(client)
+            complete = fetch(args, client, form, input_dir)
+            print(json.dumps({"requests": client.counts, "posts": form.posts}), file=sys.stderr)
+            if not complete:
+                print(f"INCOMPLETE: stopped at the cap of {args.max_posts} posts; nothing built. "
+                      f"Run again with --raw-dir {input_dir} to continue.", file=sys.stderr)
+                return 3
+            request_note = (f"Requests: {sum(client.counts.values())} to sec.rajasthan.gov.in "
+                            f"({form.posts} form posts), at most one per {args.interval:g} s.")
+        saved = SavedResponses(input_dir)
+        if not args.skip_search:
+            districts, summary = collect(saved)
+            write_shards(args.out, districts)
+        if legacy_out:
+            catalogue = legacy_catalogue(saved, request_note)
+            os.makedirs(os.path.dirname(os.path.abspath(legacy_out)), exist_ok=True)
+            with open(legacy_out, "w", encoding="utf-8") as fh:
+                json.dump(catalogue, fh, ensure_ascii=False, indent=1)
+                fh.write("\n")
+    except CatalogueError as exc:
+        print(f"FAILED: {exc}", file=sys.stderr)
+        return 1
     except (Blocked, UnexpectedResponse) as exc:
         print(f"STOPPED: {exc}", file=sys.stderr)
         return 2
+    if not args.skip_search:
+        print(json.dumps({"summary": summary}, sort_keys=True))
+    return 0
 
 
 if __name__ == "__main__":

@@ -1,0 +1,18 @@
+{
+ "districts": [
+  {
+   "file": "bharatpur.json",
+   "id": "6",
+   "name": "BHARATPUR",
+   "panchayatCount": 1
+  },
+  {
+   "file": "bhilwara.json",
+   "id": "7",
+   "name": "BHILWARA",
+   "panchayatCount": 1
+  }
+ ],
+ "schemaVersion": 1,
+ "sourcePage": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx"
+}

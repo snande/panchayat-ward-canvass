@@ -30,6 +30,7 @@ import urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build_catalogue import (  # noqa: E402 - the sibling module is found via the line above
     DISTRICT_FIELD,
+    FINAL_COLUMN,
     GP_FIELD,
     PS_FIELD,
     SOURCE_PAGE,
@@ -37,43 +38,18 @@ from build_catalogue import (  # noqa: E402 - the sibling module is found via th
     PoliteClient,
     RollForm,
     UnexpectedResponse,
+    district_slug,
     now_iso,
+    result_grid,
 )
 
-FINAL_COLUMN = "Final PDF"
-_TARGET_RE = re.compile(r'WebForm_PostBackOptions\("([^"]+)"|__doPostBack\(\'([^\']+)\'')
 # The portal's PDF paths carry a literal space ("Ward No-001.pdf").
 _PDF_URL_RE = re.compile(r"https?://[^'\"<>\r\n]+?\.pdf", re.I)
 _WARD_IN_URL_RE = re.compile(r"-(\d{3})\.pdf$", re.I)
 
 
-def result_grid(page):
-    """The Search result grid: (column headers, ward rows). A ward row is
-    {"cells": [text], "ward": int, "links": {column header: postback target}}."""
-    headers = None
-    rows = []
-    for row in page.rows:
-        texts = [c["text"] for c in row]
-        if headers is None:
-            if "Ward No." in texts:
-                headers = texts
-            continue
-        if len(row) != len(headers):
-            continue
-        links = {}
-        for header, cell in zip(headers, row):
-            for link in cell["links"]:
-                m = _TARGET_RE.search(link.get("href") or "")
-                if m:
-                    links[header] = m.group(1) or m.group(2)
-        ward = texts[headers.index("Ward No.")]
-        if links and ward.isdigit():
-            rows.append({"cells": texts, "ward": int(ward), "links": links})
-    return headers or [], rows
-
-
 def district_dir(name):
-    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    return district_slug(name)
 
 
 def column_suffix(header):
