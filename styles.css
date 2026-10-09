@@ -1487,6 +1487,10 @@ select.picker-select,
   font-size: var(--font-size-sm);
 }
 
+.roll-struck .search-serial {
+  color: inherit;
+}
+
 .search-row mark {
   background: var(--color-success-bg);
   color: var(--color-text);

@@ -56,6 +56,8 @@ export const FALLBACK_TEXT = {
   search_serial: 'क्रम',
   roll_age: 'उम्र',
   roll_house: 'मकान नं.',
+  roll_struck_off: 'हटाया गया',
+  supp_deleted: 'हटाया गया (पूरक सूची)',
   roll_progress_label: 'मतदाता सूची लोड हो रही है',
 };
 
@@ -328,11 +330,14 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     const row = el(doc, 'li', 'list-row search-row');
     row.setAttribute('role', 'option');
     row.setAttribute('data-key', result.key);
-    const head = el(doc, 'span', 'search-row-head');
+    const struck = entry.struck === true;
+    // A struck-off entry stays listed: serial and name struck, as in the roll.
+    const head = el(doc, struck ? 'del' : 'span', struck ? 'search-row-head roll-struck' : 'search-row-head');
     part(head, 'search-serial', `${entry.ward}/`, entry.serial, at('serial'));
     part(head, 'search-name', '', entry.name, at('name'));
     row.appendChild(head);
     const meta = el(doc, 'span', 'search-row-meta');
+    if (struck) meta.appendChild(el(doc, 'span', null, text(entry.supplement === 'deletion' ? 'supp_deleted' : 'roll_struck_off')));
     part(meta, 'search-relative', '', entry.relative, at('relative'));
     part(meta, 'search-age', `${text('roll_age')} `, entry.age ?? '—', null);
     part(meta, 'search-gender', '', entry.gender || '—', null);

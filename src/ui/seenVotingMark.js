@@ -17,7 +17,8 @@
 // voters the team has marked as far as this phone knows. It is read again
 // after every added mark, both this phone's and those a sync pull brings from
 // teammates (the store reports both through onMarksChanged once they are
-// stored). All text comes from the strings table.
+// stored). All text comes from the strings table. A struck-off entry gets
+// no button, only a notice saying why; markSeen is never called for it.
 
 import { el, setNotice } from './dom.js';
 
@@ -38,6 +39,7 @@ export function mountSeenVotingMark(container, strings, opts) {
   const doc = container.ownerDocument;
   const text = (key) => (strings && Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : '');
   const { marks, wardId, entry } = opts;
+  const struck = entry.struck === true;
   const workerId = typeof opts.workerId === 'function' ? opts.workerId : () => 'device';
   const log = opts.log || ((...args) => console.error(...args));
 
@@ -72,10 +74,11 @@ export function mountSeenVotingMark(container, strings, opts) {
   // undefined: still reading; null: not marked; false: could not be read;
   // otherwise the mark.
   function showState(state) {
-    const marked = Boolean(state);
-    button.hidden = state === undefined || marked;
+    const marked = Boolean(state) && !struck;
+    button.hidden = state === undefined || marked || struck;
     badge.hidden = !marked;
-    if (state === undefined) setNotice(status, text('seen_mark_loading'));
+    if (struck) setNotice(status, text('seen_struck_off'));
+    else if (state === undefined) setNotice(status, text('seen_mark_loading'));
     else if (state === false) setNotice(status, text('seen_mark_read_failed'), 'error');
     else setNotice(status, '');
   }
@@ -118,7 +121,7 @@ export function mountSeenVotingMark(container, strings, opts) {
 
   let busy = false;
   async function mark() {
-    if (busy) return;
+    if (busy || struck) return;
     busy = true;
     root.setAttribute('aria-busy', 'true');
     button.setAttribute('disabled', '');

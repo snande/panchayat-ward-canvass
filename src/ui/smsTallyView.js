@@ -136,7 +136,7 @@ export function mountSmsTally(container, strings, opts) {
     if (request === wardRequest) showCount(value, 'seen_team_count_failed');
   }
 
-  // The serials the send button packs: this worker's marks in this ward.
+  // The serials the send button packs: this worker's marks on live serials of this ward.
   let ownSerials = [];
   let settings = null;
   let worker = null;
@@ -165,7 +165,8 @@ export function mountSmsTally(container, strings, opts) {
       if (worker === null) worker = await workerId();
       const all = await marks.listMarks();
       serials = all
-        .filter((mark) => mark.wardId === wardId && mark.workerId === worker && mark.serial >= 1)
+        .filter((mark) => mark.wardId === wardId && mark.workerId === worker && mark.serial >= 1
+          && (!opts.inRoll || opts.inRoll(mark.serial)))
         .map((mark) => mark.serial);
     } catch (err) {
       log('this worker\'s seen-voting marks could not be read', err);

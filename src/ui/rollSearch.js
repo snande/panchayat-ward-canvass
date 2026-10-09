@@ -27,6 +27,7 @@ export function toVoter(entry) {
     name: entry.name,
     relativeName: entry.relative,
     houseNo: entry.house,
+    struck: entry.struck === true,
   };
 }
 
@@ -126,8 +127,8 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
     if (typeof screen.root.scrollIntoView === 'function') screen.root.scrollIntoView();
     return screen;
   }
-  // Roll serials as text, so 5 and '5' are one voter.
-  const rollSerials = new Set(entries.map((entry) => String(entry.serial)));
+  // Live roll serials as text, so 5 and '5' are one voter.
+  const rollSerials = new Set(entries.filter((e) => e.struck !== true).map((e) => String(e.serial)));
   async function openSmsTally() {
     if (!canSms) return null;
     leaveHost();
