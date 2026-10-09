@@ -76,6 +76,126 @@ test('every shared control DESIGN.md names has a rule in styles.css', () => {
   for (const name of names) assert.ok(selectors.includes(`.${name}`), `styles.css has no .${name} rule`);
 });
 
+// styles.css as innermost `selectors { body }` rules, comments stripped. A rule
+// inside @media keeps its own selector.
+const rules = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  .map((m) => ({ selectors: m[1].trim().split(/,\s*/), body: m[2] }));
+const decls = (body) => body.split(';').filter((d) => d.includes(':')).map((d) => {
+  const i = d.indexOf(':');
+  return [d.slice(0, i).trim().toLowerCase(), d.slice(i + 1).trim()];
+});
+const tokenBlock = (selector) => {
+  const rule = rules.find((r) => r.selectors.length === 1 && r.selectors[0] === selector);
+  assert.ok(rule, `styles.css has no ${selector} block`);
+  return Object.fromEntries(decls(rule.body));
+};
+const remPx = (value) => {
+  const m = /^(\d+(?:\.\d+)?)(px|rem)$/.exec(value);
+  assert.ok(m, `${value} is not a px/rem size`);
+  return Number(m[1]) * (m[2] === 'rem' ? 16 : 1);
+};
+const luminance = (hex) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a, b) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+const lightTokens = tokenBlock(':root');
+const darkTokens = tokenBlock(':root[data-theme="dark"]');
+// Each shared control DESIGN.md requires: buttons, text input, select,
+// checkbox/toggle, list row, card and status banner.
+const CONTROLS = ['btn-primary', 'btn-secondary', 'btn-quiet', 'btn-quiet-danger', 'btn-danger',
+  'field-input', 'field-select', 'picker-select', 'choice', 'choice-input', 'list-row', 'card', 'notice'];
+
+test('the dark theme overrides every colour token, the same under data-theme="dark" and prefers-color-scheme: dark', () => {
+  const media = css.match(/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root:not\(\[data-theme="light"\]\)\s*\{([^}]*)\}\s*\}/);
+  assert.ok(media, 'no prefers-color-scheme: dark block for :root:not([data-theme="light"])');
+  assert.deepEqual(Object.fromEntries(decls(media[1])), darkTokens);
+  assert.equal(darkTokens['color-scheme'], 'dark');
+  for (const token of Object.keys(lightTokens).filter((t) => t.startsWith('--color-'))) {
+    assert.match(darkTokens[token] ?? '', /^#[0-9a-f]{6}$/i, `dark theme lacks ${token}`);
+  }
+  for (const token of Object.keys(darkTokens).filter((t) => t.startsWith('--'))) {
+    assert.ok(token in lightTokens, `dark theme adds ${token}, which :root lacks`);
+  }
+});
+
+test('body text is at least 7:1 and each feedback tone at least 4.5:1, in both themes', () => {
+  for (const [name, t] of [['light', lightTokens], ['dark', darkTokens]]) {
+    for (const bg of ['--color-bg', '--color-surface']) {
+      assert.ok(contrast(t['--color-text'], t[bg]) >= 7, `${name} --color-text on ${bg}`);
+    }
+    for (const [fg, bg] of [['--color-success', '--color-success-bg'], ['--color-danger', '--color-danger-bg'],
+      ['--color-text', '--color-primary-tint'], ['--color-on-primary', '--color-primary'],
+      ['--color-on-danger', '--color-danger'], ['--color-primary-strong', '--color-surface']]) {
+      assert.ok(contrast(t[fg], t[bg]) >= 4.5, `${name} ${fg} on ${bg}`);
+    }
+  }
+});
+
+test('text is at least 16 px, and data-text-size="large" scales body text up', () => {
+  const sizes = Object.keys(lightTokens).filter((t) => t.startsWith('--font-size-'));
+  assert.ok(sizes.includes('--font-size-sm') && sizes.includes('--font-size-body'));
+  for (const token of sizes) assert.ok(remPx(lightTokens[token]) >= 16, token);
+  assert.match(ruleFor('body'), /font-size:\s*var\(--font-size-body\)/);
+  const large = tokenBlock(':root[data-text-size="large"]');
+  assert.ok(remPx(large['--font-size-body']) > remPx(lightTokens['--font-size-body']));
+  for (const token of sizes) {
+    if (large[token]) assert.ok(remPx(large[token]) >= remPx(lightTokens[token]), token);
+  }
+});
+
+test('each shared control sets an appearance, a focus ring and a 48 px tap target, and DESIGN.md names it', () => {
+  assert.equal(lightTokens['--touch-target'], '48px');
+  const table = design.slice(design.indexOf('## Shared controls'), design.indexOf('## States'));
+  for (const name of CONTROLS) {
+    const own = Object.fromEntries(rules.filter((r) => r.selectors.includes(`.${name}`)).flatMap((r) => decls(r.body)));
+    assert.match(own.appearance ?? '', /^(none|auto)$/, `.${name} appearance`);
+    assert.equal(own['min-width'], 'var(--touch-target)', `.${name} min-width`);
+    assert.equal(own['min-height'], 'var(--touch-target)', `.${name} min-height`);
+    const focus = rules.filter((r) => r.selectors.includes(`.${name}:focus-visible`));
+    assert.ok(focus.some((r) => /outline:[^;]*var\(--color-focus\)/.test(r.body)), `.${name}:focus-visible ring`);
+    assert.ok(table.includes(`\`.${name}\``), `DESIGN.md does not name .${name}`);
+  }
+});
+
+test('outside the token blocks no rule uses a literal colour, font size or space', () => {
+  const colourProp = /^(color|background(-color|-image)?|border(-(top|right|bottom|left))?(-color)?|outline(-color)?|box-shadow|accent-color|caret-color|text-decoration-color|fill|stroke)$/;
+  const colourLiteral = /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(|\b(white|black|red|green|blue|orange|yellow|gr[ae]y|purple|pink|brown|teal|navy)\b/i;
+  const spaceProp = /^((margin|padding)(-(top|right|bottom|left|block|inline)(-(start|end))?)?|(row-|column-)?gap|letter-spacing|word-spacing|outline-offset|font-size)$/;
+  const lengthLiteral = /(^|[^\w-])\d*\.?\d+(px|rem|em|%|vh|vw|ch)\b/;
+  for (const { selectors, body } of rules) {
+    if (selectors.every((sel) => sel.startsWith(':root') || sel === '@font-face')) continue;
+    for (const [prop, value] of decls(body)) {
+      if (colourProp.test(prop)) assert.doesNotMatch(value, colourLiteral, `${selectors} ${prop}: ${value}`);
+      if (spaceProp.test(prop)) {
+        assert.doesNotMatch(value.replace(/var\(--[\w-]+\)/g, ''), lengthLiteral, `${selectors} ${prop}: ${value}`);
+      }
+    }
+  }
+});
+
+test('the body face is the committed WOFF2 subset with a local fallback stack, and nothing is fetched from elsewhere', () => {
+  const face = rules.find((r) => r.selectors[0] === '@font-face');
+  assert.ok(face);
+  const props = Object.fromEntries(decls(face.body));
+  assert.equal(props['font-family'], '"Noto Sans Devanagari"');
+  assert.equal(props.src, 'url("fonts/noto-sans-devanagari-subset.woff2") format("woff2")');
+  const font = readFileSync(new URL('../fonts/noto-sans-devanagari-subset.woff2', import.meta.url));
+  assert.equal(font.subarray(0, 4).toString('latin1'), 'wOF2');
+  for (const [, url] of css.matchAll(/url\(\s*["']?([^"')]+)/g)) {
+    assert.doesNotMatch(url, /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i, url);
+  }
+  const stack = lightTokens['--font-family-base'].split(',').map((f) => f.trim());
+  assert.equal(stack[0], '"Noto Sans Devanagari"');
+  assert.equal(stack.at(-1), 'sans-serif');
+  assert.ok(stack.length >= 3, 'no local fallback faces');
+  assert.match(ruleFor('body'), /font-family:\s*var\(--font-family-base\)/);
+});
+
 test('feedback colours come from tokens, and the danger and quiet buttons are tap-sized', () => {
   for (const sel of ['.notice', '.notice[data-tone="success"]', '.notice[data-tone="error"]', '.badge',
     '.alert[data-tone="error"]', '.btn-danger', '.btn-quiet-danger', '.panel', '.choice']) {
