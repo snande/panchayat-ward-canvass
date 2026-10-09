@@ -103,7 +103,7 @@ three lines still fit its fixed height.
 | Status banner (notice) | `.notice` (+ `data-tone="info"`, `"success"` or `"error"`) | The one feedback line of a surface, set with `setNotice()` in `src/ui/dom.js`. A 48 px banner with a toned left edge and tint. |
 | Seat header | `.seat-header`, `.seat-header-text`, `.seat-header-link` | One 48 px strip under the app header, above every screen, naming the seat whose roll is on screen in body text on the surface: "पंचायत: <name> · वार्ड: <n>", or "· सभी वार्ड" for a sarpanch. While the stored seat is read it is the same strip, blank (`data-state="pending"`). With no seat it is the empty state: on the info tint, an underlined link with a teal edge that fills the strip and leads to the ward picker. Built by `renderSeatHeader()` in `src/ui/seatHeader.js`. |
 | SEC footer | `.sec-footer`, `.sec-footer-text` | Three static lines below every screen, on the surface above a hairline, in body text (`--color-text`, `--font-size-sm`, never muted): the data source, "not an official SEC app" and "the printed roll prevails". No control, no party or candidate branding, no network; the same in every state. Built by `renderSecFooter()` in `src/ui/secFooter.js`. |
-| Search screen | `.search-screen`, `.search-filters`, `.search-row` | The query box (`.field-input`) over every loaded ward, then a grid of `.field-select`/`.field-input` filters (ward or booth, gender, age range, tag, visit status, sort) and two `.choice` rows (has a number, not called yet). Each result is a `.list-row`: ward/serial and name, then relative · age · gender · house in muted `--font-size-sm`; the matched text is a `<mark>` on `--color-success-bg`, and the row a ward/serial jump ("3/145") lands on is selected (`aria-selected`) with a teal edge on the tint. At most 100 rows. Built by `createVoterSearchScreen()` in `src/ui/voterSearchScreen.js`. |
+| Search screen | `.search-screen`, `.search-filters`, `.search-row` | The query box (`.field-input`) over every loaded ward, shown in every state and disabled until a roll is loaded; then a grid of `.field-select`/`.field-input` filters (ward or booth, gender, age range, tag, visit status, sort) and two `.choice` rows (has a number, not called yet). Each result is a `.list-row`: ward/serial and name, then relative · age · gender · house in muted `--font-size-sm`; the matched text is a `<mark>` on `--color-success-bg`, and the row a ward/serial jump ("3/145") lands on is selected (`aria-selected`) with a teal edge on the tint. At most 100 rows. Built by `createVoterSearchScreen()` in `src/ui/voterSearchScreen.js`. |
 | Alert | `.alert` (+ `data-tone="error"`) | A block that asks before something is deleted: the consequence in body text, then the danger button and a secondary "no". |
 
 The controls `.btn-primary`, `.btn-secondary`, `.btn-quiet`,
@@ -138,7 +138,10 @@ secondary retry).
 
 The search screen (`src/ui/voterSearchScreen.js`) carries the same field:
 empty (info notice: load a ward's roll first), loading (progress bar and
-info notice), filled (result rows), no results (info notice: change the
-spelling or clear a filter) and error (error notice saying what to do, e.g.
-for a ward/serial jump to a voter not in the loaded rolls, and a line saying
-whom to call).
+info notice, while a roll opens or a ticked has-number/not-called box waits
+for its lookup), filled (result rows), no results (info notice: change the
+spelling or clear a filter) and error (error notice saying what to do and a
+line saying whom to call: a ward/serial jump to a voter who is not loaded or
+is hidden by a filter, or a minimum age above the maximum). If the number
+and call lookups cannot be read, those two boxes are disabled under a line
+saying what to do and whom to call.

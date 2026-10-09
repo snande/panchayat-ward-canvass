@@ -1,25 +1,18 @@
-// The search screen: one query box over every loaded ward of the
-// constituency, with filter and sort controls (DESIGN.md "Search screen").
-//
-// It renders from one `state` field, one state at a time:
-//   empty     no roll loaded yet: an info notice saying what brings one
-//   loading   a roll is being opened: the progress bar and an info notice
-//   filled    result rows (.list-row): serial, name, relative, age, gender
-//             and house, the matched text in <mark> from the engine's ranges
-//   noResults an info notice saying what to change
-//   error     an error notice saying what to do, and a line saying whom to
-//             call: a "ward/serial" jump (e.g. 3/145) to a voter who is not
-//             in the loaded rolls, or an index that could not be built
-// setRolls() rebuilds the index (src/search/voterSearch.js) whenever a roll
-// finishes loading. The has-number lookup is read from the contact store and
-// the not-called lookup from the call list: a consented voter the call list
-// hands to a worker counts as called. Tag and visit lookups are Maps keyed by
-// voterKey() passed in by the caller; with none, those filters keep everyone.
-//
-// Voter text reaches the page only as text nodes, never as markup. Nothing
-// here writes to any store or makes a network request, so it works offline.
+// The search screen over every loaded ward (DESIGN.md "Search screen"), one
+// `state` at a time: empty (no roll), loading (a roll opening, or a ticked
+// has-number/not-called box waiting for its lookup), filled (rows with the
+// match in <mark> from the engine's ranges), noResults, and error (what to do
+// and whom to call: a ward/serial jump to a voter not loaded or filtered out,
+// an inverted age range, an index that could not be built).
+// setRolls() rebuilds the index (src/search/voterSearch.js) when a roll loads.
+// Has-number comes from the contact store, not-called from the call list (a
+// consented voter it hands to a worker counts as called). Tag and visit are
+// Maps keyed by voterKey(); with none, those filters keep everyone.
+// Voter text is only ever text nodes. No store writes, no network.
 
-import { buildSearchIndex, searchVoters, parseWardSerial, voterKey } from '../search/voterSearch.js';
+import {
+  buildSearchIndex, searchVoters, parseWardSerial, voterKey, toAsciiDigits,
+} from '../search/voterSearch.js';
 import { buildCallList } from '../calls/callList.js';
 import { el, textFrom, setNotice } from './dom.js';
 
@@ -31,15 +24,19 @@ export const SORT_KEYS = Object.freeze(['relevance', 'serial', 'name', 'age']);
 // Copies of src/strings.hi.json entries, used when the caller passes no string
 // table; test/voterSearchScreen.test.js fails if they drift.
 export const FALLBACK_TEXT = {
-  search_label: 'नाम, पिता/पति का नाम, मकान नं. या वार्ड/क्रम (जैसे 3/145) लिखें',
-  search_empty: 'खोजने के लिए पहले ऊपर अपना ज़िला, पंचायत और वार्ड चुनकर मतदाता सूची लोड करें।',
-  search_loading: 'मतदाता सूची खोज के लिए तैयार हो रही है…',
-  search_no_results: 'कोई मतदाता नहीं मिला। नाम की वर्तनी बदलकर देखें या फ़िल्टर हटाएँ।',
-  search_jump_missing: 'यह मतदाता लोड की गई सूची में नहीं है। वार्ड और क्रम संख्या जाँचें, या ऊपर वह वार्ड चुनकर उसकी सूची लोड करें।',
-  search_failed: 'खोज नहीं चल सकी। पेज फिर से खोलें और दोबारा खोजें।',
+  search_label: 'नाम, मकान नं. या वार्ड/क्रम (जैसे 3/145) लिखें',
+  search_empty: 'खोजने के लिए पहले ऊपर वार्ड चुनकर मतदाता सूची लोड करें।',
+  search_loading: 'खोज के लिए सूची तैयार हो रही है…',
+  search_lookups_loading: 'नंबर और कॉल की जानकारी पढ़ी जा रही है…',
+  search_lookups_failed: 'नंबर और कॉल की जानकारी नहीं पढ़ी जा सकी, ये दो फ़िल्टर बंद हैं। पेज फिर खोलें; न चले तो समन्वयक से संपर्क करें।',
+  search_no_results: 'कोई मतदाता नहीं मिला। वर्तनी बदलें या फ़िल्टर हटाएँ।',
+  search_jump_missing: 'यह मतदाता लोड सूची में नहीं है। वार्ड और क्रम जाँचें, या ऊपर वह वार्ड लोड करें।',
+  search_jump_filtered: 'यह मतदाता फ़िल्टर से छिपा है। फ़िल्टर हटाकर फिर खोजें।',
+  search_age_inverted: 'कम से कम उम्र, अधिक से अधिक उम्र से बड़ी नहीं हो सकती। उम्र ठीक करें।',
+  search_failed: 'खोज नहीं चल सकी। पेज फिर खोलकर दोबारा खोजें।',
   search_error_contact: 'फिर भी न मिले तो अपने समन्वयक से संपर्क करें।',
   search_found: 'मतदाता मिले',
-  search_capped: 'केवल सबसे ऊपर के नतीजे दिखाए गए हैं। खोज और सटीक करें।',
+  search_capped: 'केवल ऊपर के नतीजे दिखे हैं। खोज और सटीक करें।',
   search_results_label: 'खोज के नतीजे',
   search_filter_place: 'वार्ड / बूथ',
   search_filter_gender: 'लिंग',
@@ -80,15 +77,41 @@ function lookupValues(lookup) {
   return [...out].sort();
 }
 
+// A typed age, or null when the box is blank or holds no number.
+function ageValue(node) {
+  const s = toAsciiDigits(String(node.value ?? '')).trim();
+  const n = s ? Number(s) : NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
 const byNumber = (a, b) => (Number(a) - Number(b)) || (a < b ? -1 : a > b ? 1 : 0);
 
-/**
- * @param {Element} container the section the screen renders into
- * @param {Record<string,string>|null} strings the Hindi string table
- * @param {{contacts?: {listConsented: (wardKey: string) => Promise<object[]>},
- *   assignments?: {loadAssignments: () => Promise<object>}, tags?: Map, visits?: Map,
- *   support?: string, onRender?: (results: object[]) => void, log?: Function}} [opts]
- */
+// Has-number and called sets, keyed by voterKey, for the given ward keys.
+export async function readLookups(wardKeys, { contacts, assignments } = {}) {
+  const next = { hasNumber: new Set(), called: new Set() };
+  const assigned = assignments ? await assignments.loadAssignments() : {};
+  const perWard = [];
+  const wardsOfSerial = new Map();
+  for (const wardKey of wardKeys) {
+    const consented = contacts ? await contacts.listConsented(wardKey) : [];
+    const withNumber = (consented || []).filter((c) => c && c.phone);
+    perWard.push([wardOfKey(wardKey), withNumber]);
+    for (const c of withNumber) wardsOfSerial.set(String(c.serial), (wardsOfSerial.get(String(c.serial)) || 0) + 1);
+  }
+  for (const [ward, withNumber] of perWard) {
+    for (const c of withNumber) next.hasNumber.add(voterKey({ ward, serial: c.serial }));
+    for (const row of buildCallList(withNumber, assigned)) {
+      // An assignment names no ward: keep it only where its serial is unambiguous.
+      if (row.workerId && wardsOfSerial.get(String(row.serial)) === 1) {
+        next.called.add(voterKey({ ward, serial: row.serial }));
+      }
+    }
+  }
+  return next;
+}
+
+// opts: contacts {listConsented}, assignments {loadAssignments}, tags, visits,
+// support (whom to call), onRender(results), log.
 export function createVoterSearchScreen(container, strings, opts = {}) {
   const doc = container.ownerDocument;
   const text = textFrom(strings, FALLBACK_TEXT);
@@ -101,6 +124,8 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   let tags = opts.tags || null;
   let visits = opts.visits || null;
   let lookups = { hasNumber: new Set(), called: new Set() };
+  let lookupsPending = false;
+  let lookupsFailed = false;
   let generation = 0;
 
   const root = el(doc, 'section', 'search-screen');
@@ -117,22 +142,22 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     return field(parent, labelKey, el(doc, 'select', 'field-select'));
   }
   function numberInput(parent, labelKey) {
-    const input = el(doc, 'input', 'field-input');
-    input.setAttribute('type', 'number');
-    input.setAttribute('inputmode', 'numeric');
-    input.setAttribute('min', '18');
-    input.setAttribute('max', '120');
-    return field(parent, labelKey, input);
+    const node = el(doc, 'input', 'field-input');
+    node.setAttribute('type', 'number');
+    node.setAttribute('inputmode', 'numeric');
+    node.setAttribute('min', '18');
+    node.setAttribute('max', '120');
+    return field(parent, labelKey, node);
   }
   function choice(parent, labelKey) {
     const row = el(doc, 'label', 'choice search-choice');
-    const input = el(doc, 'input', 'choice-input');
-    input.setAttribute('type', 'checkbox');
-    input.checked = false;
-    row.appendChild(input);
+    const node = el(doc, 'input', 'choice-input');
+    node.setAttribute('type', 'checkbox');
+    node.checked = false;
+    row.appendChild(node);
     row.appendChild(el(doc, 'span', null, text(labelKey)));
     parent.appendChild(row);
-    return input;
+    return node;
   }
   function setOptions(node, values) {
     const keep = node.value;
@@ -147,12 +172,14 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     node.disabled = values.length === 0;
   }
 
-  const controls = el(doc, 'div', 'search-controls');
-  const input = field(controls, 'search_label', el(doc, 'input', 'field-input search-input'));
+  // The query box stays on screen in every state (disabled until a roll is
+  // there); the filters show once there is something to filter.
+  const input = field(root, 'search_label', el(doc, 'input', 'field-input search-input'));
   input.setAttribute('type', 'search');
   input.setAttribute('inputmode', 'text');
   input.setAttribute('autocomplete', 'off');
   input.setAttribute('spellcheck', 'false');
+  const controls = el(doc, 'div', 'search-controls');
   const filtersBox = el(doc, 'div', 'search-filters');
   const place = select(filtersBox, 'search_filter_place');
   const gender = select(filtersBox, 'search_filter_gender');
@@ -170,6 +197,9 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   controls.appendChild(filtersBox);
   const hasNumber = choice(controls, 'search_has_number');
   const notCalled = choice(controls, 'search_not_called');
+  const lookupNote = el(doc, 'p', 'search-contact search-lookup-note', text('search_lookups_failed'));
+  lookupNote.hidden = true;
+  controls.appendChild(lookupNote);
 
   const progress = el(doc, 'div', 'progress');
   progress.setAttribute('role', 'progressbar');
@@ -188,7 +218,8 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   function show(next, key, tone, prefix = '') {
     state = next;
     root.setAttribute('data-state', next);
-    controls.hidden = next === 'empty' || next === 'loading';
+    input.disabled = !index;
+    controls.hidden = !index;
     progress.hidden = next !== 'loading';
     setNotice(message, key ? prefix + text(key) : '', tone);
     message.setAttribute('role', tone === 'error' ? 'alert' : 'status');
@@ -199,18 +230,18 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     if (next !== 'filled') list.replaceChildren();
   }
 
-  function filters() {
+  function filters(age) {
     const f = {};
-    const [kind, value] = place.value ? [place.value[0], place.value.slice(2)] : [];
-    if (kind === 'w') f.ward = value;
-    if (kind === 'b') f.booth = value;
+    const [kind, value, extra] = String(place.value || '').split(':');
+    if (value && extra === undefined && kind === 'w') f.ward = value;
+    if (value && extra === undefined && kind === 'b') f.booth = value;
     if (gender.value) f.gender = gender.value;
-    if (String(ageMin.value).trim()) f.ageMin = Number(ageMin.value);
-    if (String(ageMax.value).trim()) f.ageMax = Number(ageMax.value);
+    if (age.min !== null) f.ageMin = age.min;
+    if (age.max !== null) f.ageMax = age.max;
     if (tags && tag.value) f.tag = { lookup: tags, value: tag.value };
     if (visits && visit.value) f.visit = { lookup: visits, value: visit.value };
-    if (hasNumber.checked) f.hasNumber = lookups.hasNumber;
-    if (notCalled.checked) f.notCalled = lookups.called;
+    if (hasNumber.checked && !lookupsFailed) f.hasNumber = lookups.hasNumber;
+    if (notCalled.checked && !lookupsFailed) f.notCalled = lookups.called;
     return f;
   }
 
@@ -255,32 +286,56 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     return row;
   }
 
+  function search() {
+    const age = { min: ageValue(ageMin), max: ageValue(ageMax) };
+    if (age.min !== null && age.max !== null && age.min > age.max) {
+      show('error', 'search_age_inverted', 'error');
+      return [];
+    }
+    const query = input.value || '';
+    const found = searchVoters(index, query, { filters: filters(age), sort: sort.value, limit: RESULT_LIMIT });
+    const jump = parseWardSerial(query);
+    const target = jump ? `${jump.ward}:${jump.serial}` : null;
+    const at = target ? found.findIndex((r) => r.key === target) : -1;
+    if (target && at < 0) {
+      // Loaded but not listed means a filter hides the voter.
+      const key = index.byKey.has(target) ? 'search_jump_filtered' : 'search_jump_missing';
+      show('error', key, 'error', `${text('search_ward')} ${jump.ward}, ${text('search_serial')} ${jump.serial}: `);
+      return [];
+    }
+    if (!found.length) {
+      show('noResults', 'search_no_results', 'info');
+      return found;
+    }
+    show('filled');
+    const rows = found.map(renderRow);
+    list.replaceChildren(...rows);
+    count.textContent = `${found.length} ${text('search_found')}`
+      + (found.length >= RESULT_LIMIT ? ` ${text('search_capped')}` : '');
+    if (at >= 0) {
+      rows[at].setAttribute('aria-selected', 'true');
+      if (typeof rows[at].scrollIntoView === 'function') rows[at].scrollIntoView({ block: 'center' });
+    }
+    return found;
+  }
+
   function render() {
+    hasNumber.disabled = lookupsFailed;
+    notCalled.disabled = lookupsFailed;
+    lookupNote.hidden = !lookupsFailed;
     if (!index) {
       if (loading) show('loading', 'search_loading', 'info');
       else show('empty', 'search_empty', 'info');
       results = [];
+    } else if (loading) {
+      show('loading', 'search_loading', 'info');
+      results = [];
+    } else if (lookupsPending && (hasNumber.checked || notCalled.checked)) {
+      // A ticked box waits for its lookup rather than filtering on old sets.
+      show('loading', 'search_lookups_loading', 'info');
+      results = [];
     } else {
-      const query = input.value || '';
-      results = searchVoters(index, query, { filters: filters(), sort: sort.value, limit: RESULT_LIMIT });
-      const jump = parseWardSerial(query);
-      if (jump && !(results[0] && results[0].jump)) {
-        const who = `${text('search_ward')} ${jump.ward}, ${text('search_serial')} ${jump.serial}: `;
-        show('error', 'search_jump_missing', 'error', who);
-        results = [];
-      } else if (!results.length) {
-        show('noResults', 'search_no_results', 'info');
-      } else {
-        show('filled');
-        list.replaceChildren(...results.map(renderRow));
-        count.textContent = `${results.length} ${text('search_found')}`
-          + (results.length >= RESULT_LIMIT ? ` ${text('search_capped')}` : '');
-        if (jump) {
-          const row = list.children[0];
-          row.setAttribute('aria-selected', 'true');
-          if (typeof row.scrollIntoView === 'function') row.scrollIntoView({ block: 'center' });
-        }
-      }
+      results = search();
     }
     if (typeof opts.onRender === 'function') opts.onRender(results);
     return results;
@@ -317,37 +372,21 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
     setOptions(visit, visits ? lookupValues(visits).map((v) => [v, v]) : []);
   }
 
-  // Has-number and called sets, keyed by voterKey, from the contact store and
-  // the call list of every loaded ward.
-  async function readLookups(wardKeys) {
-    const next = { hasNumber: new Set(), called: new Set() };
-    const assigned = opts.assignments ? await opts.assignments.loadAssignments() : {};
-    for (const wardKey of wardKeys) {
-      const consented = opts.contacts ? await opts.contacts.listConsented(wardKey) : [];
-      const ward = wardOfKey(wardKey);
-      const withNumber = consented.filter((c) => c && c.phone);
-      for (const c of withNumber) next.hasNumber.add(voterKey({ ward, serial: c.serial }));
-      for (const row of buildCallList(withNumber, assigned)) {
-        if (row.workerId) next.called.add(voterKey({ ward, serial: row.serial }));
-      }
-    }
-    return next;
-  }
-
-  /**
-   * Rebuild the index over every loaded ward's roll: rolls is a Map (or
-   * [wardKey, entries] pairs). Each entry gets its ward number from the ward
-   * key; the stored entries are not changed. Resolves once the has-number and
-   * not-called lookups are read.
-   */
+  // Rebuild the index over every loaded roll (a Map or [wardKey, entries]
+  // pairs; entries are copied, never changed) and end loading. Resolves once
+  // the lookups are read; a later call wins over an earlier, slower one.
   function setRolls(rolls) {
     const pairs = rolls instanceof Map ? [...rolls] : [...(rolls || [])];
     const mine = ++generation;
     loading = false;
     try {
       const entries = [];
+      const keyOfWard = new Map();
       for (const [wardKey, roll] of pairs) {
         const ward = wardOfKey(wardKey);
+        // The engine keys voters by ward number and serial only.
+        if (keyOfWard.has(ward)) log(`search: wards ${keyOfWard.get(ward)} and ${wardKey} share number ${ward}`);
+        keyOfWard.set(ward, wardKey);
         for (const entry of roll || []) entries.push({ ...entry, ward: entry.ward ?? ward });
       }
       index = entries.length ? buildSearchIndex(entries) : null;
@@ -358,21 +397,31 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
       show('error', 'search_failed', 'error');
       return Promise.resolve([]);
     }
+    lookupsPending = true;
     render();
-    return readLookups(pairs.map(([wardKey]) => wardKey)).then((next) => {
+    return readLookups(pairs.map(([wardKey]) => wardKey), opts).then((next) => {
       if (mine !== generation) return results;
       lookups = next;
+      lookupsPending = false;
+      lookupsFailed = false;
       return render();
     }, (err) => {
+      if (mine !== generation) return results;
       log('has-number and call lookups could not be read', err);
-      return results;
+      lookupsPending = false;
+      lookupsFailed = true;
+      hasNumber.checked = false;
+      notCalled.checked = false;
+      return render();
     });
   }
 
-  /** A roll is being opened: show loading until one is there. */
+  // A roll is opening (true), or opening ended with no new roll (false):
+  // loading shows over earlier results until setRolls() or setLoading(false).
   function setLoading(on) {
+    if (loading === Boolean(on)) return;
     loading = Boolean(on);
-    if (!index) render();
+    render();
   }
 
   /** Tag and visit lookups (Maps keyed by voterKey); null keeps everyone. */
@@ -393,7 +442,7 @@ export function createVoterSearchScreen(container, strings, opts = {}) {
   render();
 
   return {
-    root, input, list, message, contact, count, progress,
+    root, input, list, message, contact, count, progress, lookupNote,
     controls: { place, gender, ageMin, ageMax, tag, visit, sort, hasNumber, notCalled },
     get state() { return state; },
     get results() { return results; },

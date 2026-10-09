@@ -105,8 +105,11 @@ function showSeat() {
 
 // The search screen (src/ui/voterSearchScreen.js) covers every ward whose
 // roll has been shown since the app opened; its index is rebuilt each time a
-// roll finishes loading. The rolls are held in memory only.
+// roll finishes loading. The rolls are held in memory only. It opens only
+// from the nav bar and closes only when the user goes elsewhere: a roll
+// loading or restoring in the background leaves it, and its nav mark, alone.
 var searchScreen = null;
+var searchShown = false;
 var loadedRolls = new Map();
 
 function onRollShown(entries, wardKey) {
@@ -132,13 +135,14 @@ function showSearch(on) {
   if (!searchContainer) {
     return;
   }
+  searchShown = on;
   searchContainer.hidden = !on;
   if (on && searchScreen) {
     if (typeof searchContainer.scrollIntoView === 'function') {
       searchContainer.scrollIntoView();
     }
     var input = searchScreen.input;
-    if (searchScreen.state !== 'empty' && searchScreen.state !== 'loading' && typeof input.focus === 'function') {
+    if (!input.disabled && typeof input.focus === 'function') {
       input.focus();
     }
   }
@@ -172,10 +176,11 @@ function startRoll(strings) {
   rollScreen = createWardRollScreen(rollContainer, table, {
     emptyCard: document.querySelector('.empty-state'),
     onState: function (state) {
-      markNav('roll');
-      showSearch(false);
       if (searchScreen) {
         searchScreen.setLoading(state === 'loading');
+      }
+      if (!searchShown) {
+        markNav('roll');
       }
     },
   });
@@ -190,6 +195,7 @@ function startRoll(strings) {
     listOptions: {
       contacts: contacts, marks: marks, workerId: workerId, sms: { settings: smsSettings, teamNumber: teamNumber },
       onHostChange: function (view) {
+        showSearch(false);
         markNav(NAV_FOR_VIEW[view] || 'roll');
       },
     },

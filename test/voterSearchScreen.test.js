@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  createVoterSearchScreen, FALLBACK_TEXT, DEBOUNCE_MS, RESULT_LIMIT, SEARCH_STATES, SORT_KEYS, wardOfKey,
+  createVoterSearchScreen, readLookups, FALLBACK_TEXT, DEBOUNCE_MS, RESULT_LIMIT, SEARCH_STATES, SORT_KEYS, wardOfKey,
 } from '../src/ui/voterSearchScreen.js';
 import { buildSearchIndex, searchVoters } from '../src/search/voterSearch.js';
 import { createDocument, type } from './helpers/fakeDom.js';
@@ -39,6 +39,12 @@ const assignments = { loadAssignments: async () => ({ 145: { workerId: 'w1', wor
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const keys = (screen) => screen.list.children.map((row) => row.getAttribute('data-key'));
 const tone = (node) => node.getAttribute('data-tone');
+const deferred = () => {
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+  return { promise, resolve, reject };
+};
 
 function mount(opts = {}) {
   const doc = createDocument();
@@ -70,12 +76,13 @@ test('the fallback copies match the string table, and every key the screen uses 
   assert.equal(wardOfKey(W3), '3');
 });
 
-test('with no roll loaded it is the empty state; while a roll opens it is the loading state', async () => {
+test('with no roll loaded it is the empty state, the query box shown but disabled; while a roll opens it is loading', async () => {
   const { screen } = mount();
   assert.equal(screen.state, 'empty');
   assert.equal(screen.message.textContent, strings.search_empty);
   assert.equal(tone(screen.message), 'info');
-  assert.equal(screen.root.querySelector('div.search-controls').hidden, true, 'no control before a roll');
+  assert.equal(screen.input.disabled, true);
+  assert.equal(screen.root.querySelector('div.search-controls').hidden, true, 'no filter before a roll');
   assert.equal(screen.progress.hidden, true);
 
   screen.setLoading(true);
@@ -87,7 +94,26 @@ test('with no roll loaded it is the empty state; while a roll opens it is the lo
   await screen.setRolls(ROLLS);
   assert.equal(screen.state, 'filled');
   assert.equal(screen.progress.hidden, true);
+  assert.equal(screen.input.disabled, false);
   assert.equal(screen.root.querySelector('div.search-controls').hidden, false);
+});
+
+test('loading a second roll after the first shows loading, then the rebuilt results; a failed open goes back', async () => {
+  const { screen } = mount();
+  await screen.setRolls(new Map([[W3, ROLL3]]));
+  assert.equal(screen.state, 'filled');
+  screen.setLoading(true);
+  assert.equal(screen.state, 'loading');
+  assert.equal(screen.list.children.length, 0);
+  await screen.setRolls(ROLLS);
+  assert.equal(screen.state, 'filled');
+  assert.equal(screen.list.children.length, 5);
+
+  screen.setLoading(true);
+  assert.equal(screen.state, 'loading');
+  screen.setLoading(false);
+  assert.equal(screen.state, 'filled', 'a failed download leaves the loaded wards searchable');
+  assert.equal(screen.list.children.length, 5);
 });
 
 test('typing shows rows with serial, name, relative, age, gender and house, the match in <mark> from the ranges', async () => {
@@ -136,6 +162,14 @@ test('the index is rebuilt when another roll finishes loading', async () => {
   assert.deepEqual(keys(screen), ['5:2']);
 });
 
+test('wards that share a number are reported, since the engine keys voters by ward number and serial', async () => {
+  const logged = [];
+  const { screen } = mount({ log: (...args) => logged.push(args.join(' ')) });
+  await screen.setRolls(new Map([[W3, ROLL3], ['17/125/9999/3', ROLL5]]));
+  assert.equal(logged.length, 1);
+  assert.match(logged[0], /share number 3/);
+});
+
 test('ward/booth, gender and age range filters re-render the results', async () => {
   const { screen } = mount();
   await screen.setRolls(new Map([[W3, ROLL3], [W5, ROLL5.map((e) => ({ ...e, booth: '12' }))]]));
@@ -145,6 +179,8 @@ test('ward/booth, gender and age range filters re-render the results', async () 
   assert.deepEqual(keys(screen), ['3:7', '3:145', '3:146']);
   change(place, 'b:12');
   assert.deepEqual(keys(screen), ['5:1', '5:2']);
+  change(place, 'x:12:3');
+  assert.equal(screen.list.children.length, 5, 'an unknown place value filters nothing');
   change(place, '');
   change(gender, 'स्त्री');
   assert.deepEqual(keys(screen), ['3:7', '3:146', '5:2']);
@@ -153,6 +189,31 @@ test('ward/booth, gender and age range filters re-render the results', async () 
   type(ageMax, '60');
   await sleep(DEBOUNCE_MS + 20);
   assert.deepEqual(keys(screen), ['3:145', '5:2']);
+});
+
+test('an age that is not a number is ignored', async () => {
+  const { screen } = mount();
+  await screen.setRolls(ROLLS);
+  const { ageMin, ageMax } = screen.controls;
+  type(ageMin, 'abc');
+  type(ageMax, '४०');
+  await sleep(DEBOUNCE_MS + 20);
+  assert.equal(screen.state, 'filled');
+  assert.deepEqual(keys(screen), ['3:146', '5:1'], 'Devanagari digits count; a non-number does not');
+});
+
+test('a minimum age above the maximum is a Hindi error saying what to fix, not a no-results notice', async () => {
+  const { screen } = mount();
+  await screen.setRolls(ROLLS);
+  const { ageMin, ageMax } = screen.controls;
+  type(ageMin, '60');
+  type(ageMax, '30');
+  await sleep(DEBOUNCE_MS + 20);
+  assert.equal(screen.state, 'error');
+  assert.equal(screen.message.textContent, strings.search_age_inverted);
+  assert.equal(tone(screen.message), 'error');
+  assert.equal(screen.contact.textContent, strings.search_error_contact);
+  assert.equal(ageMin.value, '60', 'the typed input stays');
 });
 
 test('has-number and not-called come from the contact store and the call list', async () => {
@@ -165,6 +226,67 @@ test('has-number and not-called come from the contact store and the call list', 
   assert.deepEqual(keys(screen), ['3:7'], '145 is on the call list with a worker');
   change(hasNumber, false);
   assert.deepEqual(keys(screen), ['3:7', '3:146', '5:1', '5:2']);
+});
+
+test('an assignment names a serial but no ward: it marks only the one loaded ward where that serial is consented', async () => {
+  const shared = {
+    listConsented: async (wardKey) => (wardKey === W3
+      ? [{ serial: 1, phone: '9876543210' }, { serial: 145, phone: '9876500000' }]
+      : [{ serial: 1, phone: '9876511111' }]),
+  };
+  const assigned = { loadAssignments: async () => ({ 1: { workerId: 'w1', workerName: 'अनु' }, 145: { workerId: 'w1', workerName: 'अनु' } }) };
+  const lookups = await readLookups([W3, W5], { contacts: shared, assignments: assigned });
+  assert.deepEqual([...lookups.hasNumber].sort(), ['3:1', '3:145', '5:1']);
+  assert.deepEqual([...lookups.called], ['3:145'], 'serial 1 is consented in both wards, so its assignment is skipped');
+
+  const { screen } = mount({ contacts: shared, assignments: assigned });
+  await screen.setRolls(new Map([[W3, [...ROLL3, { serial: 1, name: 'कमल', relative: '', age: 30, gender: 'पुरुष', house: '1' }]], [W5, ROLL5]]));
+  change(screen.controls.notCalled, true);
+  assert.ok(keys(screen).includes('5:1') && keys(screen).includes('3:1'));
+  assert.ok(!keys(screen).includes('3:145'));
+});
+
+test('a ticked has-number box waits for the lookup instead of filtering on an empty set', async () => {
+  const read = deferred();
+  const { screen } = mount({ contacts: { listConsented: () => read.promise } });
+  const ready = screen.setRolls(ROLLS);
+  assert.equal(screen.state, 'filled', 'unticked, the results show at once');
+  change(screen.controls.hasNumber, true);
+  assert.equal(screen.state, 'loading');
+  assert.equal(screen.message.textContent, strings.search_lookups_loading);
+  read.resolve([{ serial: 7, phone: '9876500000' }]);
+  await ready;
+  assert.equal(screen.state, 'filled');
+  assert.deepEqual(keys(screen), ['3:7']);
+});
+
+test('lookups that cannot be read switch the two boxes off with a note saying what to do and whom to call', async () => {
+  const { screen } = mount({ contacts: { listConsented: async () => { throw new Error('locked'); } } });
+  const { hasNumber, notCalled } = screen.controls;
+  change(hasNumber, true);
+  await screen.setRolls(ROLLS);
+  assert.equal(hasNumber.checked, false);
+  assert.equal(hasNumber.disabled, true);
+  assert.equal(notCalled.disabled, true);
+  assert.equal(screen.lookupNote.hidden, false);
+  assert.equal(screen.lookupNote.textContent, strings.search_lookups_failed);
+  assert.equal(screen.state, 'filled', 'search itself still works');
+  assert.equal(screen.list.children.length, 5);
+});
+
+test('an earlier setRolls whose lookups resolve last does not overwrite the newer ones', async () => {
+  const first = deferred();
+  const second = deferred();
+  const pending = [first, second];
+  const { screen } = mount({ contacts: { listConsented: () => pending.shift().promise } });
+  const one = screen.setRolls(new Map([[W3, ROLL3]]));
+  const two = screen.setRolls(new Map([[W3, ROLL3]]));
+  second.resolve([{ serial: 146, phone: '9876500000' }]);
+  await two;
+  first.resolve([{ serial: 7, phone: '9876511111' }]);
+  await one;
+  change(screen.controls.hasNumber, true);
+  assert.deepEqual(keys(screen), ['3:146']);
 });
 
 test('tag and visit filters take maps; with none they keep everyone', async () => {
@@ -205,17 +327,22 @@ test('the sort control orders by relevance, serial, name or age', async () => {
   assert.equal(keys(screen).length, 3);
 });
 
+function spyScroll(doc) {
+  const proto = Object.getPrototypeOf(doc.createElement('li'));
+  const scrolled = [];
+  proto.scrollIntoView = function scrollIntoView() { scrolled.push(this); };
+  return { scrolled, done: () => delete proto.scrollIntoView };
+}
+
 test('"3/145" selects and scrolls to that row; a voter not loaded is a Hindi error saying what to do and whom to call', async () => {
   const { doc, screen } = mount();
-  const scrolled = [];
-  Object.getPrototypeOf(doc.createElement('li')).scrollIntoView = function scrollIntoView() { scrolled.push(this); };
+  const spy = spyScroll(doc);
   try {
     await screen.setRolls(ROLLS);
     await search(screen, '3/145');
-    const row = screen.list.children[0];
+    const row = screen.list.children.find((r) => r.getAttribute('aria-selected') === 'true');
     assert.equal(row.getAttribute('data-key'), '3:145');
-    assert.equal(row.getAttribute('aria-selected'), 'true');
-    assert.deepEqual(scrolled, [row]);
+    assert.deepEqual(spy.scrolled, [row]);
     assert.equal(row.querySelector('span.search-serial').querySelector('mark').textContent, '145');
 
     await search(screen, '3/999');
@@ -231,8 +358,36 @@ test('"3/145" selects and scrolls to that row; a voter not loaded is a Hindi err
     screen.setSupport('ब्लॉक समन्वयक से संपर्क करें।');
     assert.equal(screen.contact.textContent, 'ब्लॉक समन्वयक से संपर्क करें।');
   } finally {
-    delete Object.getPrototypeOf(doc.createElement('li')).scrollIntoView;
+    spy.done();
   }
+});
+
+test('with sort set to age the jump still selects the target row, and only that row', async () => {
+  const { doc, screen } = mount();
+  const spy = spyScroll(doc);
+  try {
+    await screen.setRolls(ROLLS);
+    change(screen.controls.sort, 'age');
+    await search(screen, '3/7');
+    const selected = screen.list.children.filter((r) => r.getAttribute('aria-selected') === 'true');
+    assert.deepEqual(selected.map((r) => r.getAttribute('data-key')), ['3:7']);
+    assert.deepEqual(spy.scrolled, selected);
+  } finally {
+    spy.done();
+  }
+});
+
+test('a jump to a loaded voter a filter hides says to clear the filter, not that the voter is missing', async () => {
+  const { screen } = mount();
+  await screen.setRolls(ROLLS);
+  change(screen.controls.gender, 'स्त्री');
+  await search(screen, '3/145');
+  assert.equal(screen.state, 'error');
+  assert.ok(screen.message.textContent.includes(strings.search_jump_filtered));
+  assert.ok(!screen.message.textContent.includes(strings.search_jump_missing));
+  change(screen.controls.gender, '');
+  assert.equal(screen.state, 'filled');
+  assert.equal(screen.list.children[0].getAttribute('aria-selected'), 'true');
 });
 
 test('a roll the index cannot be built from is the error state with whom to call', async () => {

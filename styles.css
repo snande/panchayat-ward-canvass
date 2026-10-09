@@ -1392,9 +1392,7 @@ select.picker-select,
   margin-top: var(--space-3);
 }
 
-/* Search screen (src/ui/voterSearchScreen.js): the query box, the filter and
-   sort grid, the two choice rows, then one state: result rows, a notice, or
-   the progress bar. Matched text is a <mark>; the jumped-to row is selected. */
+/* Search screen (src/ui/voterSearchScreen.js) */
 .search-screen {
   display: flex;
   flex-direction: column;

@@ -50,8 +50,7 @@ const PRECACHE = [
   "src/sync/syncEngine.js",
   "src/ui/teamJoinScreen.js",
   "src/search/hindiSearch.js",
-  // The search screen over every loaded ward and its engine: both must be
-  // here, or search fails in airplane mode.
+  // The search screen and its engine, so search works in airplane mode.
   "src/search/voterSearch.js",
   "src/ui/voterSearchScreen.js",
   "src/ui/callListScreen.js",

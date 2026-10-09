@@ -248,7 +248,7 @@ test("a failed download names the catalogue's support contact as whom to call", 
   }
 });
 
-test('the nav bar opens the search screen, which searches the roll once it has loaded, ward/serial jump included', async () => {
+test('the nav bar opens the search screen; a roll loading behind it leaves it open, and the jump finds the loaded voter', async () => {
   const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage() });
   try {
     await import('../js/picker.js?wiring=7');
@@ -258,6 +258,8 @@ test('the nav bar opens the search screen, which searches the roll once it has l
     assert.equal(page.search.hidden, false);
     const screen = page.search.querySelector('section.search-screen');
     assert.equal(screen.getAttribute('data-state'), 'empty');
+    const input = screen.querySelector('input.search-input');
+    assert.equal(input.disabled, true, 'the query box shows, disabled, until a roll is loaded');
 
     const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
     choose(district, '17');
@@ -265,17 +267,19 @@ test('the nav bar opens the search screen, which searches the roll once it has l
     choose(panchayat, '6313');
     choose(ward, '1');
     await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
-    assert.equal(page.search.hidden, true, 'the loaded roll is on screen');
+    assert.equal(page.search.hidden, false, 'a roll loading in the background does not close the search');
+    assert.deepEqual(page.currentNav(), ['search']);
+    await waitFor(() => screen.getAttribute('data-state') === 'filled');
+    assert.equal(input.disabled, false);
 
-    page.navItem('search').dispatchEvent({ type: 'click' });
-    assert.equal(page.search.hidden, false);
-    const input = screen.querySelector('input.search-input');
     input.value = '1/1';
     input.dispatchEvent({ type: 'input' });
     await waitFor(() => screen.querySelector('li.search-row')?.getAttribute('aria-selected') === 'true');
-    assert.equal(screen.getAttribute('data-state'), 'filled');
-    const first = screen.querySelector('li.search-row');
-    assert.equal(first.getAttribute('data-key'), '1:1');
+    assert.equal(screen.querySelector('li.search-row').getAttribute('data-key'), '1:1');
+
+    page.navItem('roll').dispatchEvent({ type: 'click' });
+    assert.equal(page.search.hidden, true);
+    assert.deepEqual(page.currentNav(), ['roll']);
   } finally {
     page.restore();
   }
