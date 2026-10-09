@@ -520,8 +520,14 @@ select.picker-select,
   color: var(--color-text-muted);
 }
 
-/* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
-   shown above the roll's search box. Rows open it, so they show they can. */
+/* A struck-off entry: serial and name struck through. */
+.roll-struck {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-danger);
+  text-decoration-thickness: 2px;
+}
+
 /* A roll row is also a list row (DESIGN.md), but of the fixed height
    ROW_HEIGHT, so it keeps the tighter padding that fits its three lines; a
    row only shows it can be tapped when it can (below). */

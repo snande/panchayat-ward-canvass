@@ -1,12 +1,9 @@
 // Virtualised voter list for a decoded ward roll.
 //
-// Every row has the same fixed height, so the scroll viewport holds one
-// spacer as tall as the whole list and only the rows in view (plus OVERSCAN
-// above and below) exist in the DOM, positioned with a transform. Scrolling
-// recycles row nodes on the next animation frame. A ward of a few thousand
-// voters therefore costs a few dozen DOM nodes, which keeps 2 GB phones
-// smooth. Text is set with textContent only and inherits the page's
-// Noto Sans Devanagari font (--font-family-base in styles.css).
+// Rows have one fixed height: a spacer as tall as the list holds only the
+// rows in view (plus OVERSCAN), recycled on the next animation frame. Text
+// is set with textContent only.
+// A struck-off entry stays listed, its "serial. name" in a <del>.
 
 import { el } from './dom.js';
 
@@ -33,7 +30,7 @@ function defaultFrame(fn) {
 
 /**
  * Mount the list into container (replacing its content).
- * @param {object[]} entries {serial, name, relative, age, gender, house}
+ * @param {object[]} entries {serial, name, relative, age, gender, house, struck}
  * @param {Record<string,string>} strings the Hindi string table
  * @param {{viewportHeight?: number, requestFrame?: Function, onSelect?: (entry: object) => void}} [opts]
  *   onSelect is called with the entry of a tapped row (Enter or Space on a
@@ -48,7 +45,9 @@ export function mountRollList(container, entries, strings, opts = {}) {
 
   const root = el(doc, 'div', 'roll');
   root.setAttribute('lang', 'hi');
-  root.appendChild(el(doc, 'p', 'roll-count', `${text('roll_count')}: ${count}`));
+  const struck = entries.filter((e) => e && e.struck === true).length;
+  const counted = `${text('roll_count')}: ${count - struck}`;
+  root.appendChild(el(doc, 'p', 'roll-count', struck ? `${counted} · ${text('roll_struck_count')}: ${struck}` : counted));
 
   if (count === 0) {
     const empty = el(doc, 'p', 'roll-message', text('roll_empty'));
@@ -76,9 +75,13 @@ export function mountRollList(container, entries, strings, opts = {}) {
     row.setAttribute('aria-posinset', String(index + 1));
     shownIndex.set(row, index);
     const [name, relative, meta] = row.childNodes;
-    name.textContent = `${entry.serial}. ${entry.name}`;
-    relative.textContent = entry.relative;
+    const label = `${entry.serial}. ${entry.name}`;
     const parts = [];
+    if (entry.struck === true) {
+      name.replaceChildren(el(doc, 'del', 'roll-struck', label));
+      parts.push(text('roll_struck_off'));
+    } else name.textContent = label;
+    relative.textContent = entry.relative;
     if (entry.age != null) parts.push(`${text('roll_age')} ${entry.age}`);
     if (entry.gender) parts.push(entry.gender);
     if (entry.house) parts.push(`${text('roll_house')} ${entry.house}`);

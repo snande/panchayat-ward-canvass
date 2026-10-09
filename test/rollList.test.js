@@ -84,6 +84,46 @@ test('a row shows serial, name, relative, age, gender and house in Hindi', () =>
   assert.equal(view.viewport.getAttribute('aria-label'), strings.roll_list_label);
 });
 
+test('a struck-off entry stays in the list with its serial and name struck through', () => {
+  const list = [
+    { serial: 1, name: 'किशनादेवी', relative: 'सत्यनारायण', age: 57, gender: 'स्त्री', house: '1', struck: false },
+    { serial: 2, name: 'सोहन देवी', relative: 'राम', age: 60, gender: 'स्त्री', house: '1', struck: true },
+  ];
+  const selected = [];
+  const doc = createDocument();
+  const view = mountRollList(doc.body, list, strings, { viewportHeight: VIEWPORT, requestFrame: () => {}, onSelect: (e) => selected.push(e) });
+  const [live, struck] = rows(view);
+  assert.equal(rows(view).length, 2, 'the struck-off entry is not removed');
+
+  const del = struck.children[0].querySelector('del');
+  assert.ok(del, 'serial and name sit in a <del>');
+  assert.equal(del.getAttribute('class'), 'roll-struck');
+  assert.equal(del.textContent, '2. सोहन देवी');
+  assert.equal(struck.children[2].textContent, `${strings.roll_struck_off} · ${strings.roll_age} 60 · स्त्री · ${strings.roll_house} 1`);
+
+  assert.equal(live.querySelector('del'), null);
+  assert.equal(live.children[0].textContent, '1. किशनादेवी');
+
+  // Reachable: a tap opens it like any other row.
+  struck.dispatchEvent({ type: 'click' });
+  assert.deepEqual(selected, [list[1]]);
+
+  assert.equal(view.root.querySelector('p.roll-count').textContent,
+    `${strings.roll_count}: 1 · ${strings.roll_struck_count}: 1`);
+});
+
+test('a recycled row drops the struck-off look when it shows a live entry', () => {
+  const list = entries(300).map((e) => ({ ...e, struck: e.serial <= 20 }));
+  const { view, flush } = mount(list);
+  flush();
+  assert.ok(rows(view).every((r) => r.querySelector('del.roll-struck')));
+  view.viewport.scrollTop = 200 * ROW_HEIGHT;
+  view.render();
+  for (const row of rows(view)) {
+    assert.equal(row.querySelector('del'), null);
+  }
+});
+
 test('resize re-renders for the new height and destroy() removes the listener', () => {
   const doc = createDocument();
   const listeners = new Map();

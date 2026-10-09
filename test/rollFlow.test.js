@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createRollFlow, decodeWithTable } from '../src/roll/rollFlow.js';
 import { RollFetchError } from '../src/roll/fetchRoll.js';
-import { createRollStore, minimiseEntries } from '../src/roll/rollStore.js';
+import { createRollStore, minimiseEntries, RECORD_VERSION, RollRecordVersionError } from '../src/roll/rollStore.js';
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
@@ -67,7 +67,10 @@ test('picking Badli ward 1 downloads, decodes, stores and lists the roll', async
   assert.equal(s.shown.length, 1);
   const list = s.shown[0];
   assert.ok(list.length > 200, `${list.length} entries`);
-  assert.equal(countLine(s.container), `${strings.roll_count}: ${list.length}`);
+  // Every printed entry is listed; the 29 struck-off ones are counted apart.
+  assert.equal(list.length, 326);
+  assert.equal(list.filter((e) => e.struck).length, 29);
+  assert.equal(countLine(s.container), `${strings.roll_count}: ${expected.length} · ${strings.roll_struck_count}: 29`);
   assert.ok(rowCount(s.container) > 0 && rowCount(s.container) < 30);
 
   // The decoder's Hindi reaches the screen unchanged.
@@ -94,6 +97,38 @@ test('reopening offline shows the same list with no network request', async () =
   await offline.flow.open(SELECTION);
   assert.equal(offline.calls.length, 0);
   assert.deepEqual(offline.shown[1], before);
+});
+
+test('a stored roll of the old record version is downloaded and decoded again', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  // Rewrite the stored record as the old shape left it: version 1.
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  rolls.set('17/125/6313/1', { ...rolls.get('17/125/6313/1'), v: 1 });
+
+  const again = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await again.flow.open(SELECTION);
+  assert.equal(again.calls.length, 1, 'the roll is downloaded again, not misread');
+  assert.equal(again.shown[0].length, 326);
+  assert.equal(rolls.get('17/125/6313/1').v, RECORD_VERSION);
+  assert.deepEqual(again.errors, []);
+});
+
+test('a stored roll of an unknown record version is reported, then downloaded again', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  rolls.set('17/125/6313/1', { ...rolls.get('17/125/6313/1'), v: 99 });
+
+  const again = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await again.flow.open(SELECTION);
+  assert.equal(again.errors.length, 1);
+  assert.ok(again.errors[0][1] instanceof RollRecordVersionError);
+  assert.equal(again.errors[0][1].version, 99);
+  assert.equal(again.calls.length, 1);
+  assert.equal(again.shown[0].length, 326);
 });
 
 test('restore with nothing stored shows nothing and sends no request', async () => {

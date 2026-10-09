@@ -137,7 +137,10 @@ The ward-roll screen (`src/ui/wardRollScreen.js`), the frame's default screen,
 carries these as one `state` field: empty (info notice: pick a ward), loading
 (progress bar and info notice), filled (the roll's `.list-row` lines) and
 error (error notice saying what to do, a line saying whom to call, and a
-secondary retry).
+secondary retry). A struck-off entry stays among the filled rows at its
+serial: its serial and name sit in a `<del>` (`.roll-struck`), struck through
+in `--color-danger` over `--color-text-muted` text, and its last line starts
+with "हटाया गया"; a tap opens it like any row.
 
 The voter route (`src/ui/voterRoute.js`) carries the same field: loading
 (progress bar and info notice while the stored roll is read), empty (info

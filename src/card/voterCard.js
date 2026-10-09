@@ -1,5 +1,5 @@
 // Voter card render (issue #138): one entry's roll line plus its booth in a
-// DESIGN.md panel; a missing field reads "—", a `deleted` entry carries the
+// DESIGN.md panel; a missing field reads "—", a `struck` entry carries the
 // error badge and a struck-through name. Pure: stores nothing, no network.
 // Its one control shares this voter's fields and the SEC footer lines through
 // navigator.share or the clipboard (issue #140); a failure shows an error
@@ -97,7 +97,7 @@ export async function shareText(text, nav) {
  * button and its notice. `card.share()` runs one tap's share.
  */
 export function renderVoterCard(entry, ward, booth, doc = globalThis.document, options = {}) {
-  const struck = Boolean(entry && entry.deleted);
+  const struck = Boolean(entry && entry.struck);
   const fields = voterCardFields(entry, ward, booth);
   const name = fields[0][1];
 
