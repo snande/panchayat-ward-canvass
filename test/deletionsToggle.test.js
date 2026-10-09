@@ -20,7 +20,7 @@ function host() {
   return container;
 }
 
-/** Declarations of the rule whose selector list is exactly `selector`. */
+/** Declarations of the first rule whose selector list is exactly `selector`. */
 function ruleFor(selector) {
   const re = new RegExp(`(^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`);
   const m = css.match(re);

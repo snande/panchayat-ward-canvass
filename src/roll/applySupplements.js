@@ -2,15 +2,19 @@
 //
 // A supplementary roll PDF (the SEC's "Final With Supp-<n>" column) is decoded
 // by the same decoder as the roll (src/decoder/decodeRoll.js). It reprints the
-// roll with the supplement's changes: entries added at new serials and entries
-// struck off. Merged by serial:
+// roll with the supplement's changes: entries added at new serials, entries
+// struck off and, rarely, entries struck off before and listed again. Merged
+// by serial, the supplement's printed struck-off state wins:
 //   - a serial the roll does not have is an addition, tagged
 //     supplement: 'addition' (or 'deletion' if the supplement prints it struck
 //     off)
 //   - a serial the roll lists live but the supplement prints struck off marks
 //     the roll's entry struck: true, supplement: 'deletion'
-// Entries the roll already printed struck off stay as they are, untagged.
-// Nothing else of the roll's entry changes: the roll's own record wins.
+//   - a serial the roll prints struck off but the supplement prints live is
+//     reinstated: struck: false, supplement: 'addition' (it is on the roll again)
+// An entry whose struck-off state the supplement does not change keeps its
+// tag, if any, and the roll's own record: name, age and the rest never change.
+// Merging the same supplement twice changes nothing.
 
 export const SUPPLEMENT_KINDS = Object.freeze(['addition', 'deletion']);
 
@@ -34,8 +38,8 @@ export function applySupplements(baseEntries, supplementEntries = []) {
       const prev = bySerial.get(entry.serial);
       if (!prev) {
         bySerial.set(entry.serial, { ...entry, struck, supplement: struck ? 'deletion' : 'addition' });
-      } else if (struck && prev.struck !== true) {
-        bySerial.set(entry.serial, { ...prev, struck: true, supplement: 'deletion' });
+      } else if (struck !== (prev.struck === true)) {
+        bySerial.set(entry.serial, { ...prev, struck, supplement: struck ? 'deletion' : 'addition' });
       }
     }
   }

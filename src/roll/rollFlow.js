@@ -12,12 +12,14 @@
 //
 // Supplementary rolls (selection.supplementPdfUrls) are downloaded through the
 // same relay GET (fetchSupplements), decoded by the same decoder and merged
-// onto the roll (src/roll/applySupplements.js) before it is stored. One that
-// fails leaves the roll showing, with the deletions toggle's error state and
-// its retry; a stored roll whose supplements failed fetches them again on
-// open. The deletions toggle (src/ui/deletionsToggle.js) sits above the list:
-// supplementary deletions are hidden until it is on, and its state is kept in
-// the roll settings (src/roll/rollSettings.js). It only hides and shows rows.
+// onto the roll (src/roll/applySupplements.js) before it is stored, with the
+// URLs merged so far. Opening a stored ward fetches only the listed
+// supplementary rolls not merged yet: one that failed, or one the catalogue
+// lists since. One that fails leaves the roll showing, with the deletions
+// toggle's error state and its retry. The deletions toggle
+// (src/ui/deletionsToggle.js) sits above the list: supplementary deletions
+// are hidden until it is on, and its state is kept in the roll settings
+// (src/roll/rollSettings.js). It only hides and shows rows.
 
 import {
   fetchRoll as defaultFetchRoll, fetchSupplements as defaultFetchSupplements, RollFetchError, supplementUrls,
@@ -57,10 +59,18 @@ export async function decodeWithTable(pdfBytes) {
 export function createRollFlow(container, strings, deps = {}) {
   const fetchRoll = deps.fetchRoll || defaultFetchRoll;
   const fetchSupplements = deps.fetchSupplements || defaultFetchSupplements;
-  const settings = deps.settings || { load: () => loadRollSettings().settings, save: saveRollSettings };
   const decode = deps.decode || decodeWithTable;
   const mountList = deps.mountList || mountRollWithSearch;
   const log = deps.log || ((...args) => console.error(...args));
+  const settings = deps.settings || {
+    load() {
+      const { settings: read, error, version } = loadRollSettings();
+      // An unknown version or a corrupt record is reported; the defaults apply.
+      if (error) log('roll settings could not be read', error, version);
+      return read;
+    },
+    save: saveRollSettings,
+  };
   const screen = deps.screen || createWardRollScreen(container, strings);
   let store = deps.store || null;
   let generation = 0;
@@ -136,15 +146,27 @@ export function createRollFlow(container, strings, deps = {}) {
     return list;
   }
 
+  /** The listed supplementary roll URLs not in `merged`. */
+  function pendingSupplements(selection, merged) {
+    return supplementUrls(selection).filter((url) => !merged.includes(url));
+  }
+
+  /** 'failed' if one failed, else 'merged' once any is merged, else 'none'. */
+  const supplementStateOf = ({ urls, failed }) => (failed ? 'failed' : urls.length ? 'merged' : 'none');
+
   /**
-   * Download and decode a selection's supplementary rolls.
-   * @returns {Promise<{state: 'none'|'merged'|'failed', lists: object[][]}>}
+   * Download and decode the selection's supplementary rolls not in `merged`.
+   * @returns {Promise<{lists: object[][], urls: string[], failed: boolean}>}
+   *   the decoded rolls, every URL merged once these are (merged first), and
+   *   whether one failed
    */
-  async function loadSupplements(selection) {
-    if (supplementUrls(selection).length === 0) return { state: 'none', lists: [] };
+  async function loadSupplements(selection, merged = []) {
+    const pending = pendingSupplements(selection, merged);
     const lists = [];
+    const urls = [...merged];
     let failed = false;
-    for (const result of await fetchSupplements(selection)) {
+    if (pending.length === 0) return { lists, urls, failed };
+    for (const result of await fetchSupplements({ ...selection, supplementPdfUrls: pending })) {
       if (!result.ok) {
         log('supplementary roll could not be downloaded', result.url, result.error);
         failed = true;
@@ -154,21 +176,23 @@ export function createRollFlow(container, strings, deps = {}) {
         const decoded = await decode(result.buffer);
         if (!Array.isArray(decoded) || decoded.length === 0) throw new Error('decoder returned no entries');
         lists.push(decoded);
+        urls.push(result.url);
       } catch (err) {
         log('supplementary roll could not be decoded', result.url, err);
         failed = true;
       }
     }
-    return { state: failed ? 'failed' : 'merged', lists };
+    return { lists, urls, failed };
   }
 
+  /** The stored supplement state {state, urls}; unreadable reads as failed, nothing merged. */
   async function storedSupplementState(wardKey) {
-    if (typeof getStore().supplementState !== 'function') return 'none';
+    if (typeof getStore().supplementState !== 'function') return { state: 'none', urls: [] };
     try {
-      return (await getStore().supplementState(wardKey)) || 'none';
+      return (await getStore().supplementState(wardKey)) || { state: 'none', urls: [] };
     } catch (err) {
       log('stored supplement state could not be read', err);
-      return 'failed';
+      return { state: 'failed', urls: [] };
     }
   }
 
@@ -179,16 +203,17 @@ export function createRollFlow(container, strings, deps = {}) {
   async function mergeStoreAndShow(base, supplements, wardKey, selection, current) {
     const { applySupplements } = await import('./applySupplements.js');
     const merged = applySupplements(base, supplements.lists);
+    const state = supplementStateOf(supplements);
     let entries;
     try {
-      entries = await getStore().encryptAndStore(wardKey, merged, { supplement: supplements.state });
+      entries = await getStore().encryptAndStore(wardKey, merged, { supplement: state, supplementUrls: supplements.urls });
     } catch (err) {
       // Still show the roll; it just will not be there offline next time.
       log('roll could not be stored on the device', err);
       entries = minimiseEntries(merged);
     }
     if (!current()) return null;
-    return showList(entries, wardKey, supplements.state, selection);
+    return showList(entries, wardKey, state, selection);
   }
 
   function showError(err, selection) {
@@ -217,13 +242,14 @@ export function createRollFlow(container, strings, deps = {}) {
       const stored = await storedEntries(wardKey);
       if (!current()) return null;
       if (stored) {
-        const state = await storedSupplementState(wardKey);
+        const saved = await storedSupplementState(wardKey);
         if (!current()) return null;
-        const listed = supplementUrls(selection).length > 0;
-        // Supplements that failed, or were published since, are fetched again.
-        if (!listed || state === 'merged') return showList(stored, wardKey, listed ? state : 'none', selection);
+        // Supplements that failed, or were listed since, are fetched; merged ones are not.
+        if (pendingSupplements(selection, saved.urls).length === 0) {
+          return showList(stored, wardKey, supplementStateOf({ urls: saved.urls, failed: false }), selection);
+        }
         screen.setState('loading', { phase: 'download' });
-        const supplements = await loadSupplements(selection);
+        const supplements = await loadSupplements(selection, saved.urls);
         if (!current()) return null;
         return mergeStoreAndShow(stored, supplements, wardKey, selection, current);
       }
@@ -255,10 +281,11 @@ export function createRollFlow(container, strings, deps = {}) {
       const stored = await storedEntries(wardKey);
       // A ward picked meanwhile wins over the restored one.
       if (!stored || mine !== generation) return null;
-      const state = await storedSupplementState(wardKey);
+      const saved = await storedSupplementState(wardKey);
       if (mine !== generation) return null;
-      // No selection here: a failed supplement is retried when the ward is picked.
-      return showList(stored, wardKey, state);
+      // No network here: a failed supplement is retried from the toggle's
+      // retry (deps.selectionFor) or when the ward is picked.
+      return showList(stored, wardKey, saved.state);
     } catch (err) {
       log('stored roll could not be restored', err);
       return null;

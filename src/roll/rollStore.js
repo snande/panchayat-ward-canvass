@@ -4,9 +4,12 @@
 //   ('addition' or 'deletion') on an entry a supplementary roll added or
 //   struck off (src/roll/applySupplements.js); never the PDF, EPIC numbers or
 //   pages.
-// - The record's supplement state (SUPPLEMENT_STATES): 'none' when the ward
-//   has no supplementary roll, 'merged' when every one was merged, 'failed'
-//   when one could not be downloaded or decoded (so it is tried again).
+// - In the clear beside the ciphertext, the supplement state (no voter data):
+//   `supplement` (SUPPLEMENT_STATES: 'none' when the ward has no
+//   supplementary roll, 'merged' when every listed one was merged, 'failed'
+//   when one could not be downloaded or decoded) and `supplementUrls`, the
+//   public SEC URLs of the supplementary rolls merged so far, so one the
+//   catalogue lists later, or one that failed, is fetched again.
 // - Record version RECORD_VERSION. An older one reads as null (decode
 //   again); an unknown one throws RollRecordVersionError.
 // - AES-GCM (fresh 12-byte IV, ward key as additional data) under the shared
@@ -29,6 +32,8 @@ export const STORED_FIELDS = Object.freeze(['serial', 'name', 'relative', 'age',
 export const SUPPLEMENT_FIELD = 'supplement';
 const SUPPLEMENT_KINDS = Object.freeze(['addition', 'deletion']);
 export const SUPPLEMENT_STATES = Object.freeze(['none', 'merged', 'failed']);
+
+const urlList = (urls) => (Array.isArray(urls) ? urls.filter((u) => typeof u === 'string' && u) : []);
 
 export class RollRecordVersionError extends Error {
   constructor(version) {
@@ -76,10 +81,11 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
 
   /**
    * Encrypt and store a ward's entries; remembers it as the last opened ward.
-   * @param {{supplement?: string}} [meta] the supplement state, 'none' by default
+   * @param {{supplement?: string, supplementUrls?: string[]}} [meta] the
+   *   supplement state ('none' by default) and the supplementary roll URLs merged
    * @returns {Promise<object[]>} the minimised entries that were stored
    */
-  async function encryptAndStore(wardKey, entries, { supplement = 'none' } = {}) {
+  async function encryptAndStore(wardKey, entries, { supplement = 'none', supplementUrls = [] } = {}) {
     if (typeof wardKey !== 'string' || !wardKey) throw new TypeError('wardKey must be a non-empty string');
     if (!SUPPLEMENT_STATES.includes(supplement)) throw new TypeError(`unknown supplement state: ${supplement}`);
     const minimal = minimiseEntries(entries);
@@ -92,7 +98,9 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
     );
     const tx = (await db()).transaction([ROLLS_STORE, META_STORE], 'readwrite');
     const done = complete(tx);
-    tx.objectStore(ROLLS_STORE).put({ v: RECORD_VERSION, iv, data, supplement }, wardKey);
+    tx.objectStore(ROLLS_STORE).put({
+      v: RECORD_VERSION, iv, data, supplement, supplementUrls: urlList(supplementUrls),
+    }, wardKey);
     tx.objectStore(META_STORE).put(wardKey, LAST_WARD);
     await done;
     return minimal;
@@ -121,14 +129,16 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
   }
 
   /**
-   * The stored roll's supplement state ('none', 'merged' or 'failed'); null
-   * when no current record is stored. An unknown state reads as 'failed', so
-   * the supplements are fetched again rather than trusted.
+   * The stored roll's supplement state: {state, urls}, state 'none', 'merged'
+   * or 'failed' and urls the supplementary rolls merged so far; null when no
+   * current record is stored. An unknown state reads as 'failed', so the
+   * supplements are fetched again rather than trusted.
    */
   async function supplementState(wardKey) {
     const record = await currentRecord(wardKey);
     if (!record) return null;
-    return SUPPLEMENT_STATES.includes(record.supplement) ? record.supplement : 'failed';
+    const state = SUPPLEMENT_STATES.includes(record.supplement) ? record.supplement : 'failed';
+    return { state, urls: urlList(record.supplementUrls) };
   }
 
   /** Key of the ward stored most recently, or null. */

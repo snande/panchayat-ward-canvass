@@ -31,7 +31,8 @@ test('the ALMAS ward 1 supplement merges onto the roll as the entries the supple
   // What the supplement changed: serials the roll lacks are additions, and
   // entries it strikes off that the roll listed live are deletions.
   const inBase = new Map(base.map((e) => [e.serial, e]));
-  const additions = printed.filter((e) => !inBase.has(e.serial) && !e.struck).map((e) => e.serial);
+  const additions = printed.filter((e) => !e.struck && (!inBase.has(e.serial) || inBase.get(e.serial).struck))
+    .map((e) => e.serial);
   const deletions = printed.filter((e) => e.struck && !(inBase.get(e.serial) || {}).struck).map((e) => e.serial);
   assert.deepEqual(merged.filter((e) => e.supplement === 'addition').map((e) => e.serial), additions);
   assert.deepEqual(merged.filter(isSupplementDeletion).map((e) => e.serial), deletions);
@@ -46,6 +47,8 @@ test('the ALMAS ward 1 supplement merges onto the roll as the entries the supple
   for (const e of merged.filter((m) => inBase.get(m.serial).struck)) assert.equal(e.supplement, undefined);
   assert.equal(inBase.get(258).struck, false);
   assert.ok(base.every((e) => !('supplement' in e)));
+  // Merging the same supplement again changes nothing.
+  assert.deepEqual(applySupplements(merged, [supplement]), merged);
 });
 
 test('a serial the roll lacks is an addition, or a deletion when printed struck off', () => {
@@ -60,6 +63,19 @@ test('a serial the roll lacks is an addition, or a deletion when printed struck 
     [1, false, undefined], [2, true, undefined], [3, false, 'addition'], [4, true, 'deletion'],
   ]);
   assert.deepEqual(SUPPLEMENT_KINDS, ['addition', 'deletion']);
+});
+
+test('a serial the roll struck off but the supplement prints live is reinstated as an addition', () => {
+  const base = [{ serial: 1, name: 'क', age: 40, struck: true }, { serial: 2, name: 'ख', struck: false }];
+  const merged = applySupplements(base, [[
+    { serial: 1, name: 'क (reprint)', age: 41, struck: false },
+    { serial: 2, name: 'ख', struck: false },
+  ]]);
+  // The merged roll shows what the supplement prints: serial 1 is on the roll again.
+  assert.deepEqual(merged.map((e) => [e.serial, e.struck, e.supplement]), [[1, false, 'addition'], [2, false, undefined]]);
+  // The roll's own record is kept; only the struck-off state changes.
+  assert.equal(merged[0].name, 'क');
+  assert.equal(merged[0].age, 40);
 });
 
 test('supplements apply in publication order: a later one can strike off an earlier addition', () => {
