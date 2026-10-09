@@ -197,6 +197,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
 
   let list = null;
   const search = mountSearchScreen(searchHost, entries.map(toVoter), {
+    struckLabel: strings && typeof strings.roll_struck === 'string' ? strings.roll_struck : '',
     onSelect: canCapture ? (voter) => openVoterCard(bySerial.get(voter.serial)) : undefined,
     onRender() {
       // Re-read the box: onRender fires after every debounced render.

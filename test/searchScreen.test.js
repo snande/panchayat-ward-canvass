@@ -15,9 +15,9 @@ import {
   DEBOUNCE_MS,
   PLACEHOLDER,
   NO_RESULTS_MESSAGE,
-  STRUCK_LABEL,
 } from '../src/ui/searchScreen.js';
 import { buildIndex, search } from '../src/search/hindiSearch.js';
+import { mountRollWithSearch } from '../src/ui/rollSearch.js';
 import { createDocument, type } from './helpers/fakeDom.js';
 
 const MODULE_PATH = fileURLToPath(new URL('../src/ui/searchScreen.js', import.meta.url));
@@ -363,17 +363,33 @@ test('a struck-off voter stays findable, its name struck through and labelled', 
     { id: 1, serial: 1, name: 'राम प्रसाद', relativeName: 'गोपाल', houseNo: '1', struck: true },
     { id: 2, serial: 2, name: 'राम कुमार', relativeName: 'गोपाल', houseNo: '2', struck: false },
   ];
-  const { screen, nextRender, rows } = mount(voters);
-  const rendered = nextRender();
+  const doc = createDocument();
+  let rendered;
+  const done = new Promise((resolve) => { rendered = resolve; });
+  const screen = mountSearchScreen(doc.body, voters, { struckLabel: 'हटाया', onRender: () => rendered() });
   type(screen.input, 'राम');
-  await rendered;
-  const bySerial = (n) => rows().find((r) => r.querySelector('span.pwc-search__serial').textContent.endsWith(` ${n}`));
-  assert.equal(rows().length, 2);
+  await done;
+  const rows = screen.list.querySelectorAll('li');
+  const bySerial = (n) => rows.find((r) => r.querySelector('span.pwc-search__serial').textContent.endsWith(` ${n}`));
+  assert.equal(rows.length, 2);
   assert.equal(bySerial(1).getAttribute('class'), 'pwc-search__row pwc-search__row--struck');
-  assert.equal(bySerial(1).querySelector('span.pwc-search__struck').textContent, STRUCK_LABEL);
+  assert.equal(bySerial(1).querySelector('span.pwc-search__struck').textContent, 'हटाया');
   assert.equal(bySerial(2).getAttribute('class'), 'pwc-search__row');
   assert.equal(bySerial(2).querySelector('span.pwc-search__struck'), null);
-  const strings = JSON.parse(readFileSync(new URL('../src/strings.hi.json', import.meta.url), 'utf8'));
-  assert.equal(STRUCK_LABEL, strings.roll_struck);
   assert.match(readFileSync(MODULE_PATH, 'utf8'), /\.pwc-search__row--struck \.pwc-search__name \{ text-decoration: line-through; color: var\(--color-text-muted/);
+});
+
+test('the roll view passes the string table\'s roll_struck to the search rows', async () => {
+  const strings = JSON.parse(readFileSync(new URL('../src/strings.hi.json', import.meta.url), 'utf8'));
+  const doc = createDocument();
+  const entries = [
+    { serial: 1, name: 'राम प्रसाद', relative: 'गोपाल', age: 40, gender: 'पुरूष', house: '1', struck: true },
+    { serial: 2, name: 'राम कुमार', relative: 'गोपाल', age: 41, gender: 'पुरूष', house: '2', struck: false },
+  ];
+  const view = mountRollWithSearch(doc.body, entries, strings, { viewportHeight: 600, requestFrame: () => {} });
+  type(view.search.input, 'राम');
+  await wait(DEBOUNCE_MS * 3);
+  const labels = view.search.list.querySelectorAll('span.pwc-search__struck').map((n) => n.textContent);
+  assert.deepEqual(labels, [strings.roll_struck]);
+  view.destroy();
 });

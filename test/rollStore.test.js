@@ -150,14 +150,14 @@ test('the decoded Badli ward 1 roll is stored line for line, struck-off entries 
 test('an older (v1) record loads as null so the roll is decoded again', async () => {
   const { idb, store } = newStore();
   await store.encryptAndStore(WARD, sample);
-  assert.equal(await store.isStale(WARD), false);
+  assert.deepEqual(await store.readStored(WARD), { entries: minimiseEntries(sample), stale: false });
   raw(idb, ROLLS_STORE).get(WARD).v = 1;
   assert.equal(await store.loadStored(WARD), null);
-  assert.equal(await store.isStale(WARD), true);
-  assert.equal(await store.isStale('other-ward'), false);
+  assert.deepEqual(await store.readStored(WARD), { entries: null, stale: true });
+  assert.deepEqual(await store.readStored('other-ward'), { entries: null, stale: false });
   // an unknown version is not stale: it is an error, never re-read as old
   raw(idb, ROLLS_STORE).get(WARD).v = 99;
-  assert.equal(await store.isStale(WARD), false);
+  await assert.rejects(store.readStored(WARD), RollRecordVersionError);
 });
 
 test('a record version the loader does not know is an explicit error, not a misread', async () => {

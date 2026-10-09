@@ -31,7 +31,7 @@ export async function decodeWithTable(pdfBytes) {
  * @param {Element} container where the loading line, error or list goes
  * @param {Record<string,string>} strings the Hindi string table
  * @param {object} [deps] fetchRoll, decode, store ({encryptAndStore,
- *   loadStored, lastWardKey}), mountList, onShow (called when a list shows),
+ *   readStored or loadStored, lastWardKey}), mountList, onShow (called when a list shows),
  *   listOptions (passed to mountList, with the ward key added as wardKey), log,
  *   resolveSelection (ward key -> selection or null, may be async; lets
  *   restore() decode again a ward whose stored copy is of an older version)
@@ -88,17 +88,29 @@ export function createRollFlow(container, strings, deps = {}) {
     show(box);
   }
 
-  async function storedEntries(wardKey) {
+  /**
+   * The stored copy of a ward, in one read: {entries, stale, unknown}.
+   * entries is null when there is nothing readable. stale: the copy is of an
+   * older record version (never read; the ward is decoded again). unknown:
+   * the copy is of a record version this build does not know (reported,
+   * never read, and kept: a newer build may have written it).
+   */
+  async function storedCopy(wardKey) {
+    const s = getStore();
     try {
-      return await getStore().loadStored(wardKey);
+      if (typeof s.readStored === 'function') {
+        const { entries, stale } = await s.readStored(wardKey);
+        return { entries, stale: stale === true, unknown: false };
+      }
+      return { entries: await s.loadStored(wardKey), stale: false, unknown: false };
     } catch (err) {
-      // An unreadable copy (e.g. storage cleared under us) is refetched. So
-      // is a copy whose record version this build does not know: it is
-      // reported, never read. (An older version loads as null: refetched.)
-      log(err instanceof RollRecordVersionError
-        ? 'stored roll has an unknown record version'
-        : 'stored roll could not be read', err);
-      return null;
+      if (err instanceof RollRecordVersionError) {
+        log('stored roll has an unknown record version; it is kept, not read or replaced', err);
+        return { entries: null, stale: false, unknown: true };
+      }
+      // An unreadable copy (e.g. storage cleared under us) is refetched.
+      log('stored roll could not be read', err);
+      return { entries: null, stale: false, unknown: false };
     }
   }
 
@@ -108,9 +120,9 @@ export function createRollFlow(container, strings, deps = {}) {
     try {
       const wardKey = wardKeyFor(selection);
       show(showMessage('roll_loading', 'status'));
-      const stored = await storedEntries(wardKey);
+      const stored = await storedCopy(wardKey);
       if (!current()) return null;
-      if (stored) return showList(stored, wardKey);
+      if (stored.entries) return showList(stored.entries, wardKey);
 
       const bytes = await fetchRoll(selection);
       if (!current()) return null;
@@ -122,7 +134,9 @@ export function createRollFlow(container, strings, deps = {}) {
       if (minimiseEntries(decoded).length === 0) throw new Error('decoder returned no entries');
       let entries;
       try {
-        entries = await getStore().encryptAndStore(wardKey, decoded);
+        // A copy of an unknown (possibly newer) version is not overwritten:
+        // the roll is shown, but only from this download.
+        entries = stored.unknown ? minimiseEntries(decoded) : await getStore().encryptAndStore(wardKey, decoded);
       } catch (err) {
         // Still show the roll; it just will not be there offline next time.
         log('roll could not be stored on the device', err);
@@ -137,28 +151,19 @@ export function createRollFlow(container, strings, deps = {}) {
     }
   }
 
-  async function isStale(wardKey) {
-    const s = getStore();
-    if (typeof s.isStale !== 'function') return false;
-    try {
-      return await s.isStale(wardKey);
-    } catch (err) {
-      log('stored roll version could not be read', err);
-      return false;
-    }
-  }
-
   async function restore() {
     const mine = generation;
     try {
       const wardKey = await getStore().lastWardKey();
       if (!wardKey) return null;
-      const stored = await storedEntries(wardKey);
+      const stored = await storedCopy(wardKey);
       // A ward picked meanwhile wins over the restored one.
       if (mine !== generation) return null;
-      if (stored) return showList(stored, wardKey);
-      // A copy of an older record version: decode the ward again.
-      if (typeof deps.resolveSelection !== 'function' || !(await isStale(wardKey))) return null;
+      if (stored.entries) return showList(stored.entries, wardKey);
+      // A copy of an older record version: decode the ward again. If that
+      // fails (offline), open() shows the error with its retry button; the
+      // old copy is never shown, and the next startup tries again.
+      if (!stored.stale || typeof deps.resolveSelection !== 'function') return null;
       const selection = await deps.resolveSelection(wardKey);
       if (!selection || mine !== generation) return null;
       return open(selection);

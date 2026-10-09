@@ -190,19 +190,62 @@ test('a roll whose entries are all struck off is shown, struck through, and stor
   assert.deepEqual(await s.store.loadStored('17/125/6313/1'), s.shown[0]);
 });
 
-test('a stored roll of an unknown record version is reported, not read, and decoded again', async () => {
+test('a stored roll of an unknown record version is reported, not read, decoded again and kept', async () => {
   const idb = createFakeIndexedDB();
   const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
   await first.flow.open(SELECTION);
-  idb.databases.get('ward-canvass').stores.get('rolls').get('17/125/6313/1').v = 99;
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  const newer = rolls.get('17/125/6313/1');
+  newer.v = 99;
 
   const s = setup({ idb, fetchRoll: async () => pdfBuffer() });
   await s.flow.open(SELECTION);
   assert.equal(s.errors.length, 1);
-  assert.equal(s.errors[0][0], 'stored roll has an unknown record version');
+  assert.equal(s.errors[0][0], 'stored roll has an unknown record version; it is kept, not read or replaced');
   assert.ok(s.errors[0][1] instanceof RollRecordVersionError);
   assert.equal(s.calls.length, 1);
   assert.deepEqual(s.shown[0], first.shown[0]);
+  // A downgraded build does not overwrite a record a newer build wrote.
+  assert.equal(rolls.get('17/125/6313/1'), newer);
+  assert.equal(newer.v, 99);
+  // restore() neither reads it nor fetches.
+  const r = setup({ idb, fetchRoll: async () => pdfBuffer(), resolveSelection: async () => SELECTION });
+  assert.equal(await r.flow.restore(), null);
+  assert.equal(r.calls.length, 0);
+});
+
+test('offline startup with an older-version copy shows the download error and a retry, never the old copy', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  const rolls = idb.databases.get('ward-canvass').stores.get('rolls');
+  rolls.get('17/125/6313/1').v = 1;
+
+  let online = false;
+  const s = setup({
+    idb,
+    fetchRoll: async () => {
+      if (!online) throw new RollFetchError('offline');
+      return pdfBuffer();
+    },
+    resolveSelection: async () => SELECTION,
+  });
+  assert.equal(await s.flow.restore(), null);
+  assert.equal(s.calls.length, 1);
+  assert.equal(s.shown.length, 0);
+  assert.equal(s.container.hidden, false);
+  const alert = s.container.querySelector('p.roll-message');
+  assert.equal(alert.getAttribute('role'), 'alert');
+  assert.equal(alert.textContent, strings.roll_fetch_failed);
+  assert.equal(rowCount(s.container), 0);
+  assert.equal(rolls.get('17/125/6313/1').v, 1);
+
+  // The retry, once online, decodes the ward again and replaces the old copy.
+  online = true;
+  s.container.querySelector('button.roll-retry').dispatchEvent({ type: 'click' });
+  await waitFor(() => s.shown.length === 1);
+  assert.deepEqual(s.shown[0], first.shown[0]);
+  assert.equal(rolls.get('17/125/6313/1').v, 2);
 });
 
 test('restore with nothing stored shows nothing and sends no request', async () => {

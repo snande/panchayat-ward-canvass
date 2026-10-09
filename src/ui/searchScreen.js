@@ -10,8 +10,6 @@ export const DEBOUNCE_MS = 100;
 export const RESULT_LIMIT = 50;
 export const PLACEHOLDER = 'नाम खोजें';
 export const NO_RESULTS_MESSAGE = 'कोई मतदाता नहीं मिला';
-// Same text as roll_struck in src/strings.hi.json (the roll list's label).
-export const STRUCK_LABEL = 'सूची से हटाया गया';
 
 const STYLE = `
 .pwc-search { font-family: var(--font-family-base, 'Noto Sans Devanagari', 'Mangal', sans-serif); max-width: 40rem; margin: 0 auto 0.75rem; }
@@ -33,7 +31,7 @@ function el(doc, tag, className, text) {
   return node;
 }
 
-function renderRow(doc, voter, onSelect) {
+function renderRow(doc, voter, onSelect, struckLabel) {
   // A struck-off voter stays findable, struck through as in the roll list.
   const row = el(doc, 'li', voter.struck === true ? 'pwc-search__row pwc-search__row--struck' : 'pwc-search__row');
   if (onSelect) {
@@ -47,7 +45,7 @@ function renderRow(doc, voter, onSelect) {
   }
   row.appendChild(el(doc, 'span', 'pwc-search__name', voter.name));
   const meta = el(doc, 'span', 'pwc-search__meta');
-  if (voter.struck === true) meta.appendChild(el(doc, 'span', 'pwc-search__struck', STRUCK_LABEL));
+  if (voter.struck === true && struckLabel) meta.appendChild(el(doc, 'span', 'pwc-search__struck', struckLabel));
   meta.appendChild(el(doc, 'span', 'pwc-search__relative', voter.relativeName ?? ''));
   meta.appendChild(el(doc, 'span', 'pwc-search__serial', `क्रम सं. ${voter.serial ?? ''}`));
   meta.appendChild(el(doc, 'span', 'pwc-search__house', `मकान नं. ${voter.houseNo ?? ''}`));
@@ -61,12 +59,14 @@ function renderRow(doc, voter, onSelect) {
  *
  * options.onRender(results) is called after each render (used by tests and
  * for instrumentation). options.onSelect(voter), when given, is called when a
- * result row is tapped. Returns { input, list, message, destroy }.
+ * result row is tapped. options.struckLabel is the text shown on a struck-off
+ * voter's row (the string table's roll_struck). Returns { input, list, message, destroy }.
  */
 export function mountSearchScreen(container, voters, options = {}) {
   const doc = container.ownerDocument || globalThis.document;
   const onRender = typeof options.onRender === 'function' ? options.onRender : null;
   const onSelect = typeof options.onSelect === 'function' ? options.onSelect : null;
+  const struckLabel = typeof options.struckLabel === 'string' ? options.struckLabel : '';
   const index = buildIndex(voters);
 
   const root = el(doc, 'section', 'pwc-search');
@@ -97,7 +97,7 @@ export function mountSearchScreen(container, voters, options = {}) {
     const query = input.value || '';
     const results = query.trim() ? search(index, query, { limit: RESULT_LIMIT }) : [];
     const fragment = doc.createDocumentFragment();
-    for (const voter of results) fragment.appendChild(renderRow(doc, voter, onSelect));
+    for (const voter of results) fragment.appendChild(renderRow(doc, voter, onSelect, struckLabel));
     list.replaceChildren(fragment);
     if (query.trim() && results.length === 0) message.removeAttribute('hidden');
     else message.setAttribute('hidden', '');

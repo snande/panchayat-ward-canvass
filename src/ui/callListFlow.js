@@ -36,7 +36,8 @@ export function mountCallListFlow(container, strings, opts) {
   const text = (key) => (strings && Object.prototype.hasOwnProperty.call(strings, key) ? strings[key] : '');
   const { contacts, wardId, entries = [], assignments, roster } = opts;
   const log = opts.log || ((...args) => console.error(...args));
-  const names = new Map(entries.map((entry) => [entry.serial, entry.name]));
+  // Serials are compared as numbers, whatever type the contact store kept.
+  const names = new Map(entries.map((entry) => [Number(entry.serial), entry.name]));
   const struck = new Set(entries.filter((entry) => entry.struck === true).map((entry) => Number(entry.serial)));
 
   const root = el(doc, 'section', 'panel call-list-screen');
@@ -105,7 +106,7 @@ export function mountCallListFlow(container, strings, opts) {
         if (mine !== generation) return;
         const voters = consented
           .filter(({ serial }) => !struck.has(Number(serial)))
-          .map(({ serial, phone }) => ({ serial, name: names.get(serial) || '', phone }));
+          .map(({ serial, phone }) => ({ serial, name: names.get(Number(serial)) || '', phone }));
         const rows = buildCallList(voters, assigned);
         const workers = [...listed];
         for (const row of rows) {

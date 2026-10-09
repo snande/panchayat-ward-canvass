@@ -175,6 +175,26 @@ test('a consented voter whose roll entry is struck off is left out of the call l
   assert.doesNotMatch(screen.root.textContent, /मोहन लाल/);
 });
 
+test('call-list serials are compared as numbers: a string serial is still named and still filtered', async () => {
+  const doc = createDocument();
+  const entries = ENTRIES.map((e) => ({ ...e, struck: e.serial === 8 }));
+  const screen = mountCallListFlow(doc.body, strings, {
+    wardId: WARD,
+    entries,
+    contacts: {
+      listConsented: async () => ['7', '8'].map((serial) => ({ wardId: WARD, serial, phone: '9876543210', consentAt: 'x' })),
+    },
+    assignments: { loadAssignments: async () => ({}), assignVoter: async () => {} },
+    roster: { listWorkers: async () => [], addWorker: async () => ({}) },
+    log: () => {},
+  });
+  await screen.ready;
+  const rows = screen.root.querySelectorAll('div.call-row');
+  assert.equal(rows.length, 1);
+  assert.match(rows[0].textContent, /सुनीता देवी/);
+  assert.doesNotMatch(screen.root.textContent, /मोहन लाल/);
+});
+
 test('the service worker precaches the call-list screen and the worker roster', () => {
   const sw = read('sw.js');
   for (const rel of ['src/ui/callListFlow.js', 'src/calls/workerRoster.js']) assert.ok(sw.includes(`"${rel}"`), rel);

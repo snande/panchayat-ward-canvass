@@ -4,8 +4,9 @@
 //   (with struck: true) so the roll matches the printed PDF line for line;
 //   the PDF bytes, EPIC numbers and page numbers are never written.
 // - Each record carries RECORD_VERSION. A record of an older known version
-//   (OLD_RECORD_VERSIONS) loads as null, so the ward is fetched and decoded
-//   again; any other version is a RollRecordVersionError, never a guess.
+//   (OLD_RECORD_VERSIONS) is never read: readStored reports it as stale, so
+//   the ward is fetched and decoded again; any other version is a
+//   RollRecordVersionError, never a guess.
 // - The entries are encrypted with WebCrypto AES-GCM (256-bit key, fresh
 //   12-byte IV per write, the ward key as additional data) and stored in
 //   IndexedDB.
@@ -99,14 +100,16 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
   }
 
   /**
-   * Decrypt a stored ward's entries, or null when none is stored or the
-   * stored copy is of an older version (the caller decodes the roll again).
-   * Rejects with RollRecordVersionError for a version it does not know.
+   * Read a stored ward in one read: {entries, stale}. entries is null when
+   * none is stored or when the copy is of an older version, which is never
+   * read; stale is true in that second case (the caller decodes the roll
+   * again). Rejects with RollRecordVersionError for a version it does not
+   * know.
    */
-  async function loadStored(wardKey) {
+  async function readStored(wardKey) {
     const record = await readValue(db, ROLLS_STORE, wardKey);
-    if (!record) return null;
-    if (OLD_RECORD_VERSIONS.has(record.v)) return null;
+    if (!record) return { entries: null, stale: false };
+    if (OLD_RECORD_VERSIONS.has(record.v)) return { entries: null, stale: true };
     if (record.v !== RECORD_VERSION) throw new RollRecordVersionError(wardKey, record.v);
     const key = await deviceKey();
     const plain = await crypto.subtle.decrypt(
@@ -114,16 +117,12 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
       key,
       record.data,
     );
-    return minimiseEntries(JSON.parse(new TextDecoder().decode(plain)));
+    return { entries: minimiseEntries(JSON.parse(new TextDecoder().decode(plain))), stale: false };
   }
 
-  /**
-   * True when the ward's stored copy is of an older record version, which
-   * loadStored does not read: the roll has to be fetched and decoded again.
-   */
-  async function isStale(wardKey) {
-    const record = await readValue(db, ROLLS_STORE, wardKey);
-    return Boolean(record) && OLD_RECORD_VERSIONS.has(record.v);
+  /** A stored ward's entries, or null (none stored, or an older version). */
+  async function loadStored(wardKey) {
+    return (await readStored(wardKey)).entries;
   }
 
   /** Key of the ward stored most recently, or null. */
@@ -132,7 +131,7 @@ export function createRollStore({ indexedDB = globalThis.indexedDB, crypto = glo
     return typeof value === 'string' ? value : null;
   }
 
-  return { encryptAndStore, loadStored, isStale, lastWardKey };
+  return { encryptAndStore, readStored, loadStored, lastWardKey };
 }
 
 let defaultStore = null;
@@ -141,4 +140,4 @@ const store = () => (defaultStore ||= createRollStore());
 export const encryptAndStore = (wardKey, entries) => store().encryptAndStore(wardKey, entries);
 export const loadStored = (wardKey) => store().loadStored(wardKey);
 export const lastWardKey = () => store().lastWardKey();
-export const isStale = (wardKey) => store().isStale(wardKey);
+export const readStored = (wardKey) => store().readStored(wardKey);

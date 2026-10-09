@@ -28,8 +28,11 @@ one.
    generated on the device as a non-extractable `CryptoKey` and kept in the
    same database. Each stored record carries a schema version (now 2). A
    version-1 copy, which left struck-off entries out, is fetched and decoded
-   again instead of being read, also when it is the ward restored at startup. A version the loader does not know is
-   reported as an error (`RollRecordVersionError`) and never read.
+   again instead of being read, also when it is the ward restored at
+   startup; offline, that startup shows the download error with a retry.
+   A version the loader does not know is reported as an error
+   (`RollRecordVersionError`), never read, and not overwritten: the roll is
+   shown from a fresh download but the unknown record is kept.
 4. `src/ui/rollList.js` renders the entries as a virtualised list: fixed
    100 px rows, with only the rows in view (plus 6 above and below) in the
    DOM. Text uses the page's Noto Sans Devanagari font. A struck-off entry

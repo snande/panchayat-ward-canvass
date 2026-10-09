@@ -294,7 +294,8 @@ export function addPageEntries(bySerial, rawEntries, page) {
 
 /**
  * Decode a roll PDF into its voter entries, one per serial, in roll order.
- * Every printed entry is returned, struck-off ones included. Each entry:
+ * decodeRoll returns every printed entry, in printed (serial) order, with
+ * no struck-off entry dropped. Each entry:
  * {serial, page, name, relation, relative, age, gender, house, epic, struck}
  * (the fields of fixtures/badli-ward1-expected.json plus page and struck)
  * with every string NFC-normalised Unicode; `epic` is null where the roll

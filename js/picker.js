@@ -94,8 +94,17 @@ var configReady = new Promise(function (resolve) {
   resolveConfig = resolve;
 });
 
+// restore() waits for the config at most this long, so a request that never
+// settles cannot hold it forever; it then gives up (no selection).
+var CONFIG_WAIT_MS = 30000;
+
 function resolveSelection(wardKey) {
-  return configReady.then(function (config) {
+  var timeout = new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve(null);
+    }, CONFIG_WAIT_MS);
+  });
+  return Promise.race([configReady, timeout]).then(function (config) {
     if (!config) {
       return null;
     }
