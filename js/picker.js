@@ -2,6 +2,7 @@ import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
+import { renderSeatHeader, saveSeat, seatFromSelection } from '../src/ui/seatHeader.js';
 import { startSync } from '../src/sync/syncEngine.js';
 import { createContactSync } from '../src/contacts/contactSync.js';
 import * as marks from '../src/tally/seenVotingStore.js';
@@ -22,6 +23,18 @@ var FALLBACK_STRINGS = {
 var container = document.getElementById('ward-picker');
 var rollContainer = document.getElementById('roll');
 var teamContainer = document.getElementById('team-join');
+var seatHeader = document.getElementById('seat-header');
+
+// The seat header above every screen names the ward just picked, and keeps
+// it (panchayat name, ward, seat type only) for the next cold start.
+function showSeat(config, selection, strings) {
+  var seat = seatFromSelection(config, selection);
+  if (!seat) {
+    return;
+  }
+  saveSeat(seat);
+  renderSeatHeader(seatHeader, seat, strings || {});
+}
 
 // Tapping a voter in the roll records their consent and number on the device,
 // encrypted, and queues it for the team; numbers teammates saved arrive with
@@ -151,6 +164,7 @@ if (container) {
     .then(function (config) {
       var picker = mountWardPicker(container, config, table, {
         onSelect: function (selection) {
+          showSeat(config, selection, table);
           if (roll) {
             roll.open(selection);
           }

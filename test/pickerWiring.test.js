@@ -24,7 +24,7 @@ async function waitFor(cond, ms = 8000) {
   }
 }
 
-function boot(idb, requests, { syncEnv } = {}) {
+function boot(idb, requests, { syncEnv, localStorage } = {}) {
   const doc = createDocument();
   const picker = doc.createElement('section');
   const roll = doc.createElement('section');
@@ -32,7 +32,8 @@ function boot(idb, requests, { syncEnv } = {}) {
   const empty = doc.createElement('section');
   const team = doc.createElement('section');
   team.setAttribute('hidden', '');
-  const byId = { 'ward-picker': picker, roll };
+  const seat = doc.createElement('div');
+  const byId = { 'ward-picker': picker, roll, 'seat-header': seat };
   if (syncEnv) byId['team-join'] = team;
   const fakeDocument = {
     getElementById: (id) => byId[id] || null,
@@ -56,7 +57,7 @@ function boot(idb, requests, { syncEnv } = {}) {
     return new Response('', { status: 404 });
   };
   const saved = {};
-  const globals = { document: fakeDocument, window: {}, fetch, indexedDB: idb };
+  const globals = { document: fakeDocument, window: {}, fetch, indexedDB: idb, localStorage };
   for (const [k, v] of Object.entries(globals)) {
     saved[k] = Object.getOwnPropertyDescriptor(globalThis, k);
     Object.defineProperty(globalThis, k, { value: v, configurable: true, writable: true });
@@ -67,7 +68,7 @@ function boot(idb, requests, { syncEnv } = {}) {
       else delete globalThis[k];
     }
   };
-  return { picker, roll, empty, team, restore };
+  return { picker, roll, empty, team, seat, restore };
 }
 
 function choose(select, value) {
@@ -78,7 +79,9 @@ function choose(select, value) {
 test('picking a ward opens its roll and hides the empty state; a reload restores it offline', async () => {
   const idb = createFakeIndexedDB();
   const requests = [];
-  const first = boot(idb, requests);
+  const stored = new Map();
+  const localStorage = { getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => { stored.set(k, String(v)); } };
+  const first = boot(idb, requests, { localStorage });
   try {
     await import('../js/picker.js?wiring=1');
     await waitFor(() => first.picker.querySelector('select') !== null);
@@ -87,6 +90,13 @@ test('picking a ward opens its roll and hides the empty state; a reload restores
     choose(samiti, '125');
     choose(panchayat, '6313');
     assert.equal(first.roll.querySelectorAll('div.roll-row').length, 0);
+    choose(ward, '1');
+    // The seat header names the pick at once and keeps only the seat.
+    assert.equal(first.seat.textContent, 'पंचायत: बडली · वार्ड: 1');
+    assert.deepEqual(JSON.parse(stored.get('ward-canvass-seat')),
+      { schemaVersion: 1, seatType: 'ward', panchayat: 'बडली', ward: '1' });
+    choose(ward, '2');
+    assert.equal(first.seat.textContent, 'पंचायत: बडली · वार्ड: 2');
     choose(ward, '1');
 
     await waitFor(() => first.roll.querySelectorAll('div.roll-row').length > 0);

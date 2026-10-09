@@ -127,5 +127,9 @@
   "turnout.countUnavailable": "गिनती उपलब्ध नहीं",
   "turnout.invalid": "मतदान की संख्या केवल अंकों में डालें, जैसे ४१२।",
   "turnout.saved": "आधिकारिक मतदान इस फ़ोन पर सहेजा गया।",
-  "turnout.saveFailed": "मतदान सहेजा नहीं जा सका। फिर से कोशिश करें।"
+  "turnout.saveFailed": "मतदान सहेजा नहीं जा सका। फिर से कोशिश करें।",
+  "seat_header_panchayat": "पंचायत",
+  "seat_header_ward": "वार्ड",
+  "seat_header_all_wards": "सभी वार्ड",
+  "seat_header_empty": "कोई वार्ड लोड नहीं — ऊपर पंचायत और वार्ड चुनें"
 }

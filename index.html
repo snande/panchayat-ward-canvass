@@ -22,6 +22,11 @@
     <h1 data-i18n="app_title">पंचायत वार्ड कैनवास</h1>
     <p data-i18n="app_subtitle">मतदाता सूची और घर-घर संपर्क</p>
   </header>
+  <!-- The seat header: the loaded panchayat and ward, above every screen
+       (src/ui/seatHeader.js; js/app.js restores it, js/picker.js updates it). -->
+  <div id="seat-header" class="seat-header" aria-live="polite">
+    <a class="seat-header-link" href="#ward-picker" data-i18n="seat_header_empty">कोई वार्ड लोड नहीं — ऊपर पंचायत और वार्ड चुनें</a>
+  </div>
   <main id="app">
     <!-- Team join (candidate code + team passphrase), shown by js/picker.js
          while the device holds no team credentials (src/ui/teamJoinScreen.js). -->
