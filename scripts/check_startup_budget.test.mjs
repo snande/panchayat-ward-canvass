@@ -16,6 +16,7 @@ function run(args = []) {
 
 // A minimal shell that passes: a classic js/app.js, a module js/picker.js
 // that imports src/ui/dom.js, and a decoder only picker.js reaches by import().
+// An override of null leaves that file out.
 function fixture(t, overrides = {}) {
   const root = mkdtempSync(join(tmpdir(), 'startup-budget-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -73,6 +74,32 @@ test('a page module reaching the decoder transitively fails', (t) => {
   assert.match(r.stderr, /js\/picker\.js -> src\/ui\/dom\.js -> src\/decoder\/decodeRoll\.js/);
 });
 
+test('a decoder import after a regex holding a quote, "//" or "/*" still fails', (t) => {
+  const root = fixture(t, {
+    'src/ui/dom.js': [
+      'const star = /[/*]/;',
+      "const quote = /'/g;",
+      'const url = /https?:\\/\\//;',
+      "const cls = x.split(/[/']/);",
+      'const tick = /`/;',
+      "import { decodeRoll } from '../decoder/decodeRoll.js';",
+      'export const el = 1;',
+      '',
+    ].join('\n'),
+  });
+  const r = run(['--root', root]);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /src\/ui\/dom\.js -> src\/decoder\/decodeRoll\.js/);
+});
+
+test('a missing critical-path file fails', (t) => {
+  for (const missing of ['styles.css', FONT]) {
+    const r = run(['--root', fixture(t, { [missing]: null })]);
+    assert.equal(r.status, 1, missing);
+    assert.ok(r.stderr.includes(`FAIL: ${missing} does not exist`), r.stderr);
+  }
+});
+
 test('a critical path over 350 KB fails', (t) => {
   const r = run(['--root', fixture(t, { [FONT]: Buffer.alloc(BUDGET_BYTES) })]);
   assert.equal(r.status, 1);
@@ -117,6 +144,28 @@ test('staticImports skips import() and commented-out imports, and reads multi-li
     "export const notAnImport = 'from';",
   ].join('\n');
   assert.deepEqual(staticImports(src), ['./a.js', './side.js', './x.js', './re.js', './y.js', './w.js']);
+});
+
+test('staticImports reads imports after regex literals holding quotes, "//" or "/*"', () => {
+  const src = [
+    "const quote = /'/g;",
+    'const dq = text.replace(/"/g, "");',
+    "import { q } from './after-quote.js';",
+    'const url = /https?:\\/\\//i;',
+    "import { u } from './after-slashes.js';",
+    'const cls = /[/*]/;',
+    "import { c } from './after-class.js';",
+    'function f(s) { return /`/.test(s); }',
+    "import { b } from './after-backtick.js';",
+    "const sq = /'/; import { s } from './same-line-quote.js';",
+    "const sl = /a\\/\\//; import { l } from './same-line-slashes.js';",
+    'const half = total / 2; const ratio = (a) / b;',
+    "import { d } from './after-division.js';",
+  ].join('\n');
+  assert.deepEqual(staticImports(src), [
+    './after-quote.js', './after-slashes.js', './after-class.js', './after-backtick.js',
+    './same-line-quote.js', './same-line-slashes.js', './after-division.js',
+  ]);
 });
 
 test('parsePrecache reads string entries past comments', () => {

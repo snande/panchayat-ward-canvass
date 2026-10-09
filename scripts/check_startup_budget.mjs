@@ -28,9 +28,47 @@ const SHELL_FILES = ['index.html', 'styles.css', 'manifest.webmanifest', FONT];
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Remove // and /* */ comments, leaving string and template literals alone,
-// so a commented-out import is not counted and a "//" inside a string does
-// not swallow the rest of its line.
+// After one of these characters, or one of these keywords, a "/" starts a
+// regex literal; after anything else (an identifier, a number, ")" or "]")
+// it is division.
+const REGEX_AFTER_CHAR = new Set('(,=:[!&|?{};+-*%<>~^'.split(''));
+const REGEX_AFTER_WORD = new Set([
+  'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void',
+  'throw', 'case', 'do', 'else', 'yield', 'await',
+]);
+
+function regexAllowed(out) {
+  let k = out.length - 1;
+  while (k >= 0 && /\s/.test(out[k])) k--;
+  if (k < 0) return true;
+  if (REGEX_AFTER_CHAR.has(out[k])) return true;
+  const word = /[A-Za-z_$][\w$]*$/.exec(out.slice(Math.max(0, k - 15), k + 1));
+  return word !== null && REGEX_AFTER_WORD.has(word[0]);
+}
+
+// The index just past the regex literal starting at source[i], or -1 if no
+// literal closes on this line (then the "/" was division after all).
+function regexEnd(source, i) {
+  let inClass = false;
+  for (let j = i + 1; j < source.length; j++) {
+    const c = source[j];
+    if (c === '\n') return -1;
+    if (c === '\\') j++;
+    else if (c === '[') inClass = true;
+    else if (c === ']') inClass = false;
+    else if (c === '/' && !inClass) {
+      j++;
+      while (j < source.length && /[a-z]/i.test(source[j])) j++;
+      return j;
+    }
+  }
+  return -1;
+}
+
+// Remove // and /* */ comments and blank out regex literals, leaving string
+// and template literals alone. A commented-out import is then not counted,
+// and a quote or "//" inside a string or regex such as /'/ or /https?:\/\//
+// cannot swallow the imports after it.
 export function stripComments(source) {
   let out = '';
   let i = 0;
@@ -52,6 +90,10 @@ export function stripComments(source) {
       const block = source.slice(i, end < 0 ? source.length : end + 2);
       out += block.replace(/[^\n]/g, ' ');
       i = end < 0 ? source.length : end + 2;
+    } else if (c === '/' && regexAllowed(out) && regexEnd(source, i) > 0) {
+      const end = regexEnd(source, i);
+      out += '0' + ' '.repeat(end - i - 1);
+      i = end;
     } else {
       out += c;
       i++;
@@ -180,7 +222,8 @@ export function checkStartupBudget(root = ROOT) {
     }
   }
 
-  // 2. The critical path fits the budget.
+  // 2. The critical path fits the budget. A missing module of the graph was
+  // already reported by the walk above.
   const app = walkStaticGraph(root, [APP]);
   const files = ['index.html', 'styles.css', ...app.files, FONT];
   let totalBytes = 0;
