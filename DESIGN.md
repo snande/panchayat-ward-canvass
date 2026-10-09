@@ -106,6 +106,7 @@ three lines still fit its fixed height.
 | Seat header | `.seat-header`, `.seat-header-text`, `.seat-header-link` | One 48 px strip under the app header, above every screen, naming the seat whose roll is on screen in body text on the surface: "पंचायत: <name> · वार्ड: <n>", or "· सभी वार्ड" for a sarpanch. While the stored seat is read it is the same strip, blank (`data-state="pending"`). With no seat it is the empty state: on the info tint, an underlined link with a teal edge that fills the strip and leads to the ward picker. Built by `renderSeatHeader()` in `src/ui/seatHeader.js`. |
 | SEC footer | `.sec-footer`, `.sec-footer-text` | Three static lines below every screen, on the surface above a hairline, in body text (`--color-text`, `--font-size-sm`, never muted): the data source, "not an official SEC app" and "the printed roll prevails". No control, no party or candidate branding, no network; the same in every state. Built by `renderSecFooter()` in `src/ui/secFooter.js`. |
 | Search screen | `.search-screen`, `.search-filters`, `.search-row` | The query box (`.field-input`) over every loaded ward, shown in every state and disabled until a roll is loaded; then a grid of `.field-select`/`.field-input` filters (ward or booth, gender, age range, tag, visit status, sort) and two `.choice` rows (has a number, not called yet). Each result is a `.list-row`: ward/serial and name, then relative · age · gender · house in muted `--font-size-sm`; the matched text is a `<mark>` on `--color-success-bg`, and the row a ward/serial jump ("3/145") lands on is selected (`aria-selected`) with a teal edge on the tint. At most 100 rows. Built by `createVoterSearchScreen()` in `src/ui/voterSearchScreen.js`. |
+| Household card | `.household-card`, `.household-members` | Every voter at one house number in a `.panel`: the panel header names the house number, with the member count as its subtitle. Each member is a `<button>` `.list-row` (at least 48 px) built from the search row's lines: "क्रम" serial and name, then relative · age · gender in muted `--font-size-sm`, then the phone number and the tag and visit status as neutral `.badge`s in body text; a value that is missing reads "—". A tap only hands the member's ward and serial to the caller (`onOpenMember`). No store write, no destructive action, no network. Built by `renderHouseholdCard()` in `src/households/householdCard.js`. |
 | Alert | `.alert` (+ `data-tone="error"`) | A block that asks before something is deleted: the consequence in body text, then the danger button and a secondary "no". |
 
 The controls `.btn-primary`, `.btn-secondary`, `.btn-quiet`,
@@ -154,3 +155,10 @@ line saying whom to call: a ward/serial jump to a voter who is not loaded or
 is hidden by a filter, or a minimum age above the maximum). If the number
 and call lookups cannot be read, those two boxes are disabled under a line
 saying what to do and whom to call.
+
+The household card (`src/households/householdCard.js`) carries the same
+field: loading (info notice while every member's number, tag and visit
+status are read; the panel is `aria-busy`), empty (info notice: no house with
+that number in the loaded ward; check the number or load the right ward),
+success (the member rows) and error (error notice saying what to do, a line
+saying whom to call, and a secondary retry).
