@@ -134,3 +134,33 @@ test('the list uses the Noto Sans Devanagari base font and fixed-height rows', (
   assert.doesNotMatch(row, /font-family/);
   assert.match(css, /\.roll-viewport\s*\{[^}]*overflow-y:\s*auto/);
 });
+
+test('a struck-off entry stays in the list with its serial and name struck through', () => {
+  const list = entries(3000).map((e) => ({ ...e, struck: e.serial === 2 || e.serial === 2500 }));
+  const { view, flush } = mount(list);
+  assert.equal(view.root.querySelector('p.roll-count').textContent, `${strings.roll_count}: 3000`);
+  const rowFor = (serial) => rows(view).find((r) => r.querySelector('span.roll-name').textContent === `${serial}. नाम${serial}`);
+
+  const struck = rowFor(2);
+  assert.ok(struck, 'struck-off row is rendered');
+  assert.equal(struck.getAttribute('class'), 'roll-row roll-row--struck');
+  assert.match(struck.querySelector('span.roll-meta').textContent, new RegExp(`^${strings.roll_struck} · `));
+  assert.equal(rowFor(1).getAttribute('class'), 'roll-row');
+  assert.ok(!rowFor(1).querySelector('span.roll-meta').textContent.includes(strings.roll_struck));
+
+  // Reachable by scrolling, and a recycled row drops the struck class again.
+  view.viewport.scrollTop = 2499 * ROW_HEIGHT;
+  view.viewport.dispatchEvent({ type: 'scroll' });
+  flush();
+  assert.equal(rowFor(2500).getAttribute('class'), 'roll-row roll-row--struck');
+  assert.equal(rowFor(2501).getAttribute('class'), 'roll-row');
+});
+
+test('styles.css strikes through the serial and name of a struck-off row with a DESIGN.md token', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const rule = css.match(/\.roll-row--struck \.roll-name\s*\{([^}]*)\}/);
+  assert.ok(rule, 'no .roll-row--struck .roll-name rule');
+  assert.match(rule[1], /text-decoration:\s*line-through/);
+  assert.match(rule[1], /color:\s*var\(--color-text-muted\)/);
+  assert.ok(strings.roll_struck);
+});

@@ -36,9 +36,21 @@ cd tools/reference-decoder
 ../../venv/bin/python decode.py ../../fixtures/badli-ward1.pdf ../../src/decoder/master-glyph-table.json /tmp/out
 ```
 
-It writes `/tmp/out/entries.json` (all serials with a `deleted` flag) and a
-per-page text dump. Against `fixtures/badli-ward1-expected.json` it scores
-297 of 297.
+It writes `/tmp/out/entries.json` (all serials with a `deleted` flag; the
+JavaScript decoder calls the same flag `struck`) and a per-page text dump.
+Against `fixtures/badli-ward1-expected.json` it scores 297 of 297.
+
+`expected.py` turns that file into an expected-entries file for
+`test/secFixtures.test.js` (serial, name, relative, age, gender, house,
+struck):
+
+```
+../../venv/bin/python decode.py ../../fixtures/sec/bharatpur/ARAUDA-ward-003.pdf ../../src/decoder/master-glyph-table.json /tmp/out
+../../venv/bin/python expected.py /tmp/out/entries.json ../../fixtures/sec/bharatpur/ARAUDA-ward-003-expected.json
+```
+
+Do this for each roll listed in `ROLLS` in that test; a roll whose expected
+file is missing is reported there as skipped.
 
 Rebuilding the glyph table needs Arial Unicode MS, which macOS ships at
 `/Library/Fonts/Arial Unicode.ttf` and which is not committed:

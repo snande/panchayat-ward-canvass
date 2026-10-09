@@ -124,43 +124,43 @@ const entryLines = (serial, y) => [
 test('parseEntries places every value by the row of its label', () => {
   const [e] = parseEntries(entryLines(7, 500));
   assert.deepEqual(
-    { serial: e.serial, name: e.name, relation: e.relation, rel: e.rel, house: e.house, age: e.age, gender: e.gender, epic: e.epic, deleted: e.deleted, extra: e.extra },
-    { serial: 7, name: 'राम कुमार', relation: 'पिता', rel: 'श्याम', house: '05', age: 40, gender: 'पुरूष', epic: 'UPY1234567', deleted: false, extra: undefined },
+    { serial: e.serial, name: e.name, relation: e.relation, rel: e.rel, house: e.house, age: e.age, gender: e.gender, epic: e.epic, struck: e.struck, extra: e.extra },
+    { serial: 7, name: 'राम कुमार', relation: 'पिता', rel: 'श्याम', house: '05', age: 40, gender: 'पुरूष', epic: 'UPY1234567', struck: false, extra: undefined },
   );
 });
 
 test('parseEntries: an "O" in the serial font marks only the entry whose serial is on its row', () => {
   const struck = parseEntries([...entryLines(7, 500), line(10, 500.5, 'O', 'serial'), ...entryLines(8, 400)]);
-  assert.deepEqual(struck.map((e) => [e.serial, e.deleted]), [[7, true], [8, false]]);
+  assert.deepEqual(struck.map((e) => [e.serial, e.struck]), [[7, true], [8, false]]);
 
   const offRow = parseEntries([...entryLines(7, 500), line(10, 450, 'O', 'serial')]);
-  assert.deepEqual(offRow.map((e) => [e.serial, e.deleted]), [[7, false]]);
+  assert.deepEqual(offRow.map((e) => [e.serial, e.struck]), [[7, false]]);
 
   const hindiO = parseEntries([...entryLines(7, 500), line(10, 500, 'O', 'latin')]);
-  assert.deepEqual(hindiO.map((e) => [e.serial, e.deleted]), [[7, false]]);
+  assert.deepEqual(hindiO.map((e) => [e.serial, e.struck]), [[7, false]]);
 });
 
 test('parseEntries: a page without a नाम label yields no entries', () => {
   assert.deepEqual(parseEntries([line(20, 500, '12', 'serial'), line(50, 500, 'कुल मतदाता')]), []);
 });
 
-test('addPageEntries: a supplement repeat keeps the first page and ORs the deleted flag', () => {
+test('addPageEntries: a supplement repeat keeps the first page and ORs the struck flag', () => {
   const bySerial = new Map();
   addPageEntries(bySerial, parseEntries(entryLines(9, 500)), 3);
   addPageEntries(bySerial, parseEntries([...entryLines(9, 300), line(10, 300, 'O', 'serial')]), 16);
   assert.equal(bySerial.size, 1);
-  assert.deepEqual({ page: bySerial.get(9).page, deleted: bySerial.get(9).deleted }, { page: 3, deleted: true });
+  assert.deepEqual({ page: bySerial.get(9).page, struck: bySerial.get(9).struck }, { page: 3, struck: true });
 
-  // a later repeat that is not struck off does not un-delete the entry
+  // a later repeat that is not struck off does not un-strike the entry
   addPageEntries(bySerial, parseEntries(entryLines(9, 300)), 17);
-  assert.equal(bySerial.get(9).deleted, true);
+  assert.equal(bySerial.get(9).struck, true);
 });
 
 test('addPageEntries renames rel to relative, NFC-normalises strings and sets a missing EPIC to null', () => {
   const bySerial = new Map();
-  addPageEntries(bySerial, [{ serial: 3, deleted: false, name: 'जांगिड़', rel: 'राम', relation: 'पिता', age: 1, gender: 'स्त्री', house: '1' }], 15);
+  addPageEntries(bySerial, [{ serial: 3, struck: false, name: 'जांगिड़', rel: 'राम', relation: 'पिता', age: 1, gender: 'स्त्री', house: '1' }], 15);
   assert.deepEqual(bySerial.get(3), {
-    serial: 3, page: 15, name: 'जांगिड़', relation: 'पिता', relative: 'राम', age: 1, gender: 'स्त्री', house: '1', epic: null, deleted: false,
+    serial: 3, page: 15, name: 'जांगिड़', relation: 'पिता', relative: 'राम', age: 1, gender: 'स्त्री', house: '1', epic: null, struck: false,
   });
 });
 
@@ -174,7 +174,7 @@ test('decodeRoll decodes the Badli ward 1 roll to the expected entries', () => {
 
   assert.deepEqual(entries.map((e) => e.serial), Array.from({ length: 326 }, (_, i) => i + 1));
   assert.deepEqual(
-    entries.filter((e) => e.deleted).map((e) => e.serial),
+    entries.filter((e) => e.struck).map((e) => e.serial),
     allSerials.filter((e) => e.deleted).map((e) => e.serial),
   );
   assert.deepEqual(
@@ -185,7 +185,7 @@ test('decodeRoll decodes the Badli ward 1 roll to the expected entries', () => {
   // every field of the expected file is present, under the same name
   for (const key of Object.keys(expected[0])) assert.ok(Object.hasOwn(entries[0], key), key);
 
-  const live = new Map(entries.filter((e) => !e.deleted).map((e) => [e.serial, e]));
+  const live = new Map(entries.filter((e) => !e.struck).map((e) => [e.serial, e]));
   const matched = expected.filter((want) => {
     const got = live.get(want.serial);
     return got && Object.keys(want).every((k) => norm(got[k]) === norm(want[k]));
@@ -199,11 +199,11 @@ test('decodeRoll decodes the Badli ward 1 roll to the expected entries', () => {
   }
   // struck-off entries keep the page of the original list, not the supplement's repeat
   assert.equal(entries.find((e) => e.serial === 9).page, 3);
-  assert.ok(entries.filter((e) => e.deleted).every((e) => e.page < 15));
+  assert.ok(entries.filter((e) => e.struck).every((e) => e.page < 15));
   // the supplement adds serials 319 to 326, without EPIC numbers
   const supplement = entries.filter((e) => e.serial >= 319);
   assert.deepEqual([...new Set(supplement.map((e) => e.page))], [15]);
-  assert.ok(supplement.every((e) => e.epic === null && !e.deleted));
+  assert.ok(supplement.every((e) => e.epic === null && !e.struck));
 });
 
 // --- no OCR, Kruti Dev table or network call -------------------------------------

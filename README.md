@@ -13,18 +13,29 @@ one.
    requests the same-origin `/roll?url=<encoded pdfUrl>`.
 2. `decodeRoll` from `src/decoder/` turns the bytes into entries on the text
    layer. The decoder and its glyph table are imported only when a PDF has to
-   be decoded.
+   be decoded. It returns every entry the PDF prints, in roll order, each
+   with a boolean `struck`: `true` for an entry printed as struck off (an `O`
+   in the serial font on the serial's row), `false` otherwise.
+   `test/secFixtures.test.js` compares five rolls from five districts under
+   `fixtures/sec/` with the reference decoder's output
+   (`tools/reference-decoder/`).
 3. `src/roll/rollStore.js` keeps only `serial, name, relative, age, gender,
-   house` of each live entry. Struck-off (deleted) entries, EPIC numbers and
-   the PDF are never stored. The entries are encrypted with WebCrypto AES-GCM
-   (256-bit, fresh 12-byte IV per write, ward key as additional data) and
-   written to IndexedDB (`ward-canvass`). The key is generated on the device
-   as a non-extractable `CryptoKey` and kept in the same database.
-   Struck-off serials are left out because the benchmark roll
-   (`fixtures/badli-ward1-expected.json`, 297 voters) does not list them.
+   house, struck` of each entry. Struck-off entries are stored alongside the
+   live ones, so the stored roll matches the printed PDF line for line. EPIC
+   numbers and the PDF are never stored. The entries are encrypted with
+   WebCrypto AES-GCM (256-bit, fresh 12-byte IV per write, ward key as
+   additional data) and written to IndexedDB (`ward-canvass`). The key is
+   generated on the device as a non-extractable `CryptoKey` and kept in the
+   same database. Each stored record carries a schema version (now 2). A
+   version-1 copy, which left struck-off entries out, is fetched and decoded
+   again instead of being read. A version the loader does not know is
+   reported as an error (`RollRecordVersionError`) and never read.
 4. `src/ui/rollList.js` renders the entries as a virtualised list: fixed
    100 px rows, with only the rows in view (plus 6 above and below) in the
-   DOM. Text uses the page's Noto Sans Devanagari font.
+   DOM. Text uses the page's Noto Sans Devanagari font. A struck-off entry
+   stays in the list and is shown struck off: its serial and name are struck
+   through (`.roll-row--struck` in `styles.css`), and its detail line starts
+   with "सूची से हटाया गया".
 
 `src/roll/rollFlow.js` ties these together. Picking a ward that is already
 stored shows the encrypted copy without a request. At startup the last stored

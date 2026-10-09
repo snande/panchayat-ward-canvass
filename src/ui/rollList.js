@@ -7,6 +7,10 @@
 // voters therefore costs a few dozen DOM nodes, which keeps 2 GB phones
 // smooth. Text is set with textContent only and inherits the page's
 // Noto Sans Devanagari font (--font-family-base in styles.css).
+//
+// A struck-off entry (struck: true) keeps its place in the list: its row gets
+// the roll-row--struck class, which draws its serial and name struck through,
+// and its detail line says it was struck off (roll_struck).
 
 import { el } from './dom.js';
 
@@ -33,7 +37,7 @@ function defaultFrame(fn) {
 
 /**
  * Mount the list into container (replacing its content).
- * @param {object[]} entries {serial, name, relative, age, gender, house}
+ * @param {object[]} entries {serial, name, relative, age, gender, house, struck}
  * @param {Record<string,string>} strings the Hindi string table
  * @param {{viewportHeight?: number, requestFrame?: Function, onSelect?: (entry: object) => void}} [opts]
  *   onSelect is called with the entry of a tapped row (Enter or Space on a
@@ -75,10 +79,12 @@ export function mountRollList(container, entries, strings, opts = {}) {
     row.setAttribute('style', `height: ${ROW_HEIGHT}px; transform: translateY(${index * ROW_HEIGHT}px)`);
     row.setAttribute('aria-posinset', String(index + 1));
     shownIndex.set(row, index);
+    row.setAttribute('class', entry.struck === true ? 'roll-row roll-row--struck' : 'roll-row');
     const [name, relative, meta] = row.childNodes;
     name.textContent = `${entry.serial}. ${entry.name}`;
     relative.textContent = entry.relative;
     const parts = [];
+    if (entry.struck === true) parts.push(text('roll_struck'));
     if (entry.age != null) parts.push(`${text('roll_age')} ${entry.age}`);
     if (entry.gender) parts.push(entry.gender);
     if (entry.house) parts.push(`${text('roll_house')} ${entry.house}`);

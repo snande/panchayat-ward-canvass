@@ -12,14 +12,14 @@
 const norm = (v) => (typeof v === 'string' ? v.normalize('NFC') : v);
 
 /**
- * @param {object[]} decoded decodeRoll output (struck-off entries flagged `deleted`)
+ * @param {object[]} decoded decodeRoll output (struck-off entries flagged `struck`)
  * @param {object[]} expected ground truth, struck-off serials left out
- * @returns {{total: number, matched: object[], mismatches: object[], percent: number, deleted: number}}
+ * @returns {{total: number, matched: object[], mismatches: object[], percent: number, struck: number}}
  *   matched: [{got, want}]; mismatches: [{serial, page, field, decoded, expected}]
  */
 export function compareEntries(decoded, expected) {
   const all = new Map(decoded.map((e) => [e.serial, e]));
-  const live = new Map(decoded.filter((e) => !e.deleted).map((e) => [e.serial, e]));
+  const live = new Map(decoded.filter((e) => !e.struck).map((e) => [e.serial, e]));
   const sortedDecoded = [...decoded].sort((a, b) => a.serial - b.serial);
   // Page of an entry the decoder lost: where it put the serial (struck off),
   // else the page of the nearest decoded serial before it.
@@ -42,7 +42,7 @@ export function compareEntries(decoded, expected) {
       mismatches.push({
         serial: want.serial,
         page: pageOf(want.serial),
-        field: struck ? 'deleted' : '(entry not decoded)',
+        field: struck ? 'struck' : '(entry not decoded)',
         decoded: struck ? true : undefined,
         expected: struck ? false : want.name,
       });
@@ -61,7 +61,7 @@ export function compareEntries(decoded, expected) {
   mismatches.sort((a, b) => a.serial - b.serial);
   const total = expected.length;
   const percent = total ? Math.round((matched.length / total) * 10000) / 100 : 0;
-  return { total, matched, mismatches, percent, deleted: decoded.filter((e) => e.deleted).length };
+  return { total, matched, mismatches, percent, struck: decoded.filter((e) => e.struck).length };
 }
 
 /**
@@ -82,7 +82,7 @@ export function sampleMatched(matched, min = 10) {
 const cell = (v) => (v === undefined ? '(missing)' : JSON.stringify(v)).replace(/\|/g, '\\|');
 
 /** The Markdown report. Deterministic: no timestamps, so CI can diff it. */
-export function renderReport({ total, matched, mismatches, percent, deleted }, { fields, sampleMin = 10 } = {}) {
+export function renderReport({ total, matched, mismatches, percent, struck }, { fields, sampleMin = 10 } = {}) {
   const lines = [
     '# Badli ward 1 decoder benchmark',
     '',
@@ -94,7 +94,7 @@ export function renderReport({ total, matched, mismatches, percent, deleted }, {
     '',
     `An entry matches when every field (${fields.join(', ')}) is equal;`,
     'strings are compared NFC-normalised on both sides. The decoder also found',
-    `${deleted} struck-off serials, which the expected file leaves out.`,
+    `${struck} struck-off serials, which the expected file leaves out.`,
     '',
     '## Mismatched entries',
     '',

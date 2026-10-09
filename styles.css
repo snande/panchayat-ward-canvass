@@ -450,6 +450,14 @@ select.picker-select,
   color: var(--color-text-muted);
 }
 
+/* A struck-off entry (src/ui/rollList.js) stays in the list, its serial and
+   name struck through in the muted text colour, as the printed roll shows it. */
+.roll-row--struck .roll-name {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  color: var(--color-text-muted);
+}
+
 /* Consent and phone capture for a tapped voter (src/ui/contactPanel.js),
    shown above the roll's search box. Rows open it, so they show they can. */
 .roll-row[tabindex],

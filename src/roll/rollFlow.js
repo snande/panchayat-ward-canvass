@@ -10,7 +10,7 @@
 // so the app opens offline once a roll has been fetched.
 
 import { fetchRoll as defaultFetchRoll, RollFetchError } from './fetchRoll.js';
-import { createRollStore, minimiseEntries, wardKeyFor } from './rollStore.js';
+import { createRollStore, minimiseEntries, RollRecordVersionError, wardKeyFor } from './rollStore.js';
 import { el } from '../ui/dom.js';
 import { mountRollWithSearch } from '../ui/rollSearch.js';
 
@@ -87,8 +87,12 @@ export function createRollFlow(container, strings, deps = {}) {
     try {
       return await getStore().loadStored(wardKey);
     } catch (err) {
-      // An unreadable copy (e.g. storage cleared under us) is refetched.
-      log('stored roll could not be read', err);
+      // An unreadable copy (e.g. storage cleared under us) is refetched. So
+      // is a copy whose record version this build does not know: it is
+      // reported, never read. (An older version loads as null: refetched.)
+      log(err instanceof RollRecordVersionError
+        ? 'stored roll has an unknown record version'
+        : 'stored roll could not be read', err);
       return null;
     }
   }

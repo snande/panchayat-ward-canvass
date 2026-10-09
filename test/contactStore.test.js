@@ -244,10 +244,11 @@ test('voter keys never collide: ":" is rejected in wardId and serial 5 equals "5
   assert.equal((await store.getContact(WARD, '5')).serial, 5);
 });
 
-test('upgrading a v1 database keeps its roll and its device key, which the contact store reuses', async () => {
+test('upgrading a v1 database keeps its roll record and its device key, which the contact store reuses', async () => {
   const idb = createFakeIndexedDB();
-  // Seed the database exactly as the v1 roll store left it.
-  const roll = minimiseEntries([{ serial: 1, name: 'किशनादेवी', relative: 'सत्यनारायण', age: 57, gender: 'स्त्री', house: '1' }]);
+  // Seed the database exactly as the v1 roll store left it (v1 roll records
+  // had six fields and no struck-off entries).
+  const roll = [{ serial: 1, name: 'किशनादेवी', relative: 'सत्यनारायण', age: 57, gender: 'स्त्री', house: '1' }];
   const key = await webcrypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
   const iv = webcrypto.getRandomValues(new Uint8Array(12));
   const data = await webcrypto.subtle.encrypt(
@@ -271,9 +272,12 @@ test('upgrading a v1 database keeps its roll and its device key, which the conta
   assert.equal(idb.databases.get(DB_NAME).version, 1);
 
   const rolls = createRollStore({ indexedDB: idb, crypto: webcrypto });
-  assert.deepEqual(await rolls.loadStored(WARD), roll);
+  // The v1 roll record is kept, but it is of the older shape: it loads as
+  // null so the ward is decoded again rather than misread.
+  assert.equal(await rolls.loadStored(WARD), null);
   assert.equal(await rolls.lastWardKey(), WARD);
   const record = idb.databases.get(DB_NAME);
+  assert.equal(record.stores.get(ROLLS_STORE).get(WARD).v, 1);
   assert.equal(record.version, DB_VERSION);
   assert.ok(DB_VERSION >= 2);
   assert.ok(record.stores.has(CONTACTS_STORE));
@@ -284,7 +288,11 @@ test('upgrading a v1 database keeps its roll and its device key, which the conta
   assert.equal(record.stores.get(KEYS_STORE).size, 1);
   assert.equal(record.stores.get(KEYS_STORE).get(DEVICE_KEY_ID), key);
   assert.equal((await decryptRecord(idb, `${WARD}:1`)).phone, PHONE);
-  assert.deepEqual(await rolls.loadStored(WARD), roll);
+  // The re-decoded roll is written with the same, kept device key.
+  const stored = await rolls.encryptAndStore(WARD, roll);
+  assert.deepEqual(stored, minimiseEntries(roll));
+  assert.equal(record.stores.get(KEYS_STORE).size, 1);
+  assert.deepEqual(await rolls.loadStored(WARD), stored);
 });
 
 test('the roll store and the contact store share one device key on a new device', async () => {

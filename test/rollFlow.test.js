@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createRollFlow, decodeWithTable } from '../src/roll/rollFlow.js';
 import { RollFetchError } from '../src/roll/fetchRoll.js';
-import { createRollStore, minimiseEntries } from '../src/roll/rollStore.js';
+import { createRollStore, minimiseEntries, RollRecordVersionError } from '../src/roll/rollStore.js';
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 
@@ -94,6 +94,46 @@ test('reopening offline shows the same list with no network request', async () =
   await offline.flow.open(SELECTION);
   assert.equal(offline.calls.length, 0);
   assert.deepEqual(offline.shown[1], before);
+});
+
+test('struck-off entries are stored and listed, struck through, not dropped', async () => {
+  const s = setup({ fetchRoll: async () => pdfBuffer() });
+  await s.flow.open(SELECTION);
+  const list = s.shown[0];
+  const decoded = await decodeWithTable(pdfBuffer());
+  assert.deepEqual(list.map((e) => [e.serial, e.struck]), decoded.map((e) => [e.serial, e.struck]));
+  assert.ok(list.some((e) => e.struck) && list.some((e) => !e.struck));
+  assert.equal(countLine(s.container), `${strings.roll_count}: ${decoded.length}`);
+  assert.deepEqual(await s.store.loadStored('17/125/6313/1'), list);
+});
+
+test('a stored roll of the older record version is decoded again, not misread', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  idb.databases.get('ward-canvass').stores.get('rolls').get('17/125/6313/1').v = 1;
+
+  const s = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await s.flow.open(SELECTION);
+  assert.equal(s.calls.length, 1);
+  assert.deepEqual(s.shown[0], first.shown[0]);
+  assert.equal(idb.databases.get('ward-canvass').stores.get('rolls').get('17/125/6313/1').v, 2);
+  assert.deepEqual(s.errors, []);
+});
+
+test('a stored roll of an unknown record version is reported, not read, and decoded again', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await first.flow.open(SELECTION);
+  idb.databases.get('ward-canvass').stores.get('rolls').get('17/125/6313/1').v = 99;
+
+  const s = setup({ idb, fetchRoll: async () => pdfBuffer() });
+  await s.flow.open(SELECTION);
+  assert.equal(s.errors.length, 1);
+  assert.equal(s.errors[0][0], 'stored roll has an unknown record version');
+  assert.ok(s.errors[0][1] instanceof RollRecordVersionError);
+  assert.equal(s.calls.length, 1);
+  assert.deepEqual(s.shown[0], first.shown[0]);
 });
 
 test('restore with nothing stored shows nothing and sends no request', async () => {
