@@ -1,5 +1,7 @@
-// Downloads the selected ward's roll PDF. No upload path: the only input is a
-// selection resolved from the bundled catalogue (src/picker/wardPicker.js).
+// Downloads the selected ward's roll PDF and its supplementary roll PDFs
+// (selection.supplementPdfUrls), each by the same GET. No upload path: the
+// only input is a selection resolved from the bundled catalogue
+// (src/picker/wardPicker.js).
 //
 // The transport follows the verdict line at the end of
 // docs/research/sec-roll-source.md (test/fetchRoll.test.js fails if they
@@ -8,6 +10,8 @@
 //   relay-required  the browser GETs the same-origin relay at RELAY_PATH,
 //                   which only fetches URLs listed in config/constituency.json
 //                   (relay/rollRelay.mjs)
+
+import { urlList } from './supplementTags.js';
 
 export const ROLL_TRANSPORT = 'relay-required';
 export const TRANSPORTS = Object.freeze(['direct-fetch', 'relay-required']);
@@ -36,16 +40,8 @@ function looksLikePdf(buffer) {
   return head.length === PDF_MAGIC.length && PDF_MAGIC.every((b, i) => head[i] === b);
 }
 
-/**
- * Download the roll PDF for a ward selection ({..., pdfUrl}).
- * @returns {Promise<ArrayBuffer>} the PDF bytes
- * @throws {RollFetchError}
- */
-export async function fetchRoll(selection, { fetch = globalThis.fetch, transport = ROLL_TRANSPORT } = {}) {
-  if (!selection || typeof selection.pdfUrl !== 'string' || !selection.pdfUrl) {
-    throw new RollFetchError('no ward selected');
-  }
-  const url = rollRequestUrl(selection.pdfUrl, transport);
+async function downloadPdf(pdfUrl, fetch, transport) {
+  const url = rollRequestUrl(pdfUrl, transport);
   let response;
   try {
     response = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
@@ -64,4 +60,38 @@ export async function fetchRoll(selection, { fetch = globalThis.fetch, transport
   }
   if (!looksLikePdf(buffer)) throw new RollFetchError('roll download is not a PDF');
   return buffer;
+}
+
+/**
+ * Download the roll PDF for a ward selection ({..., pdfUrl}).
+ * @returns {Promise<ArrayBuffer>} the PDF bytes
+ * @throws {RollFetchError}
+ */
+export async function fetchRoll(selection, { fetch = globalThis.fetch, transport = ROLL_TRANSPORT } = {}) {
+  if (!selection || typeof selection.pdfUrl !== 'string' || !selection.pdfUrl) {
+    throw new RollFetchError('no ward selected');
+  }
+  return downloadPdf(selection.pdfUrl, fetch, transport);
+}
+
+/** The supplementary roll URLs a selection lists (selection.supplementPdfUrls), in publication order. */
+export function supplementUrls(selection) {
+  return urlList(selection && selection.supplementPdfUrls);
+}
+
+/**
+ * Download each supplementary roll PDF of a selection, in order, through the
+ * same transport as the roll. One failing never rejects the rest.
+ * @returns {Promise<Array<{url: string, ok: true, buffer: ArrayBuffer} | {url: string, ok: false, error: RollFetchError}>>}
+ */
+export async function fetchSupplements(selection, { fetch = globalThis.fetch, transport = ROLL_TRANSPORT } = {}) {
+  const results = [];
+  for (const url of supplementUrls(selection)) {
+    try {
+      results.push({ url, ok: true, buffer: await downloadPdf(url, fetch, transport) });
+    } catch (error) {
+      results.push({ url, ok: false, error });
+    }
+  }
+  return results;
 }

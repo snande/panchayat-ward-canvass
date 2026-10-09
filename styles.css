@@ -545,6 +545,21 @@ select.picker-select,
   font-size: var(--font-size-sm);
 }
 
+/* Supplementary deletions toggle (src/ui/deletionsToggle.js) above the roll:
+   a .choice row, an info notice when no supplement is published, or an error
+   notice with the whom-to-call line and a secondary retry. */
+.roll-supplement {
+  margin: 0 0 var(--space-4);
+}
+
+.roll-deletions-toggle {
+  margin-bottom: 0;
+}
+
+.roll-supplement .roll-contact {
+  margin-bottom: var(--space-3);
+}
+
 .progress {
   position: relative;
   height: var(--space-1);

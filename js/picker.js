@@ -1,5 +1,6 @@
 import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
+import { selectionForWardKey } from '../src/picker/wardPicker.js';
 import { createWardRollScreen } from '../src/ui/wardRollScreen.js';
 import { mountAppFrame } from '../src/ui/appFrame.js';
 import { createVoterSearchScreen } from '../src/ui/voterSearchScreen.js';
@@ -189,6 +190,11 @@ function startRoll(strings) {
   var roll = createRollFlow(rollContainer, table, {
     screen: rollScreen,
     onShow: onRollShown,
+    // A restored roll whose supplementary roll failed retries it with the
+    // ward's selection from the catalogue.
+    selectionFor: function (wardKey) {
+      return catalogue ? selectionForWardKey(catalogue, wardKey) : null;
+    },
     // marks: tapping a voter offers "seen voting", and the turnout button
     // shows the ward's de-duplicated count beside the official turnout.
     // sms: with no mobile data, marks go out and come in by SMS and join the

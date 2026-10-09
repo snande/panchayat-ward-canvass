@@ -4,8 +4,8 @@
 //
 //   GET /roll?url=<pdf url>
 //
-// The relay only fetches a URL that appears as a ward pdfUrl in
-// config/constituency.json. Any other URL, a missing or repeated url
+// The relay only fetches a URL that appears as a ward pdfUrl, or in a ward's
+// supplementPdfUrls, in config/constituency.json. Any other URL, a missing or repeated url
 // parameter, or anything that is not a URL answers 403 without contacting
 // any server, so the relay cannot be used as an open proxy. Non-GET methods
 // answer 405. An upstream failure, redirect (the portal answers 302 for a
@@ -30,7 +30,7 @@ function normalise(raw) {
   }
 }
 
-/** Every ward pdfUrl in a constituency config, normalised. */
+/** Every ward pdfUrl and supplementPdfUrls entry in a constituency config, normalised. */
 export function allowedRollUrls(config) {
   const allowed = new Set();
   const list = (value) => (Array.isArray(value) ? value : []);
@@ -38,8 +38,11 @@ export function allowedRollUrls(config) {
     for (const samiti of list(district && district.samitis)) {
       for (const panchayat of list(samiti && samiti.panchayats)) {
         for (const ward of list(panchayat && panchayat.wards)) {
-          const href = ward && typeof ward.pdfUrl === 'string' ? normalise(ward.pdfUrl) : null;
-          if (href) allowed.add(href);
+          const urls = ward ? [ward.pdfUrl, ...list(ward.supplementPdfUrls)] : [];
+          for (const raw of urls) {
+            const href = typeof raw === 'string' ? normalise(raw) : null;
+            if (href) allowed.add(href);
+          }
         }
       }
     }

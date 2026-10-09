@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  districts, samitis, panchayats, wards, resolveWard, selectionFor,
+  districts, samitis, panchayats, wards, resolveWard, selectionFor, selectionForWardKey,
 } from '../src/picker/wardPicker.js';
 import { mountWardPicker, defaultIsOnline } from '../src/ui/wardPickerScreen.js';
 import { createDocument } from './helpers/fakeDom.js';
@@ -192,4 +192,16 @@ test('service worker precaches the picker, its catalogue and strings', () => {
     assert.ok(sw.includes(`"${file}"`), file);
   }
   assert.match(html, /<script type="module" src="js\/picker\.js">/);
+});
+
+test('a ward\'s supplementary roll URLs from its catalogue entry ride on the selection', () => {
+  const SUPP = 'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/125/BADLI-Ward%20No-001.pdf';
+  const withSupp = structuredClone(config);
+  withSupp.districts[0].samitis[0].panchayats[0].wards[0].supplementPdfUrls = [SUPP, 5];
+  const sel = { district: '17', samiti: '125', panchayat: '6313', ward: '1' };
+  assert.deepEqual(selectionFor(withSupp, sel).supplementPdfUrls, [SUPP]);
+  assert.equal('supplementPdfUrls' in selectionFor(config, sel), false);
+  assert.deepEqual(selectionForWardKey(withSupp, '17/125/6313/1'), selectionFor(withSupp, sel));
+  assert.equal(selectionForWardKey(withSupp, '17/125'), null);
+  assert.equal(selectionForWardKey(withSupp, null), null);
 });

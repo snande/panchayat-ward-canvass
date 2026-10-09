@@ -3,7 +3,8 @@
 // Rows have one fixed height: a spacer as tall as the list holds only the
 // rows in view (plus OVERSCAN), recycled on the next animation frame. Text
 // is set with textContent only.
-// A struck-off entry stays listed, its "serial. name" in a <del>.
+// A struck-off entry stays listed, its "serial. name" in a <del>; one a
+// supplementary roll struck off (supplement: 'deletion') says so.
 
 import { el } from './dom.js';
 
@@ -30,7 +31,7 @@ function defaultFrame(fn) {
 
 /**
  * Mount the list into container (replacing its content).
- * @param {object[]} entries {serial, name, relative, age, gender, house, struck}
+ * @param {object[]} entries {serial, name, relative, age, gender, house, struck, supplement?}
  * @param {Record<string,string>} strings the Hindi string table
  * @param {{viewportHeight?: number, requestFrame?: Function, onSelect?: (entry: object) => void}} [opts]
  *   onSelect is called with the entry of a tapped row (Enter or Space on a
@@ -79,7 +80,7 @@ export function mountRollList(container, entries, strings, opts = {}) {
     const parts = [];
     if (entry.struck === true) {
       name.replaceChildren(el(doc, 'del', 'roll-struck', label));
-      parts.push(text('roll_struck_off'));
+      parts.push(text(entry.supplement === 'deletion' ? 'supp_deleted' : 'roll_struck_off'));
     } else name.textContent = label;
     relative.textContent = entry.relative;
     if (entry.age != null) parts.push(`${text('roll_age')} ${entry.age}`);

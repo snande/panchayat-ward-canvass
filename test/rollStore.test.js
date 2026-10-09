@@ -7,6 +7,7 @@ import { webcrypto } from 'node:crypto';
 
 import {
   createRollStore, minimiseEntries, wardKeyFor, STORED_FIELDS, RECORD_VERSION, RollRecordVersionError,
+  SUPPLEMENT_FIELD, SUPPLEMENT_STATES,
   DB_NAME, KEYS_STORE, ROLLS_STORE,
 } from '../src/roll/rollStore.js';
 import { decodeRoll } from '../src/decoder/decodeRoll.js';
@@ -89,9 +90,11 @@ test('the stored record is AES-GCM ciphertext: no names, no EPIC, fresh IV per w
   const { idb, store } = newStore();
   await store.encryptAndStore(WARD, sample);
   const first = raw(idb, ROLLS_STORE).get(WARD);
-  assert.deepEqual(Object.keys(first).sort(), ['data', 'iv', 'v']);
+  assert.deepEqual(Object.keys(first).sort(), ['data', 'iv', 'supplement', 'supplementUrls', 'v']);
   assert.equal(first.v, RECORD_VERSION);
-  assert.equal(RECORD_VERSION, 2);
+  assert.equal(RECORD_VERSION, 3);
+  assert.equal(first.supplement, 'none');
+  assert.deepEqual(first.supplementUrls, []);
   assert.equal(first.iv.byteLength, 12);
   const dump = bytesOf(first.data).toString('utf8') + JSON.stringify(first);
   for (const secret of ['किशनादेवी', 'सत्यनारायण', 'UPY0171199', 'UPY0000000', 'serial', '"name"', 'struck']) {
@@ -156,18 +159,59 @@ test('a stored record of the old version reads as not stored, so the roll is dec
   const { idb, store } = newStore();
   await store.encryptAndStore(WARD, sample);
   const record = raw(idb, ROLLS_STORE).get(WARD);
-  raw(idb, ROLLS_STORE).set(WARD, { ...record, v: 1 });
-  assert.equal(await store.loadStored(WARD), null);
+  for (const v of [1, 2]) {
+    raw(idb, ROLLS_STORE).set(WARD, { ...record, v });
+    assert.equal(await store.loadStored(WARD), null);
+    assert.equal(await store.supplementState(WARD), null);
+  }
 });
 
 test('a stored record of an unknown version is an explicit error, not a misread', async () => {
   const { idb, store } = newStore();
   await store.encryptAndStore(WARD, sample);
   const record = raw(idb, ROLLS_STORE).get(WARD);
-  for (const v of [3, 0, undefined, '2']) {
+  for (const v of [4, 0, undefined, '3']) {
     raw(idb, ROLLS_STORE).set(WARD, { ...record, v });
     await assert.rejects(store.loadStored(WARD), (err) => err instanceof RollRecordVersionError && err.version === v);
+    await assert.rejects(store.supplementState(WARD), (err) => err instanceof RollRecordVersionError && err.version === v);
   }
   raw(idb, ROLLS_STORE).set(WARD, record);
   assert.deepEqual(await store.loadStored(WARD), minimiseEntries(sample));
+});
+
+// --- supplementary rolls (issue #127) ----------------------------------------------
+
+test('an entry a supplementary roll changed keeps its supplement tag after the seven fields', () => {
+  const out = minimiseEntries([
+    { ...sample[0], supplement: 'addition' },
+    { ...sample[2], supplement: 'deletion' },
+    { ...sample[1], supplement: 'other' },
+  ]);
+  assert.equal(SUPPLEMENT_FIELD, 'supplement');
+  assert.deepEqual(Object.keys(out[0]), [...STORED_FIELDS, SUPPLEMENT_FIELD]);
+  assert.deepEqual(out.map((e) => e.supplement), ['addition', 'deletion', undefined]);
+  assert.deepEqual(Object.keys(out[2]), [...STORED_FIELDS]);
+});
+
+test('the supplement tags, state and merged URLs survive the encrypted round trip', async () => {
+  const SUPP = 'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-001.pdf';
+  const { idb, store } = newStore();
+  const entries = [sample[0], { ...sample[2], supplement: 'deletion' }, { ...sample[1], serial: 9, supplement: 'addition' }];
+  assert.equal(await store.supplementState(WARD), null);
+  const stored = await store.encryptAndStore(WARD, entries, { supplement: 'merged', supplementUrls: [SUPP, 7] });
+  assert.deepEqual(await store.loadStored(WARD), stored);
+  assert.deepEqual(stored.map((e) => e.supplement), [undefined, 'deletion', 'addition']);
+  assert.deepEqual(await store.supplementState(WARD), { state: 'merged', urls: [SUPP] });
+  // The state and the public SEC URLs are not voter data; the tags are inside the ciphertext.
+  const record = raw(idb, ROLLS_STORE).get(WARD);
+  assert.equal(record.supplement, 'merged');
+  assert.ok(!bytesOf(record.data).toString('utf8').includes('deletion'));
+
+  await store.encryptAndStore(WARD, entries, { supplement: 'failed' });
+  assert.deepEqual(await store.supplementState(WARD), { state: 'failed', urls: [] });
+  assert.deepEqual(SUPPLEMENT_STATES, ['none', 'merged', 'failed']);
+  await assert.rejects(store.encryptAndStore(WARD, entries, { supplement: 'maybe' }), TypeError);
+  // A state this code does not know is not trusted: the supplements are fetched again.
+  raw(idb, ROLLS_STORE).set(WARD, { ...raw(idb, ROLLS_STORE).get(WARD), supplement: 'later', supplementUrls: 'x' });
+  assert.deepEqual(await store.supplementState(WARD), { state: 'failed', urls: [] });
 });

@@ -9,7 +9,9 @@ import { relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createRollFlow, decodeWithTable } from '../src/roll/rollFlow.js';
-import { RollFetchError } from '../src/roll/fetchRoll.js';
+import {
+  fetchRoll as realFetchRoll, fetchSupplements as realFetchSupplements, RELAY_PATH, RollFetchError,
+} from '../src/roll/fetchRoll.js';
 import { createRollStore, minimiseEntries, RECORD_VERSION, RollRecordVersionError } from '../src/roll/rollStore.js';
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
@@ -347,4 +349,384 @@ test('a partial name lists every voter containing it, prefix matches first', asy
   assert.deepEqual(resultSerials(container), ['4', '1']);
   const names = container.querySelectorAll('span.pwc-search__name').map((n) => n.textContent);
   assert.deepEqual(names, ['राम प्रसाद', 'सीताराम मीणा']);
+});
+
+// --- supplementary rolls and the deletions toggle (issue #127) ---------------------
+
+const ALMAS = read('fixtures/sec/bhilwara/ALMAS-ward-001.pdf');
+const ALMAS_SUPP = read('fixtures/sec/bhilwara/ALMAS-ward-001-supp-2.pdf');
+const SEC = 'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI';
+const ALMAS_URL = `${SEC}/Final/60/ALMAS-Ward%20No-001.pdf`;
+const ALMAS_SUPP_URL = `${SEC}/Supplement/60/ALMAS-Ward%20No-001.pdf`;
+const ALMAS_KEY = '2/60/9/1';
+const ALMAS_SELECTION = {
+  district: '2', samiti: '60', panchayat: '9', ward: '1', pdfUrl: ALMAS_URL, supplementPdfUrls: [ALMAS_SUPP_URL],
+};
+const withSupplements = (...urls) => ({ ...ALMAS_SELECTION, supplementPdfUrls: urls });
+
+// Supplements with set contents: served as marker PDFs that the test decoder
+// reads as the entries below (the ALMAS PDFs decode for real).
+const MARKED = {
+  // A later supplement: strikes off serial 10 and adds serial 377.
+  [`${SEC}/Supplement3/60/ALMAS-Ward%20No-001.pdf`]: [
+    { serial: 10, name: 'बालू', relative: 'खेमा', age: 73, gender: 'पुरूष', house: '2', struck: true },
+    { serial: 377, name: 'नई मतदाता', relative: 'रामलाल', age: 18, gender: 'स्त्री', house: '9', struck: false },
+  ],
+  // An earlier supplement that prints serial 12 live and adds 378...
+  [`${SEC}/SuppA/60/ALMAS-Ward%20No-001.pdf`]: [
+    { serial: 12, name: 'हजारी', relative: 'खेमा', age: 63, gender: 'पुरूष', house: '2', struck: false },
+    { serial: 378, name: 'नया मतदाता', relative: 'हजारी', age: 19, gender: 'पुरूष', house: '2', struck: false },
+  ],
+  // ...and the one after it, which strikes serial 12 off.
+  [`${SEC}/SuppB/60/ALMAS-Ward%20No-001.pdf`]: [
+    { serial: 12, name: 'हजारी', relative: 'खेमा', age: 63, gender: 'पुरूष', house: '2', struck: true },
+    { serial: 378, name: 'नया मतदाता', relative: 'हजारी', age: 19, gender: 'पुरूष', house: '2', struck: false },
+  ],
+};
+const [SUPP3_URL, SUPP_A_URL, SUPP_B_URL] = Object.keys(MARKED);
+const MARKER = '%PDF-1.4 marker ';
+const markerPdf = (url) => new TextEncoder().encode(MARKER + url);
+
+async function decodeAlmas(bytes) {
+  const text = new TextDecoder().decode(new Uint8Array(bytes).subarray(0, 200));
+  if (text.startsWith(MARKER)) return MARKED[text.slice(MARKER.length)].map((e) => ({ ...e }));
+  return decodeWithTable(bytes);
+}
+
+function memorySettings() {
+  let record = null;
+  return {
+    load: () => ({ showDeletions: record ? record.showDeletions : false }),
+    save: (s) => { record = { ...s }; return true; },
+  };
+}
+
+// The real fetchRoll/fetchSupplements over a fake network that answers the
+// same-origin relay only, and records every request. fails(url) makes that
+// URL answer 502.
+function almasSetup({
+  idb = createFakeIndexedDB(), settings = memorySettings(), fails = () => false, selectionFor = ALMAS_SELECTION,
+} = {}) {
+  const requests = [];
+  const fetch = async (url, init) => {
+    requests.push({ url, method: (init && init.method) || 'GET', init });
+    const target = new URL(url, 'https://canvass.example');
+    assert.equal(target.pathname, RELAY_PATH);
+    const pdfUrl = target.searchParams.get('url');
+    if (fails(pdfUrl)) return new Response('no', { status: 502 });
+    const bytes = pdfUrl === ALMAS_URL ? ALMAS : pdfUrl === ALMAS_SUPP_URL ? ALMAS_SUPP
+      : MARKED[pdfUrl] ? markerPdf(pdfUrl) : null;
+    return bytes ? new Response(bytes, { status: 200 }) : new Response('no', { status: 403 });
+  };
+  const doc = createDocument();
+  const container = doc.createElement('section');
+  doc.body.appendChild(container);
+  const shown = [];
+  const errors = [];
+  const store = createRollStore({ indexedDB: idb, crypto: webcrypto });
+  const flow = createRollFlow(container, strings, {
+    fetchRoll: (sel) => realFetchRoll(sel, { fetch }),
+    fetchSupplements: (sel) => realFetchSupplements(sel, { fetch }),
+    decode: decodeAlmas,
+    store,
+    settings,
+    selectionFor: (key) => (key === ALMAS_KEY ? selectionFor : null),
+    onShow: (entries) => shown.push(entries),
+    listOptions: { viewportHeight: 40000, requestFrame: () => {} },
+    log: (...args) => errors.push(args),
+  });
+  return { doc, container, flow, requests, shown, errors, store, idb, settings };
+}
+
+const relayed = (url) => `${RELAY_PATH}?url=${encodeURIComponent(url)}`;
+const requested = (s, from = 0) => s.requests.slice(from).map((r) => r.url);
+const listedSerials = (container) => container.querySelectorAll('span.roll-name')
+  .map((n) => Number(n.textContent.split('.')[0]));
+const toggleInput = (container) => container.querySelector('input.choice-input');
+const supplementBox = (container) => container.querySelector('div.roll-supplement');
+const tagged = (entries, kind) => entries.filter((e) => e.supplement === kind).map((e) => e.serial);
+const flip = (container, on) => {
+  toggleInput(container).checked = on;
+  toggleInput(container).dispatchEvent({ type: 'change' });
+};
+
+async function retry(s) {
+  const before = s.requests.length;
+  const count = s.shown.length;
+  s.container.querySelector('button.roll-supplement-retry').dispatchEvent({ type: 'click' });
+  await waitFor(() => s.shown.length === count + 1);
+  return requested(s, before);
+}
+
+test('the ALMAS supplement is fetched through the relay, merged, and its deletion hidden until the toggle is on', async () => {
+  const s = almasSetup();
+  await s.flow.open(ALMAS_SELECTION);
+  assert.deepEqual(s.errors, []);
+  // Two same-origin GETs to the relay: the roll, then its supplement.
+  assert.deepEqual(s.requests.map((r) => [r.method, r.url]), [['GET', relayed(ALMAS_URL)], ['GET', relayed(ALMAS_SUPP_URL)]]);
+  for (const r of s.requests) assert.equal(r.init.credentials, 'same-origin');
+
+  const entries = s.shown[0];
+  assert.equal(entries.length, 376);
+  assert.deepEqual(tagged(entries, 'deletion'), [258]);
+  assert.deepEqual(await s.store.loadStored(ALMAS_KEY), entries);
+  assert.deepEqual(await s.store.supplementState(ALMAS_KEY), { state: 'merged', urls: [ALMAS_SUPP_URL] });
+
+  // Off by default: serial 258 is not listed; the roll's own struck-off ones are.
+  const input = toggleInput(s.container);
+  assert.equal(input.checked, false);
+  assert.ok(input.parentNode.classList.contains('choice'));
+  assert.ok(!listedSerials(s.container).includes(258));
+  assert.ok(listedSerials(s.container).includes(81));
+  assert.equal(listedSerials(s.container).length, 375);
+
+  // On: it shows, struck through and marked deleted by the supplement.
+  flip(s.container, true);
+  assert.ok(listedSerials(s.container).includes(258));
+  const row = s.container.querySelectorAll('div.roll-row')
+    .find((r) => r.querySelector('span.roll-name').textContent.startsWith('258.'));
+  assert.ok(row.querySelector('del.roll-struck'));
+  assert.ok(row.querySelector('span.roll-meta').textContent.startsWith(strings.supp_deleted));
+  assert.equal(s.flow.screen.list.root.querySelectorAll('div.roll-row').length, 376);
+
+  // Off again hides it.
+  flip(s.container, false);
+  assert.ok(!listedSerials(s.container).includes(258));
+});
+
+test('flipping the toggle keeps a typed search query', async () => {
+  const s = almasSetup();
+  await s.flow.open(ALMAS_SELECTION);
+  const query = () => s.container.querySelector('input.pwc-search__input');
+  query().value = 'मन्शा';
+  flip(s.container, true);
+  assert.equal(query().value, 'मन्शा');
+  flip(s.container, false);
+  assert.equal(query().value, 'मन्शा');
+});
+
+test('the toggle state persists: a reload restores the roll offline with deletions shown', async () => {
+  const idb = createFakeIndexedDB();
+  const settings = memorySettings();
+  const first = almasSetup({ idb, settings });
+  await first.flow.open(ALMAS_SELECTION);
+  flip(first.container, true);
+  assert.equal(settings.load().showDeletions, true);
+
+  const reload = almasSetup({ idb, settings });
+  await reload.flow.restore();
+  assert.equal(reload.requests.length, 0, 'no network on restore');
+  assert.equal(toggleInput(reload.container).checked, true);
+  assert.ok(listedSerials(reload.container).includes(258));
+  // Picking the stored ward again needs no network either: its supplement is merged.
+  await reload.flow.open(ALMAS_SELECTION);
+  assert.equal(reload.requests.length, 0);
+});
+
+test('a supplement the catalogue lists after the ward was merged is fetched, alone, and merged on open', async () => {
+  const idb = createFakeIndexedDB();
+  await almasSetup({ idb }).flow.open(ALMAS_SELECTION);
+
+  const later = almasSetup({ idb });
+  await later.flow.open(withSupplements(ALMAS_SUPP_URL, SUPP3_URL));
+  assert.deepEqual(requested(later), [relayed(SUPP3_URL)]);
+  assert.deepEqual(later.errors, []);
+  const entries = later.shown[0];
+  assert.equal(entries.length, 377);
+  assert.deepEqual(tagged(entries, 'deletion'), [10, 258]);
+  assert.deepEqual(tagged(entries, 'addition'), [377]);
+  assert.deepEqual(await later.store.supplementState(ALMAS_KEY), { state: 'merged', urls: [ALMAS_SUPP_URL, SUPP3_URL] });
+  // Opened again, nothing new is listed: no request.
+  await later.flow.open(withSupplements(ALMAS_SUPP_URL, SUPP3_URL));
+  assert.equal(later.requests.length, 1);
+});
+
+test('a ward whose catalogue no longer lists its merged supplement is merged again from the roll, without it', async () => {
+  const idb = createFakeIndexedDB();
+  await almasSetup({ idb }).flow.open(ALMAS_SELECTION);
+
+  // Offline, the stored roll shows as it is, merged deletions and all.
+  const offline = almasSetup({ idb, fails: () => true });
+  await offline.flow.open(withSupplements());
+  assert.deepEqual(requested(offline), [relayed(ALMAS_URL)]);
+  assert.equal(offline.flow.screen.state, 'filled');
+  assert.deepEqual(tagged(offline.shown[0], 'deletion'), [258]);
+  assert.equal(supplementBox(offline.container).getAttribute('data-state'), 'filled');
+  assert.equal(offline.errors.length, 1);
+
+  // Online, the roll is downloaded again and the supplement's changes go.
+  const online = almasSetup({ idb });
+  await online.flow.open(withSupplements());
+  assert.deepEqual(requested(online), [relayed(ALMAS_URL)]);
+  assert.equal(online.shown[0].filter((e) => e.supplement).length, 0);
+  assert.equal(online.shown[0].find((e) => e.serial === 258).struck, false);
+  assert.deepEqual(await online.store.supplementState(ALMAS_KEY), { state: 'none', urls: [] });
+  // The toggle shows its empty state: no supplementary roll is published.
+  assert.equal(supplementBox(online.container).getAttribute('data-state'), 'empty');
+  assert.equal(supplementBox(online.container).querySelector('p.notice').textContent, strings.supp_no_deletions);
+});
+
+test('a ward with no supplementary roll shows the toggle\'s empty line, not an error', async () => {
+  const s = setup({ fetchRoll: async () => pdfBuffer() });
+  await s.flow.open(SELECTION);
+  const notice = supplementBox(s.container).querySelector('p.notice');
+  assert.equal(notice.textContent, strings.supp_no_deletions);
+  assert.equal(notice.getAttribute('data-tone'), 'info');
+  assert.equal(s.container.querySelector('input.choice-input'), null);
+  assert.equal(s.container.querySelector('button.roll-supplement-retry'), null);
+  assert.deepEqual(s.errors, []);
+});
+
+test('a supplement that fails to download leaves the roll loaded, with an error to retry and whom to call', async () => {
+  let fail = true;
+  const s = almasSetup({ fails: (url) => fail && url === ALMAS_SUPP_URL });
+  s.flow.screen.setSupport('समन्वयक: 98290 00000');
+  await s.flow.open(ALMAS_SELECTION);
+  assert.equal(s.flow.screen.state, 'filled');
+  assert.equal(s.shown[0].length, 376);
+  assert.equal(s.shown[0].filter((e) => e.supplement).length, 0);
+  assert.deepEqual(await s.store.supplementState(ALMAS_KEY), { state: 'failed', urls: [] });
+  const box = supplementBox(s.container);
+  const notice = box.querySelector('p.notice');
+  assert.equal(notice.textContent, strings.supp_failed);
+  assert.equal(notice.getAttribute('data-tone'), 'error');
+  assert.equal(box.querySelector('p.roll-contact').textContent, 'समन्वयक: 98290 00000');
+  assert.equal(s.errors.length, 1);
+
+  // Retry fetches only the supplement again (the roll is stored) and merges it.
+  fail = false;
+  assert.deepEqual(await retry(s), [relayed(ALMAS_SUPP_URL)]);
+  assert.deepEqual(tagged(s.shown[1], 'deletion'), [258]);
+  assert.deepEqual(await s.store.supplementState(ALMAS_KEY), { state: 'merged', urls: [ALMAS_SUPP_URL] });
+  assert.ok(toggleInput(s.container));
+});
+
+test('a restored roll whose supplement failed retries it: only the supplement is fetched, then merged', async () => {
+  const idb = createFakeIndexedDB();
+  const first = almasSetup({ idb, fails: (url) => url === ALMAS_SUPP_URL });
+  await first.flow.open(ALMAS_SELECTION);
+  assert.deepEqual(await first.store.supplementState(ALMAS_KEY), { state: 'failed', urls: [] });
+
+  // A reload: restore() shows the stored roll with no request, in the error state.
+  const reload = almasSetup({ idb });
+  await reload.flow.restore();
+  assert.equal(reload.requests.length, 0);
+  assert.equal(supplementBox(reload.container).getAttribute('data-state'), 'error');
+  assert.equal(reload.shown[0].length, 376);
+
+  // Its retry finds the ward's selection (deps.selectionFor, as js/picker.js wires it).
+  assert.deepEqual(await retry(reload), [relayed(ALMAS_SUPP_URL)]);
+  assert.deepEqual(tagged(reload.shown[1], 'deletion'), [258]);
+  assert.equal(supplementBox(reload.container).getAttribute('data-state'), 'filled');
+  assert.deepEqual(await reload.store.supplementState(ALMAS_KEY), { state: 'merged', urls: [ALMAS_SUPP_URL] });
+});
+
+test('one of two supplements failing keeps the other\'s tags under the error; a retry merges the rest once', async () => {
+  let fail = true;
+  const selection = withSupplements(ALMAS_SUPP_URL, SUPP3_URL);
+  const s = almasSetup({ fails: (url) => fail && url === SUPP3_URL, selectionFor: selection });
+  await s.flow.open(selection);
+  // The supplement that downloaded is merged; the error says the other failed.
+  assert.deepEqual(tagged(s.shown[0], 'deletion'), [258]);
+  assert.deepEqual(tagged(s.shown[0], 'addition'), []);
+  assert.deepEqual(await s.store.supplementState(ALMAS_KEY), { state: 'failed', urls: [ALMAS_SUPP_URL] });
+  const box = supplementBox(s.container);
+  assert.equal(box.getAttribute('data-state'), 'error');
+  assert.equal(box.querySelector('p.notice').textContent, strings.supp_failed);
+  assert.ok(box.querySelector('p.roll-contact'));
+
+  fail = false;
+  // Only the failed one is fetched again; no tag is lost or doubled.
+  assert.deepEqual(await retry(s), [relayed(SUPP3_URL)]);
+  const entries = s.shown[1];
+  assert.equal(entries.length, 377);
+  assert.equal(new Set(entries.map((e) => e.serial)).size, entries.length);
+  assert.deepEqual(tagged(entries, 'deletion'), [10, 258]);
+  assert.deepEqual(tagged(entries, 'addition'), [377]);
+  assert.deepEqual(await s.store.supplementState(ALMAS_KEY), { state: 'merged', urls: [ALMAS_SUPP_URL, SUPP3_URL] });
+  assert.equal(supplementBox(s.container).getAttribute('data-state'), 'filled');
+  assert.equal(supplementBox(s.container).textContent, `${strings.supp_show_deletions} (2)`);
+});
+
+test('an earlier supplement that fails holds the later ones back, so its retry cannot undo a later strike-off', async () => {
+  let fail = true;
+  const selection = withSupplements(SUPP_A_URL, SUPP_B_URL);
+  const s = almasSetup({ fails: (url) => fail && url === SUPP_A_URL, selectionFor: selection });
+  await s.flow.open(selection);
+  // supp-1 failed, so supp-2 is not even fetched: nothing is merged yet.
+  assert.deepEqual(requested(s), [relayed(ALMAS_URL), relayed(SUPP_A_URL)]);
+  assert.equal(s.shown[0].filter((e) => e.supplement).length, 0);
+  assert.deepEqual(await s.store.supplementState(ALMAS_KEY), { state: 'failed', urls: [] });
+  assert.equal(supplementBox(s.container).getAttribute('data-state'), 'error');
+
+  // The retry merges supp-1 then supp-2, in publication order: serial 12,
+  // which supp-1 prints live and supp-2 strikes off, ends struck off.
+  fail = false;
+  assert.deepEqual(await retry(s), [relayed(SUPP_A_URL), relayed(SUPP_B_URL)]);
+  const twelve = s.shown[1].find((e) => e.serial === 12);
+  assert.equal(twelve.struck, true);
+  assert.equal(twelve.supplement, 'deletion');
+  assert.deepEqual(tagged(s.shown[1], 'addition'), [378]);
+  assert.deepEqual(await s.store.supplementState(ALMAS_KEY), { state: 'merged', urls: [SUPP_A_URL, SUPP_B_URL] });
+});
+
+test('tags after two staggered merges are the same as one merge of both, relative to the roll merged so far', async () => {
+  // Staggered: supp-1 merged on one open, supp-2 on a later open over the stored roll.
+  const idb = createFakeIndexedDB();
+  await almasSetup({ idb }).flow.open(withSupplements(SUPP_A_URL));
+  const later = almasSetup({ idb });
+  await later.flow.open(withSupplements(SUPP_A_URL, SUPP_B_URL));
+  assert.deepEqual(requested(later), [relayed(SUPP_B_URL)]);
+  // At once: both on a fresh device.
+  const once = almasSetup();
+  await once.flow.open(withSupplements(SUPP_A_URL, SUPP_B_URL));
+  const summary = (entries) => entries.map((e) => [e.serial, e.struck, e.supplement]);
+  assert.deepEqual(summary(later.shown[0]), summary(once.shown[0]));
+  assert.deepEqual(tagged(once.shown[0], 'deletion'), [12]);
+  assert.deepEqual(tagged(once.shown[0], 'addition'), [378]);
+});
+
+test('a supplement that fails to decode still shows the roll, with the supplement error', async () => {
+  const s = setup({ fetchRoll: async () => pdfBuffer() });
+  const flow = createRollFlow(s.container, strings, {
+    fetchRoll: async () => pdfBuffer(),
+    fetchSupplements: async (sel) => sel.supplementPdfUrls.map((url) => ({ url, ok: true, buffer: new TextEncoder().encode('%PDF-1.4 x').buffer })),
+    decode: async (bytes) => {
+      if (bytes.byteLength < 100) throw new Error('not a roll');
+      return decodeWithTable(bytes);
+    },
+    store: s.store,
+    settings: memorySettings(),
+    onShow: (entries) => s.shown.push(entries),
+    listOptions: { viewportHeight: 600, requestFrame: () => {} },
+    log: (...args) => s.errors.push(args),
+  });
+  await flow.open({ ...SELECTION, supplementPdfUrls: ['https://esuchiroll.rajasthan.gov.in/x.pdf'] });
+  assert.equal(flow.screen.state, 'filled');
+  assert.equal(s.shown[0].length, 326);
+  assert.equal(supplementBox(s.container).getAttribute('data-state'), 'error');
+  assert.match(String(s.errors[0][0]), /could not be decoded/);
+});
+
+test('roll settings of an unknown version are reported in the log, and deletions stay hidden', async () => {
+  const saved = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: () => JSON.stringify({ schemaVersion: 99, showDeletions: true }),
+    setItem: () => {},
+  };
+  try {
+    const doc = createDocument();
+    const container = doc.createElement('section');
+    const errors = [];
+    const flow = createRollFlow(container, strings, {
+      fetchRoll: async () => pdfBuffer(),
+      store: createRollStore({ indexedDB: createFakeIndexedDB(), crypto: webcrypto }),
+      listOptions: { viewportHeight: 600, requestFrame: () => {} },
+      log: (...args) => errors.push(args),
+    });
+    await flow.open(SELECTION);
+    assert.deepEqual(errors, [['roll settings could not be read', 'unknown-version', 99]]);
+  } finally {
+    globalThis.localStorage = saved;
+  }
 });
