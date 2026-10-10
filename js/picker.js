@@ -100,11 +100,8 @@ function selectionFor(wardKey) {
     || (picked && wardKeyFor(picked) === wardKey ? picked : null);
 }
 
-// The seat header above every screen names the ward whose roll is on screen,
-// and keeps it (panchayat name, ward, seat type only) for the next cold start.
-// It follows the shown roll, not the pick: a pick whose download fails leaves
-// the previous seat (and its roll) in place. A roll restored without its pick
-// is named from its district's catalogue shard.
+// The header names the roll on screen (a failed download keeps the last
+// seat), from its pick or else its catalogue shard, and stores the seat.
 var config = null;
 var seatStrings = null;
 var shownWardKey = null;
@@ -117,26 +114,33 @@ function renderSeat(seat) {
 
 function showSeat(wardKey) {
   var picked = toRollSelection(lastSelection);
-  if (picked && wardKeyFor(picked) === wardKey) {
-    return renderSeat(seatFromPick(lastSelection));
+  var seat = picked && wardKeyFor(picked) === wardKey && seatFromPick(lastSelection);
+  if (seat && wardKey === shownWardKey) {
+    return renderSeat(seat);
   }
   var ids = wardKey.split('/');
   var byId = function (id) {
     return function (x) { return x.id === id; };
   };
   catalogue.loadIndex()
-    .then(function (index) { return catalogue.loadShard(index.districts.find(byId(ids[0]))); })
+    .then(function (index) {
+      var district = index.districts.find(byId(ids[0]));
+      return district ? catalogue.loadShard(district) : null;
+    })
     .then(function (shard) {
-      var p = shard.panchayats.find(byId(ids[2]));
-      if (p && wardKey === shownWardKey) {
+      var p = shard && shard.panchayats.find(byId(ids[2]));
+      if (p && ids[3] && wardKey === shownWardKey) {
         renderSeat({ seatType: 'ward', panchayat: p.name, ward: ids[3] });
       }
     })
-    .catch(function (err) { console.error('the shown roll could not be named', err); });
+    .catch(function (err) { console.error('roll seat lookup failed', err); });
 }
 
-// A sarpanch seat (every ward) is named at once. Rolls open one ward at a
-// time, so the shown one is put away.
+function lastSarpanch() {
+  return Boolean(lastSelection && lastSelection.seatType === 'sarpanch');
+}
+
+// A sarpanch seat (every ward) is named at once; the shown roll is put away.
 function showSarpanch(selection) {
   var seat = seatFromPick(selection);
   if (!seat || seat.seatType !== 'sarpanch') {
@@ -250,9 +254,13 @@ function startRoll(strings) {
       },
     },
   });
-  // A stored sarpanch pick shows no roll (showSarpanch).
-  if (!lastSelection || lastSelection.seatType !== 'sarpanch') {
-    flow.restore();
+  // No roll for a stored sarpanch pick; with none restored, no seat.
+  if (!lastSarpanch()) {
+    flow.restore().then(function () {
+      if (rollScreen.state === 'empty' && !lastSarpanch()) {
+        renderSeatHeader(seatHeader, null, strings || {});
+      }
+    });
   }
   return flow;
 }
@@ -326,8 +334,7 @@ function startTeamJoin(strings) {
     });
 }
 
-// A ward panch pick opens its roll; a sarpanch pick (every ward) names its
-// seat and is emitted as window.wardSelection().
+// A ward panch pick opens its roll; a sarpanch pick names its seat.
 function startPicker(strings) {
   var picker = mountWardPicker(container, catalogue, strings, {
     initial: lastSelection,

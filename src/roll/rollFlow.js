@@ -9,7 +9,7 @@
 //
 // restore(): show the last stored ward with no network request, so the app
 // opens offline once a roll has been fetched.
-// clear(detail): put away the shown roll and pending loads (stored rolls stay).
+// clear(detail): put away the shown roll and pending loads.
 //
 // Supplementary rolls (selection.supplementPdfUrls) are fetched by the same
 // relay GET, decoded and merged in publication order (applySupplements.js),

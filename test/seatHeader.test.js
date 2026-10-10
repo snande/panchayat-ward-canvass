@@ -105,7 +105,9 @@ test('a catalogue pick names its seat: the Hindi panchayat name, and its ward fo
   const root = mount();
   renderSeatHeader(root, seatFromPick(pick('sarpanch', [ward(1), ward(2)])));
   assert.equal(root.textContent, 'पंचायत: अजगरा · सभी वार्ड');
-  for (const bad of [null, {}, pick('sarpanch', []), pick('ward-panch', [ward(1), ward(2)]), pick('zila', [ward(1)]),
+  for (const bad of [null, undefined, {}, pick('sarpanch', []), pick('ward-panch', [ward(1), ward(2)]), pick('zila', [ward(1)]),
+    pick('ward-panch', [ward(null)]), pick('ward-panch', [ward(undefined)]), pick('ward-panch', [ward(0)]),
+    pick('ward-panch', [ward('3')]), pick('ward-panch', [null]),
     { ...pick('sarpanch', [ward(1)]), panchayat: { id: '54', name: ' ' } }]) {
     assert.equal(seatFromPick(bad), null, JSON.stringify(bad));
   }

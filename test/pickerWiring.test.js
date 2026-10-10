@@ -355,9 +355,10 @@ const FIVE = [
   { district: '24', panchayat: '9249', name: 'अभयपुरा', ward: '2' },
 ];
 const footerLines = (page) => page.footer.children.map((p) => p.textContent);
+const STRINGS = JSON.parse(read('src/strings.hi.json').toString('utf8'));
+const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 
 test('five panchayats in five districts: the seat header names each pick, the SEC footer stays below every screen', async () => {
-  const strings = JSON.parse(read('src/strings.hi.json').toString('utf8'));
   const requests = [];
   const storage = memoryStorage();
   const page = boot(createFakeIndexedDB(), requests, { localStorage: storage });
@@ -377,7 +378,7 @@ test('five panchayats in five districts: the seat header names each pick, the SE
       assert.equal(page.seat.getAttribute('data-state'), 'loaded');
       assert.equal(page.seat.textContent, `पंचायत: ${pick.name} · सभी वार्ड`);
       assert.deepEqual(storedSeat(storage), { schemaVersion: 1, seatType: 'sarpanch', panchayat: pick.name, ward: null });
-      assert.equal(page.roll.querySelector('p.roll-empty').textContent, strings.roll_sarpanch_all_wards);
+      assert.equal(page.roll.querySelector('p.roll-empty').textContent, STRINGS.roll_sarpanch_all_wards);
       assert.deepEqual(footerLines(page), [...SEC_FOOTER_LINES]);
     }
     assert.ok(!requests.some((u) => u.startsWith('/roll')), 'a sarpanch seat downloads no roll');
@@ -401,7 +402,6 @@ test('five panchayats in five districts: the seat header names each pick, the SE
 });
 
 test('a sarpanch seat picked last time opens again: the header names it, and no single roll is restored', async () => {
-  const strings = JSON.parse(read('src/strings.hi.json').toString('utf8'));
   const idb = createFakeIndexedDB();
   const storage = memoryStorage();
   const first = boot(idb, [], { localStorage: storage });
@@ -430,14 +430,120 @@ test('a sarpanch seat picked last time opens again: the header names it, and no 
     await waitFor(() => globalThis.window.wardSelection && globalThis.window.wardSelection() !== null);
     assert.equal(globalThis.window.wardSelection().seatType, 'sarpanch');
     assert.equal(second.seat.textContent, 'पंचायत: अजगरा · सभी वार्ड');
-    assert.equal(second.roll.querySelector('p.roll-empty').textContent, strings.roll_sarpanch_all_wards);
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(second.roll.querySelector('p.roll-empty').textContent, STRINGS.roll_sarpanch_all_wards);
+    await settle();
     assert.equal(second.roll.querySelectorAll('div.roll-row').length, 0, 'ward 1 stays stored, not shown');
     assert.equal(second.seat.textContent, 'पंचायत: अजगरा · सभी वार्ड');
     assert.deepEqual(footerLines(second), [...SEC_FOOTER_LINES]);
     assert.ok(!requests.some((u) => u.startsWith('/roll')), requests.join('\n'));
   } finally {
     second.restore();
+  }
+});
+
+test('a sarpanch pick then a ward panch pick whose download fails: the sarpanch seat stays; a cold start with no roll shows no seat', async () => {
+  const idb = createFakeIndexedDB();
+  const storage = memoryStorage();
+  const first = boot(idb, [], { localStorage: storage, rollFails: () => true });
+  try {
+    await import('../js/picker.js?wiring=20');
+    const selects = await pickPanchayat(first.picker, { seatType: 'sarpanch', district: '1', panchayat: '54' });
+    assert.equal(first.seat.textContent, 'पंचायत: अजगरा · सभी वार्ड');
+    // No roll is loaded, so no alert: the seat type changes and a ward is picked.
+    choose(selects.seatType, 'ward-panch');
+    assert.equal(first.picker.querySelector('div.picker-confirm').hidden, true);
+    choose(selects.ward, '1');
+    await waitFor(() => first.roll.querySelector('.roll-error') !== null);
+    assert.equal(first.seat.textContent, 'पंचायत: अजगरा · सभी वार्ड', 'a failed download keeps the last seat');
+    assert.equal(storedSeat(storage).seatType, 'sarpanch');
+    assert.equal(JSON.parse(storage.stored.get(LAST_SELECTION_KEY)).seatType, 'ward-panch');
+  } finally {
+    first.restore();
+  }
+
+  // Reopened: the last pick is a ward panch whose roll never arrived and no
+  // roll is on the phone, so no seat is loaded, whatever the stored seat says.
+  const requests = [];
+  const second = boot(idb, requests, { localStorage: storage });
+  try {
+    await import('../js/app.js?wiring=21');
+    await import('../js/picker.js?wiring=21');
+    await waitFor(() => second.seat.getAttribute('data-state') === 'empty');
+    await settle();
+    assert.equal(second.seat.getAttribute('data-state'), 'empty');
+    assert.equal(second.roll.querySelector('p.roll-empty').textContent, STRINGS.roll_pick_ward);
+    assert.ok(!requests.some((u) => u.startsWith('/roll')), 'nothing is downloaded at startup');
+  } finally {
+    second.restore();
+  }
+});
+
+test('a restored roll without its last pick is named from its district shard', async () => {
+  const idb = createFakeIndexedDB();
+  const first = boot(idb, [], { localStorage: memoryStorage() });
+  try {
+    await import('../js/picker.js?wiring=22');
+    await pickWard(first.picker, '1', { district: '1', panchayat: '54' });
+    await waitFor(() => first.roll.querySelectorAll('div.roll-row').length > 0);
+    assert.equal(first.seat.textContent, 'पंचायत: अजगरा · वार्ड: 1');
+  } finally {
+    first.restore();
+  }
+
+  // The last-pick and seat keys are gone; the roll is still on the phone.
+  const requests = [];
+  const storage = memoryStorage();
+  const second = boot(idb, requests, { localStorage: storage });
+  try {
+    await import('../js/picker.js?wiring=23');
+    await waitFor(() => second.roll.querySelectorAll('div.roll-row').length > 0);
+    await waitFor(() => second.seat.getAttribute('data-state') === 'loaded');
+    assert.equal(second.seat.textContent, 'पंचायत: अजगरा · वार्ड: 1');
+    assert.deepEqual(storedSeat(storage), { schemaVersion: 1, seatType: 'ward', panchayat: 'अजगरा', ward: '1' });
+    assert.ok(requests.includes('data/sec/catalogue/ajmer.json'), requests.join('\n'));
+    assert.ok(!requests.some((u) => u.startsWith('/roll')), 'restored offline');
+  } finally {
+    second.restore();
+  }
+});
+
+test('a restored roll whose district or panchayat the catalogue lacks leaves the header as it was', async () => {
+  const idb = createFakeIndexedDB();
+  const first = boot(idb, [], { localStorage: memoryStorage() });
+  try {
+    await import('../js/picker.js?wiring=24');
+    await pickWard(first.picker, '1', { district: '1', panchayat: '54' });
+    await waitFor(() => first.roll.querySelectorAll('div.roll-row').length > 0);
+  } finally {
+    first.restore();
+  }
+
+  const withoutDistrict = (url) => {
+    if (url !== 'data/sec/catalogue/index.json') return catalogueResponse(url);
+    const index = JSON.parse(read('data/sec/catalogue/index.json').toString('utf8'));
+    return new Response(JSON.stringify({ ...index, districts: index.districts.filter((d) => d.id !== '1') }));
+  };
+  const withoutPanchayat = (url) => {
+    if (url !== 'data/sec/catalogue/ajmer.json') return catalogueResponse(url);
+    const shard = JSON.parse(read('data/sec/catalogue/ajmer.json').toString('utf8'));
+    return new Response(JSON.stringify({ ...shard, panchayats: shard.panchayats.filter((p) => p.id !== '54') }));
+  };
+  let n = 25;
+  for (const catalogue of [withoutDistrict, withoutPanchayat]) {
+    const storage = memoryStorage();
+    storage.setItem('ward-canvass-seat', JSON.stringify({ schemaVersion: 1, seatType: 'ward', panchayat: 'पुराना', ward: '9' }));
+    const page = boot(idb, [], { localStorage: storage, catalogue });
+    try {
+      await import(`../js/app.js?wiring=${n}`);
+      await import(`../js/picker.js?wiring=${n}`);
+      n += 1;
+      await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
+      await settle();
+      assert.equal(page.seat.textContent, 'पंचायत: पुराना · वार्ड: 9', 'the header is not overwritten');
+      assert.equal(storedSeat(storage).panchayat, 'पुराना');
+    } finally {
+      page.restore();
+    }
   }
 });
 

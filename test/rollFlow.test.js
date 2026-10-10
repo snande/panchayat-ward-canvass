@@ -223,6 +223,20 @@ test('clear() puts the shown roll away and drops a download still running; the s
   assert.ok(await s.store.loadStored('17/125/6313/1'), 'nothing is deleted from the phone');
 });
 
+test('clear() during a pending restore() wins: the stored roll is not shown', async () => {
+  const idb = createFakeIndexedDB();
+  const first = setup({ fetchRoll: async () => pdfBuffer(), idb });
+  await first.flow.open(SELECTION);
+  const s = setup({ fetchRoll: async () => { throw new Error('no network expected'); }, idb });
+  const restoring = s.flow.restore();
+  s.flow.clear({ seatType: 'sarpanch' });
+  assert.equal(await restoring, null);
+  assert.equal(s.flow.screen.state, 'empty');
+  assert.equal(rowCount(s.container), 0);
+  assert.equal(s.shown.length, 0);
+  assert.equal(s.calls.length, 0);
+});
+
 test('restore() with a record that fails to decrypt neither crashes nor shows a list', async () => {
   const idb = createFakeIndexedDB();
   const online = setup({ idb, fetchRoll: async () => pdfBuffer() });

@@ -70,8 +70,9 @@ export function renderSeatHeader(root, selection, strings = {}) {
 /** The seat of a catalogue pick (src/picker/catalogue.js), or null. */
 export function seatFromPick(pick) {
   const wards = (pick && pick.wards) || [];
+  const ward = wards.length === 1 && wards[0] && wards[0].ward;
   const seat = { seatType: PICK_SEATS[pick && pick.seatType], panchayat: pick && pick.panchayat && pick.panchayat.name };
-  if (seat.seatType === 'ward') seat.ward = wards.length === 1 ? String(wards[0].ward) : '';
+  if (seat.seatType === 'ward') seat.ward = Number.isInteger(ward) && ward > 0 ? String(ward) : '';
   return wards.length && isSeat(seat) ? seat : null;
 }
 
