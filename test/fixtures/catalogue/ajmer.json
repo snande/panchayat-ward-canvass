@@ -1,0 +1,199 @@
+{
+ "schemaVersion": 1,
+ "id": "1",
+ "name": "अजमेर",
+ "nameLatin": "AJMER",
+ "panchayats": [
+  {
+   "id": "54",
+   "name": "अजगरा",
+   "nameLatin": "Ajgara",
+   "block": {
+    "id": "4",
+    "name": "KEKRI",
+    "nameLatin": "KEKRI"
+   },
+   "wards": [
+    {
+     "ward": 1,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/4/AJGARA-Ward%20No-001.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/4/AJGARA-Ward%20No-001.pdf"
+    },
+    {
+     "ward": 2,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/4/AJGARA-Ward%20No-002.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/4/AJGARA-Ward%20No-002.pdf"
+    },
+    {
+     "ward": 3,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/4/AJGARA-Ward%20No-003.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/4/AJGARA-Ward%20No-003.pdf"
+    },
+    {
+     "ward": 4,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/4/AJGARA-Ward%20No-004.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/4/AJGARA-Ward%20No-004.pdf"
+    },
+    {
+     "ward": 5,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/4/AJGARA-Ward%20No-005.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/4/AJGARA-Ward%20No-005.pdf"
+    },
+    {
+     "ward": 6,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/4/AJGARA-Ward%20No-006.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/4/AJGARA-Ward%20No-006.pdf"
+    },
+    {
+     "ward": 7,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/4/AJGARA-Ward%20No-007.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/4/AJGARA-Ward%20No-007.pdf"
+    }
+   ]
+  },
+  {
+   "id": "192",
+   "name": "अजयसर",
+   "nameLatin": "Ajaysar",
+   "block": {
+    "id": "296",
+    "name": "अजमेर ग्रामीण",
+    "nameLatin": "AJMER RURAL"
+   },
+   "wards": [
+    {
+     "ward": 1,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-001.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-001.pdf"
+    },
+    {
+     "ward": 2,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-002.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-002.pdf"
+    },
+    {
+     "ward": 3,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-003.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-003.pdf"
+    },
+    {
+     "ward": 4,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-004.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-004.pdf"
+    },
+    {
+     "ward": 5,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-005.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-005.pdf"
+    },
+    {
+     "ward": 6,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-006.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-006.pdf"
+    },
+    {
+     "ward": 7,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-007.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-007.pdf"
+    },
+    {
+     "ward": 8,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-008.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-008.pdf"
+    },
+    {
+     "ward": 9,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-009.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-009.pdf"
+    },
+    {
+     "ward": 10,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-010.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-010.pdf"
+    },
+    {
+     "ward": 11,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-011.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-011.pdf"
+    },
+    {
+     "ward": 12,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-012.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-012.pdf"
+    },
+    {
+     "ward": 13,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/296/AJAYSAR-Ward%20No-013.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/296/AJAYSAR-Ward%20No-013.pdf"
+    }
+   ]
+  },
+  {
+   "id": "24",
+   "name": "बडली",
+   "nameLatin": "Badli",
+   "block": {
+    "id": "2",
+    "name": "भिनाय",
+    "nameLatin": "BHINAY"
+   },
+   "wards": [
+    {
+     "ward": 1,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-001.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-001.pdf"
+    },
+    {
+     "ward": 2,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-002.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-002.pdf"
+    },
+    {
+     "ward": 3,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-003.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-003.pdf"
+    },
+    {
+     "ward": 4,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-004.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-004.pdf"
+    },
+    {
+     "ward": 5,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-005.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-005.pdf"
+    },
+    {
+     "ward": 6,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-006.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-006.pdf"
+    },
+    {
+     "ward": 7,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-007.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-007.pdf"
+    },
+    {
+     "ward": 8,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-008.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-008.pdf"
+    },
+    {
+     "ward": 9,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-009.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-009.pdf"
+    },
+    {
+     "ward": 10,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-010.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-010.pdf"
+    },
+    {
+     "ward": 11,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/2/BADLI-Ward%20No-011.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/2/BADLI-Ward%20No-011.pdf"
+    }
+   ]
+  }
+ ]
+}

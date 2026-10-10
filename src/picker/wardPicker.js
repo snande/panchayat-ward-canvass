@@ -1,6 +1,7 @@
-// Pure ward catalogue helpers: no DOM, no network. Every lookup walks the
-// bundled per-installation config (config/constituency.json), so anything not
-// listed there resolves to null and can never produce a fetch URL.
+// Pure ward lookups in the bundled per-installation config
+// (config/constituency.json), the wards the roll relay serves: no DOM, no
+// network. Anything not listed there resolves to null. The picker itself
+// reads the SEC catalogue (src/picker/catalogue.js).
 
 import { urlList } from '../roll/supplementTags.js';
 
@@ -18,30 +19,6 @@ function path(config, sel) {
   const panchayat = samiti && findChild(samiti.panchayats, sel.panchayat);
   const ward = panchayat && findChild(panchayat.wards, sel.ward);
   return ward ? { district, samiti, panchayat, ward } : null;
-}
-
-const options = (list) => (Array.isArray(list) ? list.map(({ id, label }) => ({ id, label })) : []);
-
-export function districts(config) {
-  return options(config && config.districts);
-}
-
-export function samitis(config, districtId) {
-  const d = findChild(config && config.districts, districtId);
-  return options(d && d.samitis);
-}
-
-export function panchayats(config, districtId, samitiId) {
-  const d = findChild(config && config.districts, districtId);
-  const s = d && findChild(d.samitis, samitiId);
-  return options(s && s.panchayats);
-}
-
-export function wards(config, districtId, samitiId, panchayatId) {
-  const d = findChild(config && config.districts, districtId);
-  const s = d && findChild(d.samitis, samitiId);
-  const p = s && findChild(s.panchayats, panchayatId);
-  return options(p && p.wards);
 }
 
 /** PDF URL for a configured ward, or null for anything outside the config. */

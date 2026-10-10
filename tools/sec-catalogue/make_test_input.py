@@ -5,7 +5,9 @@ panchayats that already have fixtures under fixtures/sec/.
 
 The raw HTML of the 2026-10-09 walks was not committed, so the pages are
 rebuilt from what was: the dropdown entries (ids, Latin names) come from
-data/sec/catalogue.json, and each Search grid (its columns, its rows'
+the older single-file catalogue, data/sec/catalogue.json as committed at
+LEGACY_CATALOGUE_REV (the file left the tree once the picker read the shards,
+#122; it alone lists the urban bodies and zilla parishads), and each Search grid (its columns, its rows'
 Grampanchayat and Ward No. text, which PDF columns link a file) from
 fixtures/sec/manifest.json. The markup follows the portal's form (the field
 names build_catalogue.py posts, hidden __VIEWSTATE / __EVENTVALIDATION, a
@@ -17,13 +19,14 @@ parishad and blank-named entry the portal lists for the district, so the
 build's skip counts are exercised; other rural samitis and panchayats are
 left out. No name in the output is typed by hand.
 
-    python3 tools/sec-catalogue/make_test_input.py
+    python3 tools/sec-catalogue/make_test_input.py [--catalogue FILE]
 """
 
 import html
 import json
 import os
 import shutil
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -95,12 +98,28 @@ def grid_html(columns, rows, linked):
     return "\n".join(out)
 
 
+# The last commit whose tree holds data/sec/catalogue.json.
+LEGACY_CATALOGUE_REV = "760d0d7"
+LEGACY_CATALOGUE_PATH = "data/sec/catalogue.json"
+
+
+def load_legacy_catalogue(path=None):
+    """The older single-file catalogue: from path, or from git history."""
+    if path:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    text = subprocess.run(
+        ["git", "show", f"{LEGACY_CATALOGUE_REV}:{LEGACY_CATALOGUE_PATH}"],
+        cwd=REPO, check=True, capture_output=True, text=True, encoding="utf-8").stdout
+    return json.loads(text)
+
+
 def main():
     out_dir = os.path.join(REPO, "fixtures", "sec", "catalogue-input")
     with open(os.path.join(REPO, "fixtures", "sec", "manifest.json"), encoding="utf-8") as fh:
         manifest = json.load(fh)
-    with open(os.path.join(REPO, "data", "sec", "catalogue.json"), encoding="utf-8") as fh:
-        catalogue = json.load(fh)
+    path = sys.argv[sys.argv.index("--catalogue") + 1] if "--catalogue" in sys.argv[1:-1] else None
+    catalogue = load_legacy_catalogue(path)
     picks = {p["district"]["id"]: p for p in manifest["panchayats"]}
     portal = [d for d in catalogue["districts"] if d["id"] in picks]
     districts = [(d["id"], d["name"]) for d in portal]

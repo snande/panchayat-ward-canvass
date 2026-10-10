@@ -20,7 +20,9 @@ supplementary roll (`Final With Supp-2 PDF`), Almas ward 1 included.
 
 The raw HTML of the 2026-10-09 walks was not kept, so
 `tools/sec-catalogue/make_test_input.py` rebuilds these pages from what was
-committed. The dropdown ids and Latin names come from `data/sec/catalogue.json`.
+committed. The dropdown ids and Latin names come from `data/sec/catalogue.json`,
+the older single-file catalogue, read from git history (`LEGACY_CATALOGUE_REV`
+in `make_test_input.py`) now that the app reads only the shards.
 Each Search grid (its columns, the rows' Hindi `Grampanchayat` and
 `Ward No.` text, and which PDF columns link a file) comes from
 `fixtures/sec/manifest.json`. The markup follows the portal's form. Each

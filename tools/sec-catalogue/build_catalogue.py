@@ -51,8 +51,9 @@ the same input:
   <out>/index.json         districts with id, name, nameLatin, file, panchayatCount
   <out>/<district>.json    the district's panchayats, sorted by Hindi name, each
                            with block (its samiti) and wards sorted by number
-  <out>.json               the older catalogue.json shape (--legacy-out), kept
-                           until the picker reads the sharded catalogue (#122)
+  --legacy-out FILE        the older single-file catalogue.json shape, written
+                           only when asked for: the picker reads the sharded
+                           catalogue (#122) and data/sec/catalogue.json is gone
 
 A full build replaces the catalogue and removes shards the earlier index
 listed that it no longer writes. A --districts build only replaces the named
@@ -1023,9 +1024,10 @@ def main(argv=None):
     src.add_argument("--fetch", help="walk the portal into this directory (resuming from what "
                                      "is saved there), then build from it if --out is given")
     p.add_argument("--out", help="output directory, e.g. data/sec/catalogue")
-    p.add_argument("--legacy-out", help="where to write the older single-file catalogue "
-                                        "(default: <out>.json, e.g. data/sec/catalogue.json)")
-    p.add_argument("--no-legacy", action="store_true", help="do not write the older catalogue")
+    p.add_argument("--legacy-out", help="also write the older single-file catalogue here "
+                                        "(default: not written; the app reads only the shards)")
+    p.add_argument("--no-legacy", action="store_true",
+                   help="do not write the older catalogue (the default; kept for old scripts)")
     p.add_argument("--districts", help="comma-separated district ids (default: all); with --out "
                                        "the named districts are merged into the existing catalogue")
     p.add_argument("--allow-latin-names", action="store_true",
@@ -1071,8 +1073,7 @@ def main(argv=None):
             print(f"FAILED: {e}", file=sys.stderr)
         print(f"{len(errors)} failures; nothing written", file=sys.stderr)
         return 1
-    legacy_path = None if args.no_legacy else (
-        args.legacy_out or os.path.normpath(args.out).rstrip(os.sep) + ".json")
+    legacy_path = None if args.no_legacy else args.legacy_out
     write_catalogue(args.out, files, legacy_doc, legacy_path, partial=bool(only))
     print_summary(summary)
     if not node_available():

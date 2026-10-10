@@ -24,6 +24,11 @@ class FakeResponse {
   async arrayBuffer() {
     return this.body;
   }
+  clone() {
+    const copy = new FakeResponse(this.body, { status: this.status, statusText: this.statusText, headers: this.headers });
+    copy.redirected = this.redirected;
+    return copy;
+  }
   get ok() {
     return this.status >= 200 && this.status < 300;
   }
@@ -259,6 +264,35 @@ const tests = {
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  },
+
+  async "the catalogue index and every fetched shard are kept, so an opened district works offline"() {
+    const sb = makeSandbox();
+    await dispatch(sb, "install");
+    // First open, online: the picker fetches the index.
+    sb.net.body = "index-v1";
+    const first = await dispatch(sb, "fetch", { request: req("/data/sec/catalogue/index.json") });
+    assert.strictEqual(first.body, "index-v1");
+    sb.net.body = "jaipur-v1";
+    const online = await dispatch(sb, "fetch", { request: req("/data/sec/catalogue/jaipur.json") });
+    assert.strictEqual(online.body, "jaipur-v1");
+    // Network first: an updated shard replaces the kept copy.
+    sb.net.body = "jaipur-v2";
+    const before = sb.calls.fetch;
+    const fresh = await dispatch(sb, "fetch", { request: req("/data/sec/catalogue/jaipur.json") });
+    assert.strictEqual(fresh.body, "jaipur-v2");
+    assert.strictEqual(sb.calls.fetch, before + 1, "the catalogue is fetched from the network when online");
+    // A new shell version leaves the catalogue cache alone.
+    await dispatch(sb, "activate");
+    sb.net.mode = "offline";
+    const kept = await dispatch(sb, "fetch", { request: req("/data/sec/catalogue/jaipur.json") });
+    assert.strictEqual(kept.status, 200);
+    assert.strictEqual(kept.body, "jaipur-v2");
+    const index = await dispatch(sb, "fetch", { request: req("/data/sec/catalogue/index.json") });
+    assert.strictEqual(index.status, 200, "the index answers offline");
+    assert.strictEqual(index.body, "index-v1");
+    const never = await dispatch(sb, "fetch", { request: req("/data/sec/catalogue/kota.json") });
+    assert.strictEqual(never.status, 503, "a district never opened is not available offline");
   },
 
   async "cross-origin and non-GET requests are not intercepted"() {

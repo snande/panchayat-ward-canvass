@@ -1,0 +1,21 @@
+{
+ "schemaVersion": 1,
+ "source": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
+ "note": "Test catalogue: a slice of data/sec/catalogue/ (two districts, a few panchayats each) for the picker tests; Badli (Jaipur) lists its wards out of order on purpose.",
+ "districts": [
+  {
+   "id": "1",
+   "name": "अजमेर",
+   "nameLatin": "AJMER",
+   "file": "ajmer.json",
+   "panchayatCount": 3
+  },
+  {
+   "id": "17",
+   "name": "जयपुर",
+   "nameLatin": "JAIPUR",
+   "file": "jaipur.json",
+   "panchayatCount": 3
+  }
+ ]
+}
