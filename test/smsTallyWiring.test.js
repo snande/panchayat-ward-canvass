@@ -1,7 +1,7 @@
 // Seen-voting marks wired to the SMS tally fallback (issue #81), run by
 // `npm test`. Each phone is its own in-memory IndexedDB with its own team
 // join, sync engine, mark store and SMS inbox; every sync request goes to the
-// real functions/sync.js handler over an in-memory KV. Workers mark voters by
+// real functions/sync.js handler over an in-memory D1. Workers mark voters by
 // tapping through the roll view (src/ui/rollSearch.js) on the fake DOM and
 // send them with the SMS tally view it opens; the coordinator pastes those
 // SMS into the same view and reads the count off it and the turnout screen.

@@ -1,7 +1,7 @@
 // Seen-voting marks wired to the polling-day count beside the official
 // turnout (issue #82), run by `npm test`. Each phone is its own in-memory
 // IndexedDB with its own team join, sync engine and mark store; every sync
-// request goes to the real functions/sync.js handler over an in-memory KV.
+// request goes to the real functions/sync.js handler over an in-memory D1.
 // The marks are made by tapping through the roll view (src/ui/rollSearch.js)
 // on the fake DOM, and the count is read off the turnout screen it opens.
 
