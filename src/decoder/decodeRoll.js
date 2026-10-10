@@ -314,19 +314,40 @@ export function decodeRoll(pdfBytes, { table } = {}) {
   const codeMaps = new Map(); // font program object -> byte code map (shared across pages)
   const bySerial = new Map();
   for (const page of pdf.pages()) {
-    const fonts = new Map();
-    for (const [name, { baseFont, programNum }] of page.fonts) {
-      let codes = null;
-      if (baseFont.includes('ArialUnicodeMS') && programNum !== null) {
-        if (!codeMaps.has(programNum)) {
-          const program = pdf.stream(programNum);
-          codeMaps.set(programNum, program ? subsetCodeMap(program, table) : new Map());
-        }
-        codes = codeMaps.get(programNum);
-      }
-      fonts.set(name, { role: fontRole(baseFont), codes });
-    }
+    const fonts = pageFonts(pdf, page, codeMaps, table);
     addPageEntries(bySerial, parseEntries(pageLines(page.content, fonts)), page.index + 1);
   }
   return [...bySerial.values()].sort((a, b) => a.serial - b.serial);
+}
+
+/**
+ * The text lines of a roll's first page (its cover), decoded exactly as the
+ * entry pages are: glyph outlines matched against the master table, no OCR.
+ * @param {Uint8Array|ArrayBuffer} pdfBytes the roll PDF
+ * @param {{table?: {glyphs: Record<string, object>}}} [options] master glyph table
+ * @returns {{x: number, y: number, text: string, fonts: Set<string>}[]} NFC text
+ */
+export function readCoverLines(pdfBytes, { table } = {}) {
+  const pdf = openPdf(pdfBytes);
+  for (const page of pdf.pages()) {
+    const fonts = pageFonts(pdf, page, new Map(), table);
+    return pageLines(page.content, fonts).map((ln) => ({ ...ln, text: ln.text.normalize('NFC') }));
+  }
+  return [];
+}
+
+function pageFonts(pdf, page, codeMaps, table) {
+  const fonts = new Map();
+  for (const [name, { baseFont, programNum }] of page.fonts) {
+    let codes = null;
+    if (baseFont.includes('ArialUnicodeMS') && programNum !== null) {
+      if (!codeMaps.has(programNum)) {
+        const program = pdf.stream(programNum);
+        codeMaps.set(programNum, program ? subsetCodeMap(program, table) : new Map());
+      }
+      codes = codeMaps.get(programNum);
+    }
+    fonts.set(name, { role: fontRole(baseFont), codes });
+  }
+  return fonts;
 }
