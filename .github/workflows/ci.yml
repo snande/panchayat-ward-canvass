@@ -26,3 +26,5 @@ jobs:
       - run: python3 scripts/check_pwa_shell.py
       - run: python3 -m unittest test_pwa_shell
         working-directory: scripts
+      # the statewide catalogue builder, offline, against fixtures/sec/catalogue-input
+      - run: python3 -m unittest discover -s tools/sec-catalogue -p 'test_*.py'

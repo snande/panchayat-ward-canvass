@@ -63,17 +63,92 @@ Annexure B of order 9836), so no samiti was missed. The 457 samitis are well
 above the roughly 350 Rajasthan is often cited as having; the portal's list
 follows the current 41-district map and its newer samitis.
 
-To regenerate it (a networked machine, never the swarm's sandbox):
+The 2026-10-09 catalogue was written by an earlier version of
+`build_catalogue.py` that never posted Search. That script has since been
+replaced by the sharded catalogue builder described below.
+
+### The sharded catalogue (`data/sec/catalogue/`)
+
+`tools/sec-catalogue/build_catalogue.py` now builds a versioned catalogue,
+split by district, from a directory of saved roll-page responses (#190,
+replacing #121):
 
 ```
-python3 tools/sec-catalogue/build_catalogue.py --max-posts 520 --checkpoint /tmp/sec-checkpoint.json
+python3 tools/sec-catalogue/build_catalogue.py --input DIR --out data/sec/catalogue
 ```
 
-`--checkpoint` lets an interrupted run resume without repeating finished
-samitis. Ward lists are deliberately never fetched by the catalogue: posting
-Search for every gram panchayat would be over ten thousand posts. A ward list
-is found at use time by requesting ward 001, 002, ... from the URL template
-until one answers 302 (section 3).
+It needs no network access. It writes:
+
+- `index.json`: a `schemaVersion`, plus the districts with `id`, `name`
+  (Hindi), `nameLatin`, `file` and `panchayatCount`, and a run `summary`;
+- one file per district (`schemaVersion`, the district, its `panchayats`).
+  Each panchayat has `id`, `name`, `nameLatin`, `block` (its panchayat
+  samiti, `{id, name, nameLatin}`) and `wards`, each `{ward, pdfUrl,
+  supplementUrl}`;
+- `data/sec/catalogue.json` in the older shape, with a `schemaVersion`. It is
+  kept until the picker switches over (#122).
+
+Panchayats are sorted by Hindi name and wards by number. The same input gives
+byte-identical files.
+
+Hindi names come only from SEC publications (the operator's decision on #121):
+
+- a gram panchayat's name comes from the Search grid's `Grampanchayat` column;
+- district and samiti names come from the cover page of one ward roll per
+  samiti. The page is read with the repo's glyph-matching decoder
+  (`src/decoder/rollCover.js`, no OCR). Each cover prints `पंचायत समिति का
+  नाम : <samiti>` and a `जिला : <district>` row. The `तहसील` row is not the
+  samiti: Girwa's tahsil is बारापाल.
+
+A name that cannot be read falls back to the Latin dropdown text. The run
+summary lists every fallback, and a fallback never fails the run.
+
+Wards come from the same grid rows:
+
+- `pdfUrl` is the Final template (section 3) for a row whose `Final PDF` cell
+  links a file;
+- `supplementUrl` is the Supplement template for a row whose `Final With
+  Supp-2 PDF` cell links one, otherwise `null`;
+- no ward number is probed.
+
+As noted in section 7, a listed supplement can still answer 302: Arauda's
+does.
+
+The build exits 1, naming the district and panchayat, when:
+
+- a panchayat has no wards (or no saved Search response);
+- a ward has no Final link;
+- a ward number repeats or is not a number;
+- any saved response is missing.
+
+Urban bodies, zilla parishads and blank-named entries are skipped and
+counted.
+
+The live walk is a separate operator step on a networked machine:
+
+```
+python3 tools/sec-catalogue/build_catalogue.py --fetch /var/tmp/sec-raw --out data/sec/catalogue --log /var/tmp/sec-requests.jsonl
+```
+
+It saves every response into the `--fetch` directory as `page.html`,
+`district-<D>.html`, `samiti-<D>-<S>.html`, `search-<D>-<S>-<G>.html` and
+`cover-<S>.pdf`. Covers are ward 1's Final PDF of the samiti's first
+panchayat. Each file is written whole or not at all.
+
+The walk:
+
+- skips anything already saved, so running the same command again resumes an
+  interrupted run;
+- prints progress with an estimated finish time;
+- reads no hand-edited file: only the portal's responses and the decoder's
+  generated glyph table.
+
+At one request a second it is about 41 district posts, 457 samiti posts,
+14,403 Search posts (plus re-selecting district and samiti after a resume),
+and 457 cover GETs from esuchiroll. That is roughly 15,400 requests: about
+4.5 hours at the floor rate, and longer with the portal's response times.
+The tests run on a small saved directory, `fixtures/sec/catalogue-input/`,
+covering the five fixture panchayats.
 
 What the third dropdown holds for the other kinds, seen once each in Jaipur:
 an urban body lists its municipal wards in Hindi (`CHAKSU NAGAR PALIKA`, id
@@ -248,11 +323,22 @@ Badli. The relay was not changed.
 
 ## 8. Running the scripts
 
-Both scripts are standard-library Python 3 (tested with 3.9) and must run
-from a networked machine: the swarm's Engineer sandbox cannot reach the
-commission's servers. Each stops at once on a 403, 429, an unexpected
-redirect, or a response that is not the roll form, and backs off
-exponentially (2, 4, 8, 16 s) on network errors and 5xx before stopping.
-Neither accepts an `--interval` below one second. `--log FILE` appends one
-JSON line per request; `--raw-dir DIR` keeps every response body for
-inspection.
+Both scripts are standard-library Python 3 (tested with 3.9).
+`build_catalogue.py` also needs `node` to read cover pages. Anything that
+fetches must run from a networked machine (`build_catalogue.py --fetch` and
+`fetch_fixtures.py`): the swarm's Engineer sandbox cannot reach the
+commission's servers. `build_catalogue.py --input` is offline.
+
+When fetching, each script:
+
+- stops at once on a 403, 429, an unexpected redirect, or a response that is
+  not the roll form;
+- backs off exponentially (2, 4, 8, 16 s) on network errors and 5xx before
+  stopping;
+- refuses an `--interval` below one second.
+
+`--log FILE` appends one JSON line per request. `build_catalogue.py --fetch
+DIR` keeps every response body in DIR, and `fetch_fixtures.py --raw-dir DIR`
+keeps its Search responses. `python3 -m unittest discover -s
+tools/sec-catalogue -p 'test_*.py'` runs the catalogue builder's tests (CI
+runs them).
