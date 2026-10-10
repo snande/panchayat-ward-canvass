@@ -254,7 +254,7 @@ function startFrame(strings) {
 
 // Until this device joins its candidate's team, show the join screen; the
 // roll works either way. In a team, records sync now, on reconnect, on show
-// and every 30 s online (src/sync/syncEngine.js).
+// and every 60 s online while shown (src/sync/syncEngine.js).
 function startTeamJoin(strings) {
   if (!teamContainer) {
     return;

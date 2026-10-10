@@ -170,7 +170,7 @@ test('airplane mode on, record consent and a number, reopen the next day: it is 
     assert.equal(button(nextDay, 'contact-consent').hidden, true);
 
     // Back online: the sync that picker.js started (run on reconnect, on
-    // page show and every 30 s) delivers the queued number to the team.
+    // page show and every 60 s while shown) delivers the queued number to the team.
     const result = await syncNow();
     assert.equal(result.status, 'ok', String(result.error));
     assert.equal(stored(idb, OUTBOX_STORE).size, 0);

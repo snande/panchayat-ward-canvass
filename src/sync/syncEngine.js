@@ -25,7 +25,9 @@
 //   written after the callbacks return, so a crash in between re-delivers
 //   rather than loses.
 // - start() runs syncNow() at startup, on the window `online` event, when the
-//   page becomes visible, and every SYNC_INTERVAL_MS while navigator.onLine.
+//   page becomes visible, and every SYNC_INTERVAL_MS while navigator.onLine
+//   and the page is not hidden. Every sync pulls right after its push, so a
+//   device's own saves never wait for the next tick to bring in news.
 //
 // - Seen-voting marks (src/tally/seenVotingStore.js) travel the same way, as
 //   records with id `mark:<wardId>:<serial>`: a mark made offline waits in
@@ -45,7 +47,7 @@ import { getAuth as storedAuth } from './teamAuth.js';
 
 export const PUSH_URL = '/sync/push';
 export const PULL_URL = '/sync/pull';
-export const SYNC_INTERVAL_MS = 30000;
+export const SYNC_INTERVAL_MS = 60000;
 // MAX_PUSH_RECORDS in functions/sync.js.
 export const PUSH_BATCH_SIZE = 500;
 export const CURSOR_ID = 'sync-cursor';
@@ -401,10 +403,12 @@ export function createSyncEngine({
     if (doc && doc.visibilityState === 'visible') trigger();
   };
   const onTick = () => {
-    if (!nav || nav.onLine !== false) trigger();
+    if (nav && nav.onLine === false) return;
+    if (doc && doc.visibilityState === 'hidden') return;
+    trigger();
   };
 
-  /** Sync now and on every later trigger (online, visible, every 30 s while online). */
+  /** Sync now and on every later trigger (online, visible, every 60 s while online and visible). */
   function start() {
     if (started) return;
     started = true;
