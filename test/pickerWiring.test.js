@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { createSyncD1 } from './helpers/memoryD1.js';
 import { onRequest as syncOnRequest } from '../functions/sync.js';
 
 const root = (rel) => new URL('../' + rel, import.meta.url);
@@ -155,11 +156,7 @@ test('picking a ward opens its roll and hides the empty state; a reload restores
 
 test('with no team credentials the join screen shows; after joining a reload skips it', async () => {
   const idb = createFakeIndexedDB();
-  const store = new Map();
-  const syncEnv = {
-    SYNC_SECRET: 'test-sync-secret',
-    SYNC_KV: { get: async (k) => (store.has(k) ? store.get(k) : null), put: async (k, v) => { store.set(k, String(v)); } },
-  };
+  const syncEnv = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncD1() };
   const first = boot(idb, [], { syncEnv });
   try {
     await import('../js/picker.js?wiring=3');
@@ -171,7 +168,7 @@ test('with no team credentials the join screen shows; after joining a reload ski
     first.team.querySelector('form').dispatchEvent({ type: 'submit', preventDefault() {} });
     await waitFor(() => first.team.hidden === true);
     assert.equal(first.team.querySelector('form'), null);
-    assert.ok(store.has('c/candA/verifier'));
+    assert.equal(syncEnv.SYNC_DB.sqlite.query('SELECT 1 FROM verifiers WHERE candidate_id = ?', ['candA']).length, 1);
   } finally {
     first.restore();
   }

@@ -13,6 +13,7 @@ import { webcrypto } from 'node:crypto';
 
 import { createDocument, type } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { createSyncD1 } from './helpers/memoryD1.js';
 import { onRequest as syncOnRequest } from '../functions/sync.js';
 import { createSyncEngine } from '../src/sync/syncEngine.js';
 import { createTeamAuth } from '../src/sync/teamAuth.js';
@@ -42,32 +43,21 @@ async function waitFor(cond, ms = 8000) {
   }
 }
 
-function memoryKV() {
-  const map = new Map();
-  return {
-    map,
-    async get(key) {
-      return map.has(key) ? map.get(key) : null;
-    },
-    async put(key, value) {
-      map.set(key, String(value));
-    },
-    async list({ prefix = '' } = {}) {
-      const names = [...map.keys()].filter((k) => k.startsWith(prefix)).sort();
-      return { keys: names.map((name) => ({ name })), list_complete: true };
-    },
-  };
+async function server() {
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncD1() };
+  const handle = (url, init = {}) => syncOnRequest({ request: new Request(new URL(url, ORIGIN), init), env });
+  // The team's stored mark entries (not the index), for one candidate.
+  const markEntries = (candidateId) =>
+    env.SYNC_DB.sqlite.query(
+      "SELECT id, updated_at AS updatedAt, ciphertext, iv, seq, device_id AS deviceId FROM records WHERE candidate_id = ? AND id LIKE 'mark:%' ORDER BY seq",
+      [candidateId],
+    );
+  return { handle, markEntries, db: env.SYNC_DB };
 }
 
-function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_KV: memoryKV() };
-  const handle = (url, init = {}) => syncOnRequest({ request: new Request(new URL(url, ORIGIN), init), env });
-  const markEntries = (candidateId) => [...env.SYNC_KV.map.entries()]
-    .filter(([k]) => k.startsWith(`c/${candidateId}/r/`))
-    .map(([, v]) => JSON.parse(v))
-    .filter((r) => r.id.startsWith('mark:'));
-  return { handle, markEntries, kv: env.SYNC_KV };
-}
+// Every row the sync store holds, as text, to check nothing plaintext lands.
+const storedText = (db) =>
+  ['records', 'counters', 'marks', 'verifiers'].map((t) => JSON.stringify(db.sqlite.query(`SELECT * FROM ${t}`, []))).join('\n');
 
 function clock(start) {
   let t = Date.parse(start);
@@ -174,7 +164,7 @@ function setNoticeEmpty(p) {
 }
 
 test('one voter marked on two offline phones and sent by SMS counts once, before and after both reconnect', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   const b = phone(srv, 'worker-b', '2026-10-07T10:00:00.500Z');
   const coordinator = phone(srv, 'coord', '2026-10-07T10:00:01.000Z');
@@ -246,7 +236,7 @@ function teamPhone(srv, name, start) {
 }
 
 test('the coordinator sets the team SMS number on the entry screen and it reaches a worker\'s send button by sync', async () => {
-  const srv = server();
+  const srv = await server();
   const a = teamPhone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   const coordinator = teamPhone(srv, 'coord', '2026-10-07T10:00:01.000Z');
   for (const p of [a, coordinator]) await p.auth.joinTeam(TEAM, PASS);
@@ -271,7 +261,7 @@ test('the coordinator sets the team SMS number on the entry screen and it reache
   assert.ok(!q(coordinator, 'button.sms-send-button').hasAttribute('disabled'));
 
   // Only ciphertext reaches the server.
-  const stored = [...srv.kv.map.values()].join('\n');
+  const stored = storedText(srv.db);
   assert.doesNotMatch(stored, /9800000000/);
 
   // One sync each, and the open view on the worker's phone is armed.
@@ -292,7 +282,7 @@ test('the coordinator sets the team SMS number on the entry screen and it reache
 });
 
 test('pasting the same SMS again changes nothing', async () => {
-  const srv = server();
+  const srv = await server();
   const c = phone(srv, 'coord', '2026-10-07T10:00:00.000Z');
   const [message] = encodeTallySms({ teamTag: TEAM, workerId: 'w1', serials: [1, 2, 4] });
   await openSms(c);
@@ -306,7 +296,7 @@ test('pasting the same SMS again changes nothing', async () => {
 });
 
 test('serials that are not in this ward\'s roll are not counted, and the pasted text stays', async () => {
-  const srv = server();
+  const srv = await server();
   const c = phone(srv, 'coord', '2026-10-07T10:00:00.000Z');
   const [message] = encodeTallySms({ teamTag: TEAM, workerId: 'w1', serials: [2, 99] });
   await openSms(c);
@@ -319,7 +309,7 @@ test('serials that are not in this ward\'s roll are not counted, and the pasted 
 });
 
 test('a rejected SMS marks nothing', async () => {
-  const srv = server();
+  const srv = await server();
   const c = phone(srv, 'coord', '2026-10-07T10:00:00.000Z');
   const [other] = encodeTallySms({ teamTag: 'cand-99', workerId: 'w1', serials: [2] });
   await openSms(c);
@@ -329,7 +319,7 @@ test('a rejected SMS marks nothing', async () => {
 });
 
 test('with no marks of its own the send panel says how to make one and hides the button', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   await a.marks.markSeen(WARD, 4, 'someone-else');
   await openSms(a);
@@ -346,7 +336,7 @@ test('with no marks of its own the send panel says how to make one and hides the
 });
 
 test('without a team both panels say so and nothing can be sent or added', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z', async () => ({ teamSmsNumber: NUMBER, candidateId: '' }));
   await a.marks.markSeen(WARD, 4, 'worker-a');
   await openSms(a);
@@ -385,7 +375,7 @@ test('settings that cannot be read show an error with a retry that recovers', as
 });
 
 test('a view opened after the SMS tally was tapped is not replaced by it', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   const opening = a.view.openSmsTally();
   const panel = a.view.openContact(ENTRIES[1]);

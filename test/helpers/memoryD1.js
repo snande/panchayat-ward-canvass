@@ -163,3 +163,7 @@ export async function createMemoryD1({ migrations = [] } = {}) {
   }
   return db;
 }
+
+// A fresh database with the sync store's schema, as functions/sync.js expects
+// behind env.SYNC_DB.
+export const createSyncD1 = () => createMemoryD1({ migrations: ['migrations/0001_sync.sql'] });

@@ -14,32 +14,20 @@ import { createTeamAuth } from '../src/sync/teamAuth.js';
 import { onRequest } from '../functions/sync.js';
 import { CONTACTS_STORE, DB_NAME, OUTBOX_STORE } from '../src/storage/deviceDb.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { createSyncD1 } from './helpers/memoryD1.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const WARD = '17/125/6313/1';
 const PHONE = '9876543210';
 
-function memoryKV() {
-  const map = new Map();
-  return {
-    map,
-    async get(key) {
-      return map.has(key) ? map.get(key) : null;
-    },
-    async put(key, value) {
-      map.set(key, String(value));
-    },
-    async list({ prefix = '' } = {}) {
-      const names = [...map.keys()].filter((k) => k.startsWith(prefix)).sort();
-      return { keys: names.map((name) => ({ name })), list_complete: true };
-    },
-  };
-}
-
-function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_KV: memoryKV() };
+async function server() {
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncD1() };
   return { env, handle: (url, init = {}) => onRequest({ request: new Request(new URL(url, ORIGIN), init), env }) };
 }
+
+// Every row the sync store holds, as text, to check nothing plaintext lands.
+const storedText = (db) =>
+  ['records', 'counters', 'marks', 'verifiers'].map((t) => JSON.stringify(db.sqlite.query(`SELECT * FROM ${t}`, []))).join('\n');
 
 // state.offline makes every request throw like a phone in airplane mode.
 function device(srv, { now } = {}) {
@@ -70,7 +58,7 @@ function clock(start = Date.parse('2026-10-07T10:00:00.000Z')) {
 }
 
 test('a number saved in airplane mode reaches a teammate after reconnecting, and only that team', async () => {
-  const srv = server();
+  const srv = await server();
   const field = device(srv, { now: clock() });
   const teammate = device(srv);
   const rival = device(srv);
@@ -94,7 +82,7 @@ test('a number saved in airplane mode reaches a teammate after reconnecting, and
   assert.equal(result.status, 'ok');
   assert.equal(result.pushed, 1);
   assert.equal(stored(field.idb, OUTBOX_STORE).size, 0);
-  for (const value of srv.env.SYNC_KV.map.values()) assert.ok(!value.includes(PHONE));
+  assert.ok(!storedText(srv.env.SYNC_DB).includes(PHONE));
 
   assert.equal((await teammate.engine.syncNow()).received, 1);
   const copy = await teammate.store.getContact(WARD, 12);
@@ -107,7 +95,7 @@ test('a number saved in airplane mode reaches a teammate after reconnecting, and
 });
 
 test('a revoked consent deletes the number on teammates\' devices too', async () => {
-  const srv = server();
+  const srv = await server();
   const field = device(srv, { now: clock() });
   const teammate = device(srv);
   await field.auth.joinTeam('candA', 'हमारी टीम');
@@ -128,7 +116,7 @@ test('a revoked consent deletes the number on teammates\' devices too', async ()
 });
 
 test('the later change wins when two teammates edit the same voter', async () => {
-  const srv = server();
+  const srv = await server();
   const now = clock();
   const a = device(srv, { now });
   const b = device(srv, { now });
