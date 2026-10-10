@@ -227,6 +227,13 @@ class OfflineBuild(Tmp):
         self.assertEqual(mandal["panchayats"], [{"id": "2610", "name": "Almas"}])
         self.assertIn("urban", {s["kind"] for s in bhilwara["samitis"]})
 
+    def test_the_default_older_catalogue_path_is_the_out_dir_plus_json(self):
+        # --out data/sec/catalogue writes data/sec/catalogue.json beside it.
+        root = os.path.join(self.tmp, "data", "sec")
+        status, err = run(["--input", FIXTURE, "--out", os.path.join(root, "catalogue")])
+        self.assertEqual(status, 0, err)
+        self.assertEqual(sorted(os.listdir(root)), ["catalogue", "catalogue.json"])
+
     def test_a_cover_that_cannot_be_read_falls_back_to_the_latin_name_without_failing(self):
         src = self.copy_fixture()
         os.remove(os.path.join(src, "cover-60.pdf"))
