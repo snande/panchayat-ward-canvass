@@ -4,7 +4,10 @@
 -- candidate. functions/sync.js locks that candidate's joins until
 -- locked_until (epoch milliseconds) once failures reaches its limit, then
 -- starts counting again; a successful join clears the row. Only joins are
--- locked: devices that already hold a token keep pushing and pulling.
+-- locked: devices that already hold a token keep pushing and pulling. The
+-- operator lifts a lock early with:
+--   wrangler d1 execute <database> --remote --command \
+--     "DELETE FROM join_failures WHERE candidate_id = '<candidateId>'"
 --
 -- revoked_devices lists device tokens that must no longer push or pull. A
 -- token names (candidate_id, device_id) and has no expiry, so this is how one

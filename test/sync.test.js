@@ -378,7 +378,7 @@ test('two first joins racing with different verifiers found the team once', asyn
   assert.equal(storedVerifier(env, 'candA'), verifierOf(winner));
 });
 
-test('too many wrong verifiers lock that candidate\'s joins for a while, not its sync or other teams', async () => {
+test("too many wrong verifiers lock that candidate's joins for a while, not its sync or other teams", async () => {
   const env = await setup();
   const founder = await (await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).json();
   await join(env, { candidateId: 'candB', verifier: verifierOf(2) });
@@ -408,8 +408,18 @@ test('too many wrong verifiers lock that candidate\'s joins for a while, not its
   assert.equal((await pullSince(env, founder.token, 0)).status, 200);
   assert.equal((await join(env, { candidateId: 'candB', verifier: verifierOf(2) })).status, 200);
 
-  // Once the lock has passed, the right verifier joins again.
-  env.SYNC_DB.sqlite.query('UPDATE join_failures SET locked_until = ? WHERE candidate_id = ?', [Date.now() - 1, 'candA']);
+  // The operator's manual reset (docs/operator-setup.md) lifts the lock at once.
+  rows(env, 'DELETE FROM join_failures WHERE candidate_id = ?', 'candA');
+  assert.equal((await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).status, 200);
+});
+
+test('a lock that has run out lets the right verifier in again', async () => {
+  const env = await setup();
+  await join(env, { candidateId: 'candA', verifier: verifierOf(1) });
+  for (let i = 0; i < JOIN_MAX_FAILURES; i += 1) await join(env, { candidateId: 'candA', verifier: verifierOf(3) });
+  assert.equal((await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).status, 429);
+
+  rows(env, 'UPDATE join_failures SET locked_until = ? WHERE candidate_id = ?', Date.now() - 1, 'candA');
   assert.equal((await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).status, 200);
   assert.equal(rows(env, 'SELECT count(*) AS n FROM join_failures')[0].n, 0);
 });

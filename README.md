@@ -114,7 +114,8 @@ After ten wrong passphrases for one candidate, that candidate's joins answer
 already joined keep syncing during the lock. A token does not expire. To
 withdraw one lost device without signing out every team, add its candidate
 and device id to the `revoked_devices` table; its pushes and pulls then get a
-401.
+401. [`docs/operator-setup.md`](docs/operator-setup.md) has the commands for
+both.
 
 Without `SYNC_SECRET` or `SYNC_DB` the endpoints return 503; both are listed
 in [`docs/operator-setup.md`](docs/operator-setup.md). The endpoints running
