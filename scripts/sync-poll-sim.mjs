@@ -6,25 +6,28 @@
 //
 // Every request goes through the real onRequest from functions/sync.js, with
 // env.SYNC_DB a local D1 stand-in carrying migrations/0001_sync.sql. Miniflare
-// cannot be installed here (no network for npm), so the backend is
-// test/helpers/memoryD1.js, and the output says so. Rows read and written are
-// summed from that shim's D1 counters (meta.rows_read / meta.rows_written,
-// totalled in db.usage), not estimated here.
+// cannot be installed in the sandbox this was written in (the npm registry is
+// unreachable), so the backend is test/helpers/memoryD1.js and the output says
+// so. Rows read and written are summed from that shim's D1 counters
+// (meta.rows_read / meta.rows_written, totalled in db.usage), which count
+// index writes and err high; nothing is estimated here.
 //
-// The day: each phone joins the team, syncs once at startup, then every
-// SYNC_INTERVAL_MS (src/sync/syncEngine.js) for the whole visible day, as the
-// engine's timer does. A sync pushes only when the phone saved something
-// since the last one, then pulls, following `more`. Phones save on average one
-// record every SAVE_EVERY_MINUTES; most are seen-voting marks for a voter
-// drawn from the whole ward, so teammates sometimes mark the same voter, and
-// the rest are the phone's own contact edits. Teams never share rows, so five
-// teams cost five times one team.
+// The day follows src/sync/syncEngine.js. Each phone joins the team and syncs
+// at startup, then on its timer every SYNC_INTERVAL_MS (the shipped value
+// unless --interval-ms says otherwise), and also whenever the page becomes
+// visible again or the phone comes back online: VISIBLE_RETURNS_PER_HOUR and
+// ONLINE_RETURNS_PER_HOUR, at random moments between ticks. A sync pushes only
+// when the phone saved something since its last sync, then pulls, following
+// `more`. Phones save on average one record every SAVE_EVERY_MINUTES; most are
+// seen-voting marks for a voter drawn from the whole ward, so teammates
+// sometimes mark the same voter, and the rest are the phone's own contact
+// edits. Teams never share rows, so five teams cost five times one team.
 //
 // Exits 1 when any five-team total is not below its limit.
 
 import { pathToFileURL } from 'node:url';
 
-import { onRequest } from '../functions/sync.js';
+import { base64urlEncode, onRequest } from '../functions/sync.js';
 import { SYNC_INTERVAL_MS } from '../src/sync/syncEngine.js';
 import { createSyncD1 } from '../test/helpers/memoryD1.js';
 
@@ -33,6 +36,10 @@ import { createSyncD1 } from '../test/helpers/memoryD1.js';
 export const LIMITS = { requests: 50000, rowsRead: 2500000, rowsWritten: 50000 };
 export const TEAMS = 5;
 export const SAVE_EVERY_MINUTES = 4;
+// A canvasser locks the phone or switches apps between houses; reception
+// drops in lanes and comes back.
+export const VISIBLE_RETURNS_PER_HOUR = 6;
+export const ONLINE_RETURNS_PER_HOUR = 2;
 const MARK_SHARE = 0.75;
 const WARD_VOTERS = 2000;
 const CONTACTS_PER_PHONE = 40;
@@ -59,12 +66,11 @@ function poisson(rand, mean) {
   return k;
 }
 
-const base64url = (bytes) => Buffer.from(bytes).toString('base64url');
-
 export async function simulate({ phones = 20, hours = 8, intervalMs = SYNC_INTERVAL_MS, seed = 1 } = {}) {
   const db = await createSyncD1();
   const env = { SYNC_SECRET: SECRET, SYNC_DB: db };
   const rand = random(seed);
+  const bytes = (n) => base64urlEncode(Uint8Array.from({ length: n }, () => Math.floor(rand() * 256)));
   let requests = 0;
 
   async function call(path, { method = 'GET', token, body } = {}) {
@@ -80,22 +86,20 @@ export async function simulate({ phones = 20, hours = 8, intervalMs = SYNC_INTER
     return res.json();
   }
 
-  const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+  const verifier = bytes(32);
   const devices = [];
   for (let i = 0; i < phones; i += 1) {
     const { token } = await call('/sync/join', { method: 'POST', body: { candidateId: 'team1', verifier } });
     devices.push({ index: i, token, cursor: 0, outbox: new Map() });
   }
 
-  const ciphertext = () => base64url(crypto.getRandomValues(new Uint8Array(48)));
   let clock = Date.UTC(2026, 9, 10, 8);
-
   function save(device) {
     const id = rand() < MARK_SHARE
       ? `mark:w1:${1 + Math.floor(rand() * WARD_VOTERS)}`
       : `contact:p${device.index}:${1 + Math.floor(rand() * CONTACTS_PER_PHONE)}`;
     clock += 1;
-    device.outbox.set(id, { id, updatedAt: clock, ciphertext: ciphertext(), iv: base64url(crypto.getRandomValues(new Uint8Array(12))) });
+    device.outbox.set(id, { id, updatedAt: clock, ciphertext: bytes(48), iv: bytes(12) });
   }
 
   async function sync(device) {
@@ -112,10 +116,21 @@ export async function simulate({ phones = 20, hours = 8, intervalMs = SYNC_INTER
 
   for (const device of devices) await sync(device);
   const ticks = Math.floor((hours * 3600000) / intervalMs);
-  const savesPerTick = intervalMs / 60000 / SAVE_EVERY_MINUTES;
+  const perTick = (perHour) => (perHour * intervalMs) / 3600000;
+  const savesPerTick = perTick(60 / SAVE_EVERY_MINUTES);
+  const wakesPerTick = perTick(VISIBLE_RETURNS_PER_HOUR + ONLINE_RETURNS_PER_HOUR);
   for (let tick = 0; tick < ticks; tick += 1) {
+    // Between ticks each phone saves and is woken at random moments; a wake
+    // syncs whatever was saved before it.
     for (const device of devices) {
-      for (let n = poisson(rand, savesPerTick); n > 0; n -= 1) save(device);
+      const events = [
+        ...Array.from({ length: poisson(rand, savesPerTick) }, () => ({ at: rand(), wake: false })),
+        ...Array.from({ length: poisson(rand, wakesPerTick) }, () => ({ at: rand(), wake: true })),
+      ].sort((a, b) => a.at - b.at);
+      for (const { wake } of events) {
+        if (wake) await sync(device);
+        else save(device);
+      }
     }
     for (const device of devices) await sync(device);
   }
@@ -131,27 +146,37 @@ export const overLimits = (totals) => Object.keys(LIMITS).filter((key) => !(tota
 const LABELS = { requests: 'Function requests', rowsRead: 'Rows read', rowsWritten: 'Rows written' };
 
 export function report(result) {
-  const lines = [
+  const shipped = result.intervalMs === SYNC_INTERVAL_MS ? ', the shipped SYNC_INTERVAL_MS' : '';
+  return [
     `Backend: ${result.backend}`,
-    `One team, ${result.phones} phones, ${result.hours} h, syncing every ${result.intervalMs / 1000} s:`,
+    `One team, ${result.phones} phones, ${result.hours} h, timer every ${result.intervalMs / 1000} s${shipped}, `
+      + `plus ${VISIBLE_RETURNS_PER_HOUR} visible and ${ONLINE_RETURNS_PER_HOUR} online syncs an hour:`,
     ...Object.keys(LABELS).map((key) => `  ${LABELS[key]}: ${result.team[key]}`),
     `${TEAMS} teams (limit is half the Workers Free daily limit):`,
     ...Object.keys(LABELS).map((key) => {
       const ok = result.fiveTeams[key] < LIMITS[key];
       return `  ${LABELS[key]}: ${result.fiveTeams[key]} / ${LIMITS[key]} ${ok ? 'ok' : 'OVER'}`;
     }),
-  ];
-  return lines.join('\n');
+  ].join('\n');
 }
 
-function parseArgs(argv) {
-  const names = { '--phones': 'phones', '--hours': 'hours', '--interval-ms': 'intervalMs', '--seed': 'seed' };
+const OPTIONS = {
+  '--phones': { name: 'phones', min: 1 },
+  '--hours': { name: 'hours', min: 1 },
+  '--interval-ms': { name: 'intervalMs', min: 1 },
+  '--seed': { name: 'seed', min: 0 },
+};
+
+export function parseArgs(argv) {
   const options = {};
   for (let i = 0; i < argv.length; i += 2) {
-    const name = names[argv[i]];
+    const option = OPTIONS[argv[i]];
     const value = Number(argv[i + 1]);
-    if (!name || !(value > 0)) throw new Error(`usage: sync-poll-sim.mjs [${Object.keys(names).map((n) => `${n} N`).join('] [')}]`);
-    options[name] = value;
+    if (!option || !Number.isSafeInteger(value) || value < option.min) {
+      const usage = Object.entries(OPTIONS).map(([flag, { min }]) => `[${flag} <integer >= ${min}>]`).join(' ');
+      throw new Error(`usage: sync-poll-sim.mjs ${usage}`);
+    }
+    options[option.name] = value;
   }
   return options;
 }

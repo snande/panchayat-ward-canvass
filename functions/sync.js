@@ -39,8 +39,8 @@
 //
 // Storage goes through the D1 binding env.SYNC_DB, with the tables created by
 // migrations/0001_sync.sql; tests back it with test/helpers/memoryD1.js, and
-// scripts/sync-poll-sim.mjs runs a team's polling day through it to check the
-// requests, rows read and rows written stay inside the Workers Free limits.
+// scripts/sync-poll-sim.mjs runs a team's polling day through it to measure
+// the requests, rows read and rows written against the Workers Free limits.
 //
 // Pages file routing maps this file to /sync only; functions/sync/[[path]].js
 // re-exports onRequest so /sync/push and /sync/pull reach it, and
@@ -59,8 +59,9 @@ const encoder = new TextEncoder();
 // src/sync/teamAuth.js carries its own copy of this encoder: this file is
 // bundled into the Pages Function and src/ is served to the device and
 // precached by sw.js, so neither side imports the other. test/teamAuth.test.js
-// pins that the two produce the same verifier encoding.
-function base64urlEncode(bytes) {
+// pins that the two produce the same verifier encoding. Exported for
+// scripts/sync-poll-sim.mjs, which encodes its simulated payloads with it.
+export function base64urlEncode(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
