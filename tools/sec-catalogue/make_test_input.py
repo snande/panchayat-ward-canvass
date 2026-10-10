@@ -5,7 +5,9 @@ panchayats that already have fixtures under fixtures/sec/.
 
 The raw HTML of the 2026-10-09 walks was not committed, so the pages are
 rebuilt from what was: the dropdown entries (ids, Latin names) come from
-data/sec/catalogue.json, and each Search grid (its columns, its rows'
+the older single-file catalogue (data/sec/catalogue.json until #122 removed
+it; pass a copy, e.g. `git show 6936b45:data/sec/catalogue.json`, or a
+build_catalogue.py --legacy-out file), and each Search grid (its columns, its rows'
 Grampanchayat and Ward No. text, which PDF columns link a file) from
 fixtures/sec/manifest.json. The markup follows the portal's form (the field
 names build_catalogue.py posts, hidden __VIEWSTATE / __EVENTVALIDATION, a
@@ -17,9 +19,10 @@ parishad and blank-named entry the portal lists for the district, so the
 build's skip counts are exercised; other rural samitis and panchayats are
 left out. No name in the output is typed by hand.
 
-    python3 tools/sec-catalogue/make_test_input.py
+    python3 tools/sec-catalogue/make_test_input.py --catalogue OLDER_CATALOGUE.json
 """
 
+import argparse
 import html
 import json
 import os
@@ -95,11 +98,15 @@ def grid_html(columns, rows, linked):
     return "\n".join(out)
 
 
-def main():
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    p.add_argument("--catalogue", required=True,
+                   help="the older single-file catalogue (dropdown ids and Latin names)")
+    args = p.parse_args(argv)
     out_dir = os.path.join(REPO, "fixtures", "sec", "catalogue-input")
     with open(os.path.join(REPO, "fixtures", "sec", "manifest.json"), encoding="utf-8") as fh:
         manifest = json.load(fh)
-    with open(os.path.join(REPO, "data", "sec", "catalogue.json"), encoding="utf-8") as fh:
+    with open(args.catalogue, encoding="utf-8") as fh:
         catalogue = json.load(fh)
     picks = {p["district"]["id"]: p for p in manifest["panchayats"]}
     portal = [d for d in catalogue["districts"] if d["id"] in picks]

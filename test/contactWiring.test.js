@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { webcrypto } from 'node:crypto';
 
+import { catalogueResponse, pickSeat } from './helpers/catalogueFixture.js';
 import { createDocument, type } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 import { createSyncD1 } from './helpers/memoryD1.js';
@@ -68,6 +69,8 @@ function boot(idb, { offline = false } = {}) {
     requests.push(url);
     if (url.startsWith('file:')) return new Response(readFileSync(fileURLToPath(url)));
     if (url === 'src/strings.hi.json') return new Response(read('src/strings.hi.json'));
+    const catalogue = catalogueResponse(url);
+    if (catalogue) return catalogue;
     if (url === 'config/constituency.json') return new Response(read('config/constituency.json'));
     if (offline) throw new TypeError('Failed to fetch');
     if (url.startsWith('/sync/')) return toServer(url, init);
@@ -91,11 +94,6 @@ function boot(idb, { offline = false } = {}) {
   return { picker, roll, team, requests, restore };
 }
 
-function choose(select, value) {
-  select.value = value;
-  select.dispatchEvent({ type: 'change' });
-}
-
 const firstRow = (page) => page.roll.querySelector('div.roll-row');
 const panelOf = (page) => page.roll.querySelector('section.contact-panel');
 const button = (page, cls) => panelOf(page).querySelector(`button.${cls}`);
@@ -115,12 +113,7 @@ test('airplane mode on, record consent and a number, reopen the next day: it is 
     pass.value = 'हमारी टीम';
     setup.team.querySelector('form').dispatchEvent({ type: 'submit', preventDefault() {} });
     await waitFor(() => setup.team.hidden === true);
-    await waitFor(() => setup.picker.querySelector('select') !== null);
-    const [district, samiti, panchayat, ward] = setup.picker.querySelectorAll('select');
-    choose(district, '17');
-    choose(samiti, '125');
-    choose(panchayat, '6313');
-    choose(ward, '1');
+    await pickSeat(setup.picker);
     await waitFor(() => firstRow(setup) !== null);
   } finally {
     setup.restore();

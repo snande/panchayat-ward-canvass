@@ -134,9 +134,10 @@ class OfflineBuild(Tmp):
                          sorted(["index.json"] + [d["file"] for d in index["districts"]]))
 
     def test_every_file_written_carries_schema_version(self):
-        out, status, err = self.build()
+        legacy_path = os.path.join(self.tmp, "older.json")
+        out, status, err = self.build(extra=("--legacy-out", legacy_path))
         self.assertEqual(status, 0, err)
-        written = [os.path.join(out, n) for n in os.listdir(out)] + [out + ".json"]
+        written = [os.path.join(out, n) for n in os.listdir(out)] + [legacy_path]
         for path in written:
             self.assertIsInstance(load(path).get("schemaVersion"), int, path)
 
@@ -215,10 +216,11 @@ class OfflineBuild(Tmp):
             for p in load(os.path.join(out, d["file"]))["panchayats"]:
                 self.assertIn(p["block"]["id"], rural)
 
-    def test_keeps_writing_the_older_single_file_catalogue(self):
-        out, status, err = self.build()
+    def test_writes_the_older_single_file_catalogue_only_when_asked(self):
+        legacy_path = os.path.join(self.tmp, "older.json")
+        out, status, err = self.build(extra=("--legacy-out", legacy_path))
         self.assertEqual(status, 0, err)
-        legacy = load(out + ".json")
+        legacy = load(legacy_path)
         self.assertEqual({"schemaVersion", "generated_at", "source_page", "ward_pdf_url_template",
                           "notes", "districts"}, set(legacy))
         bhilwara = next(d for d in legacy["districts"] if d["id"] == "7")
@@ -227,12 +229,13 @@ class OfflineBuild(Tmp):
         self.assertEqual(mandal["panchayats"], [{"id": "2610", "name": "Almas"}])
         self.assertIn("urban", {s["kind"] for s in bhilwara["samitis"]})
 
-    def test_the_default_older_catalogue_path_is_the_out_dir_plus_json(self):
-        # --out data/sec/catalogue writes data/sec/catalogue.json beside it.
+    def test_by_default_no_older_catalogue_is_written_beside_the_shards(self):
+        # --out data/sec/catalogue writes only the shards: the picker reads
+        # them (#122) and data/sec/catalogue.json is gone.
         root = os.path.join(self.tmp, "data", "sec")
         status, err = run(["--input", FIXTURE, "--out", os.path.join(root, "catalogue")])
         self.assertEqual(status, 0, err)
-        self.assertEqual(sorted(os.listdir(root)), ["catalogue", "catalogue.json"])
+        self.assertEqual(sorted(os.listdir(root)), ["catalogue"])
 
     def test_a_cover_that_cannot_be_read_falls_back_to_the_latin_name_without_failing(self):
         src = self.copy_fixture()
@@ -332,12 +335,13 @@ class OfflineBuild(Tmp):
 
 class PartialBuilds(Tmp):
     def test_a_districts_build_merges_into_the_existing_catalogue(self):
-        out, status, err = self.build()
+        legacy_path = os.path.join(self.tmp, "out", "catalogue.json")
+        out, status, err = self.build(extra=("--legacy-out", legacy_path))
         self.assertEqual(status, 0, err)
         before = read_tree(os.path.dirname(out))
         src = self.copy_fixture()
         self.add_panchayats(src, [("9001", "Zeta", [["अजमा", "1", "", ""]])])
-        status, err = run(["--input", src, "--out", out, "--districts", "7"])
+        status, err = run(["--input", src, "--out", out, "--districts", "7", "--legacy-out", legacy_path])
         self.assertEqual(status, 0, err)
         after = read_tree(os.path.dirname(out))
         self.assertEqual(sorted(after), sorted(before))
@@ -349,7 +353,7 @@ class PartialBuilds(Tmp):
         bhilwara = next(d for d in index["districts"] if d["id"] == "7")
         self.assertEqual((bhilwara["file"], bhilwara["panchayatCount"]), ("bhilwara.json", 2))
         self.assertEqual(index["summary"]["districtsBuilt"], ["7"])
-        legacy = load(out + ".json")
+        legacy = load(legacy_path)
         self.assertEqual([d["id"] for d in legacy["districts"]], ["6", "7", "8", "22", "33"])
 
     def test_a_districts_filter_that_matches_nothing_fails_and_deletes_nothing(self):

@@ -2,6 +2,15 @@
 
 ## Ward roll: download, decode, encrypted offline copy
 
+The picker (`src/ui/wardPickerScreen.js`, wired by `js/picker.js`) asks for
+the seat type (वार्ड पंच or सरपंच), then the district, panchayat and ward, from
+the sharded statewide catalogue in `data/sec/catalogue/`
+(`src/picker/catalogue.js`). It fetches only `index.json` on first open, and a
+district's file only once that district is chosen. `sw.js` keeps every
+catalogue file it has fetched, so an opened district works offline. A सरपंच
+pick selects every ward of the panchayat. The last pick is stored with its
+`schemaVersion` (`src/picker/lastSelection.js`).
+
 Picking a ward in the picker loads that ward's voter roll. There is no upload
 path and no file-input element; `test/noFileUpload.test.js` scans the repo for
 one.

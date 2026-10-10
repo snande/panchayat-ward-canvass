@@ -1,0 +1,65 @@
+{
+ "schemaVersion": 1,
+ "id": "33",
+ "name": "उदयपुर",
+ "nameLatin": "UDAIPUR",
+ "panchayats": [
+  {
+   "id": "11913",
+   "name": "अमरपुरा",
+   "nameLatin": "Amarpura",
+   "block": {
+    "id": "240",
+    "name": "गिर्वा",
+    "nameLatin": "GIRWA"
+   },
+   "wards": [
+    {
+     "ward": 1,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-001.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-001.pdf"
+    },
+    {
+     "ward": 2,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-002.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-002.pdf"
+    },
+    {
+     "ward": 3,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-003.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-003.pdf"
+    },
+    {
+     "ward": 4,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-004.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-004.pdf"
+    },
+    {
+     "ward": 5,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-005.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-005.pdf"
+    },
+    {
+     "ward": 6,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-006.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-006.pdf"
+    },
+    {
+     "ward": 7,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-007.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-007.pdf"
+    },
+    {
+     "ward": 8,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-008.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-008.pdf"
+    },
+    {
+     "ward": 9,
+     "pdfUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/240/AMARPURA-Ward%20No-009.pdf",
+     "supplementUrl": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/240/AMARPURA-Ward%20No-009.pdf"
+    }
+   ]
+  }
+ ]
+}

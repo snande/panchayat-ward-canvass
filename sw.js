@@ -1,9 +1,13 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v28";
+const CACHE_VERSION = "v29";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
+// Catalogue files (data/sec/catalogue/) are kept here as fetched, so an opened
+// district works offline; app updates keep this cache.
+const CATALOGUE_CACHE = "ward-canvass-catalogue-v1";
+const CATALOGUE_FILE = /\/data\/sec\/catalogue\/[^/]+\.json$/;
 
 // Every shell asset (HTML, manifest, icons, CSS, JS, string table, fonts).
 // The font must be here so Hindi renders with correct conjuncts offline.
@@ -18,7 +22,9 @@ const PRECACHE = [
   "js/app.js",
   "js/picker.js",
   "config/constituency.json",
-  "src/picker/wardPicker.js",
+  // The ward picker; catalogue files go to CATALOGUE_CACHE as fetched.
+  "src/picker/catalogue.js",
+  "src/picker/lastSelection.js",
   "src/ui/wardPickerScreen.js",
   // The navigation frame and its default screen, the ward roll.
   "src/ui/appFrame.js",
@@ -161,6 +167,36 @@ function precacheAll(cache) {
   });
 }
 
+// Network first; each OK copy is stored, and offline the stored copy answers.
+function catalogueResponse(request) {
+  function cached() {
+    return caches.match(request, { cacheName: CATALOGUE_CACHE });
+  }
+  return fetch(request)
+    .then(function (response) {
+      if (!response.ok) {
+        return cached().then(function (copy) {
+          return copy || response;
+        });
+      }
+      const copy = response.clone();
+      return caches
+        .open(CATALOGUE_CACHE)
+        .then(function (cache) {
+          return cache.put(request, copy);
+        })
+        .catch(function () {})
+        .then(function () {
+          return response;
+        });
+    })
+    .catch(function () {
+      return cached().then(function (copy) {
+        return copy || new Response("", { status: 503, statusText: "Offline" });
+      });
+    });
+}
+
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches
@@ -205,6 +241,11 @@ self.addEventListener("fetch", function (event) {
   // The sync API is network-only: a cached pull would hand back stale
   // records and a stale cursor.
   if (url.pathname.indexOf("/sync/") === 0) {
+    return;
+  }
+
+  if (CATALOGUE_FILE.test(url.pathname)) {
+    event.respondWith(catalogueResponse(request));
     return;
   }
 

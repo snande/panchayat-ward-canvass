@@ -10,7 +10,7 @@ that first. Nothing here changes the app, the relay or
 
 | file | what it is |
 |---|---|
-| `data/sec/catalogue.json` | every district and every entry of the second dropdown (panchayat samitis, urban bodies, zilla parishads), with portal ids. Gram panchayat lists were not fetched; see section 2. |
+| `data/sec/catalogue.json` (removed by #122; at commit 6936b45) | every district and every entry of the second dropdown (panchayat samitis, urban bodies, zilla parishads), with portal ids. Gram panchayat lists were not fetched; see section 2. |
 | `fixtures/sec/<district>/<PANCHAYAT>-ward-<NNN>.pdf` | the Final PDF of every ward of five gram panchayats in five districts |
 | `fixtures/sec/<district>/<PANCHAYAT>-ward-<NNN>-supp-2.pdf` | the "Final With Supp-2 PDF" of the same wards, where the server has one |
 | `fixtures/sec/manifest.json` | for every file: source URL, fetch time, size, SHA-256 and the server's Last-Modified; for every panchayat: the ward grid the portal's Search listed and the ward number that first answered a redirect |
@@ -86,8 +86,9 @@ It needs no network access. It writes:
   Each panchayat has `id`, `name`, `nameLatin`, `block` (its panchayat
   samiti, `{id, name, nameLatin}`) and `wards`, each `{ward, pdfUrl,
   supplementUrl}`;
-- `data/sec/catalogue.json` in the older shape, with a `schemaVersion`. It is
-  kept until the picker switches over (#122).
+- with `--legacy-out FILE` only, the older single-file shape, with a
+  `schemaVersion`. The picker reads the shards (#122), so
+  `data/sec/catalogue.json` is no longer written or kept.
 
 Panchayats are sorted by Hindi name and wards by number. The same input gives
 byte-identical files. A full build replaces the catalogue. `--districts

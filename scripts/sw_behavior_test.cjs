@@ -24,6 +24,11 @@ class FakeResponse {
   async arrayBuffer() {
     return this.body;
   }
+  clone() {
+    const copy = new FakeResponse(this.body, { status: this.status, statusText: this.statusText, headers: this.headers });
+    copy.redirected = this.redirected;
+    return copy;
+  }
   get ok() {
     return this.status >= 200 && this.status < 300;
   }
@@ -259,6 +264,41 @@ const tests = {
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  },
+
+  async "the catalogue index and every shard fetched are cached, so an opened district works offline"() {
+    const sb = makeSandbox();
+    await dispatch(sb, "install");
+    await dispatch(sb, "activate");
+    const index = "/data/sec/catalogue/index.json";
+    const shard = "/data/sec/catalogue/bikaner.json";
+    sb.net.body = "fresh";
+    for (const url of [index, shard]) {
+      const res = await dispatch(sb, "fetch", { request: req(url) });
+      assert.strictEqual(res.body, "fresh", "online: the network copy " + url);
+    }
+    const kept = sb.store.get("ward-canvass-catalogue-v1");
+    assert.ok(kept && kept.has(ORIGIN + index) && kept.has(ORIGIN + shard), "both kept in the catalogue cache");
+    const shell = sb.store.get(vm.runInContext("CACHE_NAME", sb.ctx));
+    assert.ok(!shell.has(ORIGIN + shard), "not in the shell cache");
+    sb.net.mode = "offline";
+    for (const url of [index, shard]) {
+      const res = await dispatch(sb, "fetch", { request: req(url) });
+      assert.strictEqual(res.status, 200, "offline copy of " + url);
+      assert.strictEqual(res.body, "fresh");
+    }
+    const unopened = await dispatch(sb, "fetch", { request: req("/data/sec/catalogue/udaipur.json") });
+    assert.strictEqual(unopened.status, 503, "a district never opened is not there offline");
+    // Online again, an error page does not replace the kept copy.
+    sb.net.mode = "online";
+    sb.net.status = 502;
+    const flaky = await dispatch(sb, "fetch", { request: req(shard) });
+    assert.strictEqual(flaky.status, 200);
+    assert.strictEqual(flaky.body, "fresh");
+    // A shell update keeps the catalogue cache.
+    await sb.ctx.caches.open("ward-canvass-shell-v0");
+    await dispatch(sb, "activate");
+    assert.ok(sb.store.has("ward-canvass-catalogue-v1"), "catalogue cache survives an app update");
   },
 
   async "cross-origin and non-GET requests are not intercepted"() {

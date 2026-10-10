@@ -1,0 +1,61 @@
+{
+ "schemaVersion": 1,
+ "source": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
+ "pdfUrlTemplates": {
+  "final": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf",
+  "supplement": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf"
+ },
+ "districts": [
+  {
+   "id": "33",
+   "name": "उदयपुर",
+   "nameLatin": "UDAIPUR",
+   "file": "udaipur.json",
+   "panchayatCount": 1
+  },
+  {
+   "id": "22",
+   "name": "जोधपुर",
+   "nameLatin": "JODHPUR",
+   "file": "jodhpur.json",
+   "panchayatCount": 1
+  },
+  {
+   "id": "8",
+   "name": "बीकानेर",
+   "nameLatin": "BIKANER",
+   "file": "bikaner.json",
+   "panchayatCount": 1
+  },
+  {
+   "id": "6",
+   "name": "भरतपुर",
+   "nameLatin": "BHARATPUR",
+   "file": "bharatpur.json",
+   "panchayatCount": 1
+  },
+  {
+   "id": "7",
+   "name": "भीलवाडा",
+   "nameLatin": "BHILWARA",
+   "file": "bhilwara.json",
+   "panchayatCount": 1
+  }
+ ],
+ "summary": {
+  "counts": {
+   "districts": 5,
+   "samitis": 5,
+   "panchayats": 5,
+   "wards": 43,
+   "wardsWithSupplement": 43
+  },
+  "skipped": {
+   "urban": 38,
+   "zillaParishad": 5,
+   "other": 2
+  },
+  "fallbacks": [],
+  "notes": []
+ }
+}
