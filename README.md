@@ -18,6 +18,16 @@ Picking a ward in the picker loads that ward's voter roll. There is no upload
 path and no file-input element; `test/noFileUpload.test.js` scans the repo for
 one.
 
+The seat header names the picked seat in the catalogue's Hindi names. For a
+ward panch it shows "पंचायत: <name> · वार्ड: <n>" once that ward's roll shows.
+For a sarpanch it shows "पंचायत: <name> · सभी वार्ड" as soon as the panchayat is
+picked. A sarpanch pick downloads no roll: the roll screen says every ward is
+picked and that a ward panch pick opens one ward's roll. Any roll already on
+screen is put away but stays stored on the phone, and a cold start shows the
+sarpanch seat again (`js/picker.js`, `seatFromPick` in `src/ui/seatHeader.js`).
+If a restored roll is not the last pick, the header names it from the roll's
+district shard in the catalogue.
+
 1. `src/roll/fetchRoll.js` downloads the PDF for the selection's `pdfUrl`.
    The transport is `ROLL_TRANSPORT`, which must equal the verdict line at the
    end of `docs/research/sec-roll-source.md` (a test pins it). The verdict is

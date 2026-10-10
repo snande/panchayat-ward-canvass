@@ -201,6 +201,28 @@ test('a later pick wins over a slower earlier one', async () => {
   assert.equal(s.shown.length, 1);
 });
 
+test('clear() puts the shown roll away and drops a download still running; the stored roll stays', async () => {
+  let release;
+  const slow = new Promise((resolve) => { release = resolve; });
+  const s = setup({
+    fetchRoll: async (sel) => {
+      if (sel.ward === '2') await slow;
+      return pdfBuffer();
+    },
+  });
+  await s.flow.open(SELECTION);
+  assert.ok(rowCount(s.container) > 0);
+  const pending = s.flow.open({ ...SELECTION, ward: '2', pdfUrl: WARD1.replace('001', '002') });
+  s.flow.clear({ seatType: 'sarpanch' });
+  release();
+  assert.equal(await pending, null, 'the dropped download shows nothing');
+  assert.equal(s.flow.screen.state, 'empty');
+  assert.equal(rowCount(s.container), 0);
+  assert.equal(s.container.querySelector('p.roll-empty').textContent, strings.roll_sarpanch_all_wards);
+  assert.equal(s.shown.length, 1);
+  assert.ok(await s.store.loadStored('17/125/6313/1'), 'nothing is deleted from the phone');
+});
+
 test('restore() with a record that fails to decrypt neither crashes nor shows a list', async () => {
   const idb = createFakeIndexedDB();
   const online = setup({ idb, fetchRoll: async () => pdfBuffer() });

@@ -17,6 +17,7 @@ import {
   catalogueResponse, choose, pickPanchayat, pickWard, pickerSelects, waitFor, optionValues,
 } from './helpers/picker.js';
 import { LAST_SELECTION_KEY } from '../src/picker/catalogue.js';
+import { SEC_FOOTER_LINES } from '../src/ui/secFooter.js';
 
 const root = (rel) => new URL('../' + rel, import.meta.url);
 const read = (rel) => readFileSync(root(rel));
@@ -35,11 +36,16 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false, c
   const nav = doc.createElement('nav');
   const search = doc.createElement('section');
   search.setAttribute('hidden', '');
-  const byId = { 'ward-picker': picker, roll, 'seat-header': seat, 'nav-bar': nav, 'voter-search': search };
+  const footer = doc.createElement('footer');
+  const byId = {
+    'ward-picker': picker, roll, 'seat-header': seat, 'nav-bar': nav, 'voter-search': search, 'sec-footer': footer,
+  };
   if (syncEnv) byId['team-join'] = team;
   const fakeDocument = {
     getElementById: (id) => byId[id] || null,
     querySelector: (sel) => (sel === '.empty-state' ? empty : null),
+    // js/app.js re-applies the string table to [data-i18n] nodes; there are none here.
+    querySelectorAll: () => [],
     createElement: (tag) => doc.createElement(tag),
     ownerDocument: doc,
   };
@@ -76,7 +82,7 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false, c
   const navItem = (id) => nav.querySelectorAll('button.nav-item').find((b) => b.getAttribute('data-screen') === id);
   const currentNav = () => nav.querySelectorAll('button.nav-item')
     .filter((b) => b.getAttribute('aria-current') === 'page').map((b) => b.getAttribute('data-screen'));
-  return { picker, roll, empty, team, seat, nav, search, navItem, currentNav, restore };
+  return { picker, roll, empty, team, seat, nav, search, footer, navItem, currentNav, restore };
 }
 
 function memoryStorage() {
@@ -339,6 +345,102 @@ test('a sarpanch pick skips the ward step and emits every ward in ward-number or
   }
 });
 
+// Five gram panchayats in five districts of the statewide catalogue, each the
+// first of its district shard (data/sec/catalogue/<district>.json).
+const FIVE = [
+  { district: '1', panchayat: '54', name: 'अजगरा' },
+  { district: '2', panchayat: '465', name: 'अंगारी' },
+  { district: '33', panchayat: '12395', name: 'अटाटिया' },
+  { district: '23', panchayat: '9109', name: 'अकबरपुर' },
+  { district: '24', panchayat: '9249', name: 'अभयपुरा', ward: '2' },
+];
+const footerLines = (page) => page.footer.children.map((p) => p.textContent);
+
+test('five panchayats in five districts: the seat header names each pick, the SEC footer stays below every screen', async () => {
+  const strings = JSON.parse(read('src/strings.hi.json').toString('utf8'));
+  const requests = [];
+  const storage = memoryStorage();
+  const page = boot(createFakeIndexedDB(), requests, { localStorage: storage });
+  try {
+    // The whole page: the shell (js/app.js: stored seat, SEC footer) and the screens (js/picker.js).
+    await import('../js/app.js?wiring=17');
+    await import('../js/picker.js?wiring=17');
+    await waitFor(() => page.seat.getAttribute('data-state') === 'empty' && page.footer.children.length === 3);
+    assert.deepEqual(footerLines(page), [...SEC_FOOTER_LINES]);
+
+    for (const pick of FIVE.slice(0, 4)) {
+      // A sarpanch seat: the header names the panchayat and every ward at once.
+      await pickPanchayat(page.picker, { seatType: 'sarpanch', district: pick.district, panchayat: pick.panchayat });
+      const selection = globalThis.window.wardSelection();
+      assert.equal(selection.district.id, pick.district);
+      assert.equal(selection.panchayat.name, pick.name);
+      assert.equal(page.seat.getAttribute('data-state'), 'loaded');
+      assert.equal(page.seat.textContent, `पंचायत: ${pick.name} · सभी वार्ड`);
+      assert.deepEqual(storedSeat(storage), { schemaVersion: 1, seatType: 'sarpanch', panchayat: pick.name, ward: null });
+      assert.equal(page.roll.querySelector('p.roll-empty').textContent, strings.roll_sarpanch_all_wards);
+      assert.deepEqual(footerLines(page), [...SEC_FOOTER_LINES]);
+    }
+    assert.ok(!requests.some((u) => u.startsWith('/roll')), 'a sarpanch seat downloads no roll');
+
+    // A ward panch seat in the fifth district: the header follows the roll once it shows.
+    const last = FIVE[4];
+    await pickWard(page.picker, last.ward, { seatType: 'ward-panch', district: last.district, panchayat: last.panchayat });
+    await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
+    const selection = globalThis.window.wardSelection();
+    assert.ok(requests.includes(`/roll?url=${encodeURIComponent(selection.wards[0].pdfUrl)}`), requests.join('\n'));
+    assert.equal(page.seat.textContent, `पंचायत: ${last.name} · वार्ड: ${last.ward}`);
+    assert.deepEqual(storedSeat(storage), { schemaVersion: 1, seatType: 'ward', panchayat: last.name, ward: last.ward });
+    assert.deepEqual(footerLines(page), [...SEC_FOOTER_LINES]);
+    assert.deepEqual(new Set(catalogueRequests(requests)), new Set([
+      'data/sec/catalogue/index.json', 'data/sec/catalogue/ajmer.json', 'data/sec/catalogue/alwar.json',
+      'data/sec/catalogue/udaipur.json', 'data/sec/catalogue/karauli.json', 'data/sec/catalogue/kota.json',
+    ]), 'one shard per district picked');
+  } finally {
+    page.restore();
+  }
+});
+
+test('a sarpanch seat picked last time opens again: the header names it, and no single roll is restored', async () => {
+  const strings = JSON.parse(read('src/strings.hi.json').toString('utf8'));
+  const idb = createFakeIndexedDB();
+  const storage = memoryStorage();
+  const first = boot(idb, [], { localStorage: storage });
+  try {
+    await import('../js/picker.js?wiring=18');
+    const selects = await pickWard(first.picker, '1');
+    await waitFor(() => first.roll.querySelectorAll('div.roll-row').length > 0);
+    // A roll is loaded, so the seat change waits for "yes".
+    choose(selects.seatType, 'sarpanch');
+    assert.equal(first.seat.textContent, 'पंचायत: बडली · वार्ड: 1', 'nothing changes before "yes"');
+    first.picker.querySelector('button.picker-confirm-yes').dispatchEvent({ type: 'click' });
+    assert.equal(first.seat.textContent, 'पंचायत: बडली · सभी वार्ड', 'the loaded panchayat, every ward');
+    // No roll is on screen now, so a new district needs no alert.
+    await pickPanchayat(first.picker, { seatType: 'sarpanch', district: '1', panchayat: '54' });
+    assert.equal(first.picker.querySelector('div.picker-confirm').hidden, true);
+    assert.equal(first.seat.textContent, 'पंचायत: अजगरा · सभी वार्ड');
+  } finally {
+    first.restore();
+  }
+
+  const requests = [];
+  const second = boot(idb, requests, { localStorage: storage });
+  try {
+    await import('../js/app.js?wiring=19');
+    await import('../js/picker.js?wiring=19');
+    await waitFor(() => globalThis.window.wardSelection && globalThis.window.wardSelection() !== null);
+    assert.equal(globalThis.window.wardSelection().seatType, 'sarpanch');
+    assert.equal(second.seat.textContent, 'पंचायत: अजगरा · सभी वार्ड');
+    assert.equal(second.roll.querySelector('p.roll-empty').textContent, strings.roll_sarpanch_all_wards);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(second.roll.querySelectorAll('div.roll-row').length, 0, 'ward 1 stays stored, not shown');
+    assert.equal(second.seat.textContent, 'पंचायत: अजगरा · सभी वार्ड');
+    assert.deepEqual(footerLines(second), [...SEC_FOOTER_LINES]);
+    assert.ok(!requests.some((u) => u.startsWith('/roll')), requests.join('\n'));
+  } finally {
+    second.restore();
+  }
+});
+
 test('the panchayat list filters as the user types, in Hindi or in Latin letters', async () => {
   const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage() });
   try {
@@ -478,6 +580,11 @@ test('with a roll loaded, changing the seat type or panchayat asks before the se
     assert.equal(selects.seatType.value, 'sarpanch');
     assert.equal(globalThis.window.wardSelection().seatType, 'sarpanch');
     assert.equal(globalThis.window.wardSelection().wards.length, 7);
+    // "Yes" replaces the loaded ward: the header names the sarpanch seat and
+    // the roll screen says how to open one ward.
+    assert.equal(page.seat.textContent, 'पंचायत: बडली · सभी वार्ड');
+    assert.equal(page.roll.querySelectorAll('div.roll-row').length, 0);
+    assert.ok(page.roll.querySelector('p.roll-empty'));
   } finally {
     page.restore();
   }

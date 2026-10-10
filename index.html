@@ -22,9 +22,8 @@
     <h1 data-i18n="app_title">पंचायत वार्ड कैनवास</h1>
     <p data-i18n="app_subtitle">मतदाता सूची और घर-घर संपर्क</p>
   </header>
-  <!-- The seat header: the loaded panchayat and ward, above every screen
-       (src/ui/seatHeader.js). It starts pending, with no text, until js/app.js
-       has read the stored seat; js/picker.js updates it once a roll shows. -->
+  <!-- The seat header (src/ui/seatHeader.js): pending, with no text, until
+       js/app.js reads the stored seat; js/picker.js names each new seat. -->
   <div id="seat-header" class="seat-header" data-state="pending" aria-live="polite"></div>
   <main id="app">
     <!-- Team join (candidate code + team passphrase), shown by js/picker.js

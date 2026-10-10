@@ -12,7 +12,7 @@ import { voterRouteHash } from '../src/ui/voterRoute.js';
 import { loadAssignments } from '../src/calls/assignmentStore.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
-import { renderSeatHeader, saveSeat, seatFromWardKey } from '../src/ui/seatHeader.js';
+import { renderSeatHeader, saveSeat, seatFromPick } from '../src/ui/seatHeader.js';
 import { startSync } from '../src/sync/syncEngine.js';
 import { createContactSync } from '../src/contacts/contactSync.js';
 import * as marks from '../src/tally/seenVotingStore.js';
@@ -24,9 +24,6 @@ import {
 // load. repo-ci fails if they drift.
 var FALLBACK_STRINGS = {
   picker_load_failed: "वार्ड सूची लोड नहीं हो सकी। कृपया पेज फिर से खोलें।",
-  roll_loading: "मतदाता सूची डाउनलोड हो रही है…",
-  roll_fetch_failed: "मतदाता सूची डाउनलोड नहीं हो सकी। इंटरनेट जाँचें और फिर से कोशिश करें।",
-  roll_failed: "मतदाता सूची खोली नहीं जा सकी। फिर से कोशिश करें।",
   roll_retry: "फिर से कोशिश करें",
 };
 
@@ -103,29 +100,54 @@ function selectionFor(wardKey) {
     || (picked && wardKeyFor(picked) === wardKey ? picked : null);
 }
 
-function seatFor(wardKey) {
-  var seat = config && seatFromWardKey(config, wardKey);
-  var picked = !seat && selectionFor(wardKey);
-  return seat || (picked && lastSelection
-    ? { seatType: 'ward', panchayat: lastSelection.panchayat.name, ward: picked.ward } : null);
-}
-
 // The seat header above every screen names the ward whose roll is on screen,
 // and keeps it (panchayat name, ward, seat type only) for the next cold start.
 // It follows the shown roll, not the pick: a pick whose download fails leaves
-// the previous seat (and its roll) in place. A roll restored before the ward
-// catalogue has loaded is named once the catalogue is there.
+// the previous seat (and its roll) in place. A roll restored without its pick
+// is named from its district's catalogue shard.
 var config = null;
 var seatStrings = null;
 var shownWardKey = null;
+var catalogue = createCatalogue();
 
-function showSeat() {
-  var seat = shownWardKey && seatFor(shownWardKey);
-  if (!seat) {
-    return;
-  }
+function renderSeat(seat) {
   saveSeat(seat);
   renderSeatHeader(seatHeader, seat, seatStrings || {});
+}
+
+function showSeat(wardKey) {
+  var picked = toRollSelection(lastSelection);
+  if (picked && wardKeyFor(picked) === wardKey) {
+    return renderSeat(seatFromPick(lastSelection));
+  }
+  var ids = wardKey.split('/');
+  var byId = function (id) {
+    return function (x) { return x.id === id; };
+  };
+  catalogue.loadIndex()
+    .then(function (index) { return catalogue.loadShard(index.districts.find(byId(ids[0]))); })
+    .then(function (shard) {
+      var p = shard.panchayats.find(byId(ids[2]));
+      if (p && wardKey === shownWardKey) {
+        renderSeat({ seatType: 'ward', panchayat: p.name, ward: ids[3] });
+      }
+    })
+    .catch(function (err) { console.error('the shown roll could not be named', err); });
+}
+
+// A sarpanch seat (every ward) is named at once. Rolls open one ward at a
+// time, so the shown one is put away.
+function showSarpanch(selection) {
+  var seat = seatFromPick(selection);
+  if (!seat || seat.seatType !== 'sarpanch') {
+    return false;
+  }
+  shownWardKey = null;
+  if (roll) {
+    roll.clear({ seatType: 'sarpanch' });
+  }
+  renderSeat(seat);
+  return true;
 }
 
 // The search screen (src/ui/voterSearchScreen.js) covers every roll shown
@@ -137,7 +159,7 @@ var loadedRolls = new Map();
 
 function onRollShown(entries, wardKey) {
   shownWardKey = wardKey;
-  showSeat();
+  showSeat(wardKey);
   loadedRolls.set(wardKey, entries);
   if (searchScreen) {
     searchScreen.setRolls(loadedRolls);
@@ -210,7 +232,7 @@ function startRoll(strings) {
     },
   });
   rollScreen.setState('empty');
-  var roll = createRollFlow(rollContainer, table, {
+  var flow = createRollFlow(rollContainer, table, {
     screen: rollScreen,
     onShow: onRollShown,
     // A restored roll whose supplementary roll failed retries it with the
@@ -228,8 +250,11 @@ function startRoll(strings) {
       },
     },
   });
-  roll.restore();
-  return roll;
+  // A stored sarpanch pick shows no roll (showSarpanch).
+  if (!lastSelection || lastSelection.seatType !== 'sarpanch') {
+    flow.restore();
+  }
+  return flow;
 }
 
 // Brings the ward-roll screen into view: the roll (or its loading line or
@@ -301,10 +326,10 @@ function startTeamJoin(strings) {
     });
 }
 
-// A ward panch pick opens its roll; a sarpanch pick (every ward) is only
-// emitted, as window.wardSelection(), until several wards can be loaded.
+// A ward panch pick opens its roll; a sarpanch pick (every ward) names its
+// seat and is emitted as window.wardSelection().
 function startPicker(strings) {
-  var picker = mountWardPicker(container, createCatalogue(), strings, {
+  var picker = mountWardPicker(container, catalogue, strings, {
     initial: lastSelection,
     hasLoadedRoll: function () {
       return shownWardKey !== null;
@@ -312,6 +337,9 @@ function startPicker(strings) {
     onSelect: function (selection) {
       lastSelection = selection;
       saveLastSelection(selection);
+      if (showSarpanch(selection)) {
+        return;
+      }
       var picked = toRollSelection(selection);
       if (roll && picked) {
         roll.open(selectionFor(wardKeyFor(picked)));
@@ -344,6 +372,7 @@ if (container) {
       seatStrings = strings;
       startSearch(strings);
       roll = startRoll(strings);
+      showSarpanch(lastSelection);
       startFrame(strings);
       startTeamJoin(strings);
       var picker = startPicker(strings);
@@ -359,7 +388,6 @@ if (container) {
             searchScreen.setSupport(support);
           }
           picker.setSupport(support);
-          showSeat();
         })
         .catch(function (err) {
           console.error('constituency config failed to load', err);

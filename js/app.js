@@ -72,11 +72,11 @@ function showRetry(shown) {
   }
 }
 
-// The seat header above every screen names the last loaded panchayat and ward
-// (src/ui/seatHeader.js, restored from local storage, so it shows offline);
-// js/picker.js re-renders it whenever a roll shows. It starts pending, so the
-// "nothing loaded" link appears only once no stored seat is found. This is a
-// classic script, so the module comes in through import().
+// The seat header (src/ui/seatHeader.js) names the last seat, restored from
+// local storage, so it shows offline; js/picker.js names each new seat. It
+// starts pending, so the "nothing loaded" link appears only once no stored
+// seat is found. This is a classic script, so the module comes in through
+// import().
 var seatHeader = document.getElementById("seat-header");
 if (seatHeader) {
   import("../src/ui/seatHeader.js")
