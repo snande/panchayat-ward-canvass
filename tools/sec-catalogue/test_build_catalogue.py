@@ -38,6 +38,10 @@ COVERS = {
     "22": ("जोधपुर", "ओसियाँ"),
     "33": ("उदयपुर", "गिर्वा"),
 }
+COLUMNS = ["Grampanchayat", "Ward No.", "Final PDF", "Final With Supp-2 PDF"]
+BHILWARA = [("7", "BHILWARA")]
+MANDAL = [("60", "MANDAL PANCHAYAT SAMITI")]
+FINAL_URL = "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/"
 
 
 def run(argv):
@@ -68,20 +72,41 @@ def load(path):
         return json.load(fh)
 
 
+def write(path, text):
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+
+
 class Tmp(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="sec-catalogue-test-")
         self.addCleanup(shutil.rmtree, self.tmp, True)
 
-    def build(self, input_dir=FIXTURE, name="out"):
+    def build(self, input_dir=FIXTURE, name="out", extra=()):
         out = os.path.join(self.tmp, name, "catalogue")
-        status, err = run(["--input", input_dir, "--out", out])
+        status, err = run(["--input", input_dir, "--out", out, *extra])
         return out, status, err
 
     def copy_fixture(self):
         dst = os.path.join(self.tmp, "input")
         shutil.copytree(FIXTURE, dst)
         return dst
+
+    @staticmethod
+    def add_panchayats(src, extra, samitis=MANDAL, sid="60"):
+        """Add test-only panchayats (gp, Latin name, [grid rows]) to a samiti
+        of a copied Bhilwara input, beside the samiti's existing ones."""
+        path = os.path.join(src, bc.samiti_file("7", sid))
+        gps = []
+        if os.path.exists(path):
+            with open(path, "rb") as fh:
+                gps = bc.parse_page(fh.read(), "samiti").options(bc.GP_FIELD)
+        gps = gps + [(g, n) for g, n, _rows in extra]
+        write(path, form_page("samiti", BHILWARA, "7", samitis, sid, gps))
+        for gp, _name, rows in extra:
+            grid = grid_html(COLUMNS, rows, {"Final PDF": "lnkFinal"})
+            write(os.path.join(src, bc.search_file("7", sid, gp)),
+                  form_page("search", BHILWARA, "7", samitis, sid, gps, gp, grid))
 
 
 class OfflineBuild(Tmp):
@@ -157,6 +182,22 @@ class OfflineBuild(Tmp):
         self.assertEqual(almas1["supplementUrl"], "https://esuchiroll.rajasthan.gov.in/"
                          "Publication_PDF_2026/PRI/Supplement/60/ALMAS-Ward%20No-001.pdf")
 
+    def test_a_name_with_spaces_or_dots_is_upper_cased_and_percent_encoded_in_the_url(self):
+        # Chaksu's dropdown lists 'Dhunsari-Rupwas Mukhayalya Dhunsari'
+        # (docs/research/sec-statewide-catalogue.md, section 7).
+        src = self.copy_fixture()
+        self.add_panchayats(src, [
+            ("9001", "Dhunsari-Rupwas Mukhayalya Dhunsari", [["धूनसरी", "1", "", ""]]),
+            ("9002", "St. Ram Nagar", [["रामनगर", "2", "", ""]]),
+        ])
+        out, status, err = self.build(src)
+        self.assertEqual(status, 0, err)
+        urls = {p["id"]: p["wards"][0]["pdfUrl"]
+                for p in load(os.path.join(out, "bhilwara.json"))["panchayats"]}
+        self.assertEqual(urls["9001"], FINAL_URL + "60/DHUNSARI-RUPWAS%20MUKHAYALYA%20DHUNSARI"
+                                                   "-Ward%20No-001.pdf")
+        self.assertEqual(urls["9002"], FINAL_URL + "60/ST.%20RAM%20NAGAR-Ward%20No-002.pdf")
+
     def test_two_runs_over_the_same_input_are_byte_identical(self):
         out1, s1, e1 = self.build(name="one")
         out2, s2, e2 = self.build(name="two")
@@ -208,20 +249,47 @@ class OfflineBuild(Tmp):
         self.assertIn("fallback: district BHILWARA (7)", err)
         self.assertIn("fallback: samiti MANDAL (60)", err)
 
+    def test_covers_that_disagree_on_the_district_take_the_majority_and_say_so(self):
+        src = self.copy_fixture()
+        samitis = MANDAL + [("9060", "TESTA PANCHAYAT SAMITI"), ("9061", "TESTB PANCHAYAT SAMITI")]
+        write(os.path.join(src, bc.district_file("7")), form_page("district", BHILWARA, "7", samitis))
+        for sid, gp in (("9060", "9160"), ("9061", "9161")):
+            self.add_panchayats(src, [(gp, f"Test{gp}", [["परीक्षा", "1", "", ""]])],
+                                samitis=samitis, sid=sid)
+            with open(os.path.join(src, bc.cover_file(sid)), "wb") as fh:
+                fh.write(b"%PDF-stub")
+        stub = {"cover-60.pdf": {"district": "भीलवाडा", "samiti": "माण्डल"},
+                "cover-9060.pdf": {"district": "भीलवाड़ा", "samiti": "परीक्षा"},
+                "cover-9061.pdf": {"district": "भीलवाड़ा", "samiti": None}}
+        seen = []
+
+        def reader(paths):
+            seen.extend(paths)
+            return {p: stub.get(os.path.basename(p), {"district": None, "samiti": None})
+                    for p in paths}
+
+        files, summary, errors, _legacy = bc.build_catalogue(src, {"7"}, cover_reader=reader)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(seen), 3)
+        doc = files["bhilwara.json"]
+        self.assertEqual(doc["name"], "भीलवाड़ा")
+        self.assertEqual(files["index.json"]["districts"][0]["name"], "भीलवाड़ा")
+        (note,) = summary["notes"]
+        self.assertIn("district BHILWARA (7): covers disagree", note)
+        self.assertIn("took भीलवाड़ा", note)
+        blocks = {p["block"]["id"]: p["block"] for p in doc["panchayats"]}
+        self.assertEqual(blocks["9060"]["name"], "परीक्षा")
+        self.assertEqual(blocks["9061"], {"id": "9061", "name": "TESTB", "nameLatin": "TESTB"})
+        self.assertEqual(summary["fallbacks"], [{
+            "level": "samiti", "id": "9061", "nameLatin": "TESTB", "district": "7",
+            "reason": "no Hindi samiti name read from cover-9061.pdf"}])
+
     def test_panchayats_sort_by_hindi_name_and_wards_by_number(self):
         src = self.copy_fixture()
-        districts = [("7", "BHILWARA")]
-        samitis = [("60", "MANDAL PANCHAYAT SAMITI")]
-        # Test-only panchayats beside Almas: grid rows listed out of order.
-        extra = [("9001", "Zeta", "अजमा", ["3", "1", "2"]), ("9002", "Alpha", "हरिपुर", ["2", "1"])]
-        gps = [("2610", "Almas")] + [(g, n) for g, n, _h, _w in extra]
-        with open(os.path.join(src, bc.samiti_file("7", "60")), "w", encoding="utf-8") as fh:
-            fh.write(form_page("samiti", districts, "7", samitis, "60", gps))
-        cols = ["Grampanchayat", "Ward No.", "Final PDF", "Final With Supp-2 PDF"]
-        for gp, _name, hindi, wards in extra:
-            grid = grid_html(cols, [[hindi, w, "", ""] for w in wards], {"Final PDF": "lnkFinal"})
-            with open(os.path.join(src, bc.search_file("7", "60", gp)), "w", encoding="utf-8") as fh:
-                fh.write(form_page("search", districts, "7", samitis, "60", gps, gp, grid))
+        self.add_panchayats(src, [
+            ("9001", "Zeta", [["अजमा", w, "", ""] for w in ("3", "1", "2")]),
+            ("9002", "Alpha", [["हरिपुर", w, "", ""] for w in ("2", "1")]),
+        ])
         out, status, err = self.build(src)
         self.assertEqual(status, 0, err)
         doc = load(os.path.join(out, "bhilwara.json"))
@@ -230,12 +298,88 @@ class OfflineBuild(Tmp):
             self.assertEqual([w["ward"] for w in p["wards"]], sorted(w["ward"] for w in p["wards"]))
         zeta = doc["panchayats"][0]
         self.assertEqual([w["supplementUrl"] for w in zeta["wards"]], [None, None, None])
-        self.assertEqual(zeta["wards"][0]["pdfUrl"], "https://esuchiroll.rajasthan.gov.in/"
-                         "Publication_PDF_2026/PRI/Final/60/ZETA-Ward%20No-001.pdf")
+        self.assertEqual(zeta["wards"][0]["pdfUrl"], FINAL_URL + "60/ZETA-Ward%20No-001.pdf")
+
+    def test_without_node_the_build_stops_unless_latin_names_are_allowed(self):
+        with mock.patch.object(bc.shutil, "which", return_value=None):
+            out, status, err = self.build()
+            self.assertEqual(status, 1)
+            self.assertIn("node was not found", err)
+            self.assertFalse(os.path.exists(out))
+            out, status, err = self.build(name="latin", extra=["--allow-latin-names"])
+        self.assertEqual(status, 0, err)
+        self.assertIn("WARNING: node was not found", err)
+        index = load(os.path.join(out, "index.json"))
+        self.assertEqual({d["name"] for d in index["districts"]},
+                         {d["nameLatin"] for d in index["districts"]})
+
+    def test_a_corrupt_meta_json_is_reported_not_a_traceback(self):
+        src = self.copy_fixture()
+        write(os.path.join(src, bc.META_FILE), '{"schemaVersion": 1, "fetch')
+        out, status, err = self.build(src)
+        self.assertEqual(status, 1)
+        self.assertIn("meta.json in", err)
+        self.assertIn("is not valid JSON; delete or regenerate it", err)
+        self.assertNotIn("Traceback", err)
+
+
+class PartialBuilds(Tmp):
+    def test_a_districts_build_merges_into_the_existing_catalogue(self):
+        out, status, err = self.build()
+        self.assertEqual(status, 0, err)
+        before = read_tree(os.path.dirname(out))
+        src = self.copy_fixture()
+        self.add_panchayats(src, [("9001", "Zeta", [["अजमा", "1", "", ""]])])
+        status, err = run(["--input", src, "--out", out, "--districts", "7"])
+        self.assertEqual(status, 0, err)
+        after = read_tree(os.path.dirname(out))
+        self.assertEqual(sorted(after), sorted(before))
+        for name in ("catalogue/bharatpur.json", "catalogue/bikaner.json",
+                     "catalogue/jodhpur.json", "catalogue/udaipur.json"):
+            self.assertEqual(after[name], before[name], name)
+        index = load(os.path.join(out, "index.json"))
+        self.assertEqual(len(index["districts"]), 5)
+        bhilwara = next(d for d in index["districts"] if d["id"] == "7")
+        self.assertEqual((bhilwara["file"], bhilwara["panchayatCount"]), ("bhilwara.json", 2))
+        self.assertEqual(index["summary"]["districtsBuilt"], ["7"])
+        legacy = load(out + ".json")
+        self.assertEqual([d["id"] for d in legacy["districts"]], ["6", "7", "8", "22", "33"])
+
+    def test_a_districts_filter_that_matches_nothing_fails_and_deletes_nothing(self):
+        out, status, err = self.build()
+        self.assertEqual(status, 0, err)
+        before = read_tree(os.path.dirname(out))
+        status, err = run(["--input", FIXTURE, "--out", out, "--districts", "999"])
+        self.assertEqual(status, 1)
+        self.assertIn("--districts 999: no such district in page.html", err)
+        self.assertEqual(read_tree(os.path.dirname(out)), before)
+
+    def test_an_unreadable_earlier_index_does_not_crash_the_build(self):
+        out = os.path.join(self.tmp, "out", "catalogue")
+        os.makedirs(out)
+        for text in ("[]", '{"schemaVersion": 1, "districts": [1, 2]}', "not json"):
+            write(os.path.join(out, "index.json"), text)
+            write(os.path.join(out, "keep.json"), "{}")
+            status, err = run(["--input", FIXTURE, "--out", out])
+            self.assertEqual(status, 0, err)
+            self.assertEqual(len(load(os.path.join(out, "index.json"))["districts"]), 5)
+            self.assertTrue(os.path.exists(os.path.join(out, "keep.json")))
+
+    def test_a_full_build_removes_shards_the_earlier_index_listed_and_no_longer_writes(self):
+        out, status, err = self.build()
+        self.assertEqual(status, 0, err)
+        index = load(os.path.join(out, "index.json"))
+        index["districts"].append({"id": "99", "file": "gone.json"})
+        write(os.path.join(out, "index.json"), json.dumps(index))
+        write(os.path.join(out, "gone.json"), "{}")
+        out, status, err = self.build()
+        self.assertEqual(status, 0, err)
+        self.assertFalse(os.path.exists(os.path.join(out, "gone.json")))
 
 
 class BuildFailures(Tmp):
     ALMAS = bc.search_file("7", "60", "2610")
+    WHERE = "district BHILWARA (7) / panchayat Almas (2610)"
 
     def edit_almas(self, edit):
         src = self.copy_fixture()
@@ -244,15 +388,15 @@ class BuildFailures(Tmp):
             text = fh.read()
         new = edit(text)
         self.assertNotEqual(new, text)
-        with open(path, "w", encoding="utf-8") as fh:
-            fh.write(new)
+        write(path, new)
         return src
 
-    def assert_fails(self, src, reason):
+    def assert_fails(self, src, reason, where=WHERE):
         out, status, err = self.build(src)
         self.assertNotEqual(status, 0)
-        self.assertIn("district BHILWARA (7) / panchayat Almas (2610)", err)
+        self.assertIn(where, err)
         self.assertRegex(err, reason)
+        self.assertNotIn("Traceback", err)
         self.assertFalse(os.path.exists(out))
         self.assertFalse(os.path.exists(out + ".json"))
 
@@ -263,6 +407,10 @@ class BuildFailures(Tmp):
     def test_a_panchayat_with_zero_wards_fails(self):
         src = self.edit_almas(lambda t: re.sub(r"<tr><td>.*?</tr>\n?", "", t))
         self.assert_fails(src, "zero wards")
+
+    def test_a_search_response_without_a_ward_grid_fails_as_such(self):
+        src = self.edit_almas(lambda t: re.sub(r"<table.*</table>", "<p>Error</p>", t, flags=re.S))
+        self.assert_fails(src, re.escape(f"no ward grid in {self.ALMAS}"))
 
     def test_a_missing_search_response_fails_as_zero_wards(self):
         src = self.copy_fixture()
@@ -282,16 +430,46 @@ class BuildFailures(Tmp):
             return text.replace(row, row.replace("<td>4</td>", "<td>3</td>"))
         self.assert_fails(self.edit_almas(repeat), "ward 3 repeats")
 
+    def test_a_ward_number_that_is_not_a_number_fails(self):
+        def letters(text):
+            row = self.rows(text)[1]
+            return text.replace(row, row.replace("<td>2</td>", "<td>2A</td>"))
+        self.assert_fails(self.edit_almas(letters), "ward number '2A' is not a number")
+
+    def test_grampanchayat_cells_that_disagree_fail(self):
+        def other(text):
+            row = self.rows(text)[4]
+            return text.replace(row, row.replace("आलमास", "अरौदा"))
+        self.assert_fails(self.edit_almas(other), "Grampanchayat cells .* disagree")
+
+    def test_a_missing_district_response_fails(self):
+        src = self.copy_fixture()
+        os.remove(os.path.join(src, bc.district_file("7")))
+        self.assert_fails(src, "no saved response district-7.html", "district BHILWARA (7)")
+
+    def test_a_missing_samiti_response_fails(self):
+        src = self.copy_fixture()
+        os.remove(os.path.join(src, bc.samiti_file("7", "60")))
+        self.assert_fails(src, "no saved response samiti-7-60.html",
+                          "district BHILWARA (7) / samiti MANDAL PANCHAYAT SAMITI (60)")
+
+    def test_a_missing_page_fails(self):
+        src = self.copy_fixture()
+        os.remove(os.path.join(src, bc.PAGE_FILE))
+        self.assert_fails(src, "no saved response page.html", src)
+
 
 class FakePortal:
     """Stands in for PoliteClient: answers the roll page's GET and posts and
     the PDF host's GETs from a directory of saved responses."""
 
-    def __init__(self, saved_dir, stop_after=None):
+    def __init__(self, saved_dir, stop_after=None, cover_status=200):
         self.saved = saved_dir
         self.counts = {}
         self.searches = []
+        self.covers = []
         self.stop_after = stop_after
+        self.cover_status = cover_status
 
     def _file(self, name):
         with open(os.path.join(self.saved, name), "rb") as fh:
@@ -315,7 +493,11 @@ class FakePortal:
                 return 200, {}, self._file(bc.samiti_file(did, sid))
         m = re.search(r"/PRI/Final/(\d+)/[^/]+-Ward%20No-001\.pdf$", url)
         if host == "esuchiroll.rajasthan.gov.in" and m:
-            return 200, {}, self._file(bc.cover_file(m.group(1)))
+            self.covers.append(url)
+            if self.cover_status in (403, 429):  # what PoliteClient does with these
+                raise bc.Blocked(f"GET {url} answered {self.cover_status}")
+            if self.cover_status == 200:
+                return 200, {}, self._file(bc.cover_file(m.group(1)))
         return 302, {"Location": "https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx"}, b""
 
 
@@ -334,6 +516,7 @@ class LiveMode(Tmp):
         status, err = self.fetch(raw, FakePortal(FIXTURE))
         self.assertEqual(status, 0, err)
         self.assertRegex(err, r"about \d+ left, finish about \d{4}-\d\d-\d\d \d\d:\d\d UTC")
+        self.assertIn("about 0 left", err.splitlines()[-1])
         got, want = read_tree(raw), saved_responses(FIXTURE)
         self.assertEqual(sorted(got), sorted(want))
         for name in want:
@@ -362,6 +545,40 @@ class LiveMode(Tmp):
         third = FakePortal(FIXTURE)
         self.assertEqual(self.fetch(raw, third)[0], 0)
         self.assertEqual(third.counts, {})
+
+    def test_a_samiti_with_no_cover_is_recorded_once_and_builds_with_latin_names(self):
+        raw = os.path.join(self.tmp, "raw")
+        first = FakePortal(FIXTURE, cover_status=302)
+        status, err = self.fetch(raw, first)
+        self.assertEqual(status, 0, err)
+        self.assertEqual(len(first.covers), 5)
+        self.assertIn("about 0 left", err.splitlines()[-1])
+        marker = load(os.path.join(raw, bc.cover_missing_file("60")))
+        self.assertEqual(marker["schemaVersion"], bc.SCHEMA_VERSION)
+        self.assertEqual(marker["tried"][0]["status"], 302)
+        again = FakePortal(FIXTURE, cover_status=302)
+        self.assertEqual(self.fetch(raw, again)[0], 0)
+        self.assertEqual(again.counts, {})
+        out, status, err = self.build(raw)
+        self.assertEqual(status, 0, err)
+        index = load(os.path.join(out, "index.json"))
+        self.assertEqual(len(index["summary"]["fallbacks"]), 10)
+        self.assertIn("the portal gave no cover PDF (cover-60.missing.json)", err)
+
+    def test_a_refused_cover_stops_the_run_and_keeps_what_was_saved(self):
+        raw = os.path.realpath(os.path.join(self.tmp, "raw"))
+        portal = FakePortal(FIXTURE, cover_status=403)
+        with mock.patch.object(bc, "PoliteClient", lambda **kw: portal):
+            status, err = run(["--fetch", raw, "--out", os.path.join(self.tmp, "o", "catalogue")])
+        self.assertEqual(status, 2)
+        self.assertIn("STOPPED: GET", err)
+        self.assertIn("answered 403", err)
+        self.assertEqual(len(portal.covers), 1)
+        saved = os.listdir(raw)
+        self.assertIn(bc.search_file("6", "50", "2240"), saved)
+        self.assertNotIn(bc.cover_file("50"), saved)
+        self.assertNotIn(bc.cover_missing_file("50"), saved)
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, "o")))
 
     def test_reads_no_file_outside_the_saved_responses_and_writes_only_its_outputs(self):
         raw = os.path.realpath(os.path.join(self.tmp, "raw"))

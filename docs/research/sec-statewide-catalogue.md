@@ -64,8 +64,9 @@ above the roughly 350 Rajasthan is often cited as having; the portal's list
 follows the current 41-district map and its newer samitis.
 
 The 2026-10-09 catalogue was written by an earlier version of
-`build_catalogue.py` that never posted Search. That script has since been
-replaced by the sharded catalogue builder described below.
+`build_catalogue.py` that never posted Search (its `--checkpoint` and
+`--max-posts` options are gone). That script has since been replaced by the
+sharded catalogue builder described below.
 
 ### The sharded catalogue (`data/sec/catalogue/`)
 
@@ -89,7 +90,10 @@ It needs no network access. It writes:
   kept until the picker switches over (#122).
 
 Panchayats are sorted by Hindi name and wards by number. The same input gives
-byte-identical files.
+byte-identical files. A full build replaces the catalogue. `--districts
+ID,...` rebuilds only those districts and merges them into the existing
+index and older catalogue; it removes no other district's shard, and an id
+that matches no district fails the run.
 
 Hindi names come only from SEC publications (the operator's decision on #121):
 
@@ -101,7 +105,10 @@ Hindi names come only from SEC publications (the operator's decision on #121):
   samiti: Girwa's tahsil is बारापाल.
 
 A name that cannot be read falls back to the Latin dropdown text. The run
-summary lists every fallback, and a fallback never fails the run.
+summary lists every fallback, and a fallback never fails the run. Where a
+district's covers disagree, the most common reading is taken and the summary
+says so. Reading covers needs `node`; without it the build stops unless
+`--allow-latin-names` is given.
 
 Wards come from the same grid rows:
 
@@ -117,8 +124,10 @@ does.
 The build exits 1, naming the district and panchayat, when:
 
 - a panchayat has no wards (or no saved Search response);
+- a Search response holds no ward grid;
 - a ward has no Final link;
 - a ward number repeats or is not a number;
+- the grid's `Grampanchayat` cells disagree;
 - any saved response is missing.
 
 Urban bodies, zilla parishads and blank-named entries are skipped and
@@ -132,8 +141,11 @@ python3 tools/sec-catalogue/build_catalogue.py --fetch /var/tmp/sec-raw --out da
 
 It saves every response into the `--fetch` directory as `page.html`,
 `district-<D>.html`, `samiti-<D>-<S>.html`, `search-<D>-<S>-<G>.html` and
-`cover-<S>.pdf`. Covers are ward 1's Final PDF of the samiti's first
-panchayat. Each file is written whole or not at all.
+`cover-<S>.pdf`. A cover is ward 1's Final PDF of the samiti's first
+panchayat that lists one and whose file the PDF host serves. When no
+panchayat's does, `cover-<S>.missing.json` records what was tried, so the
+run does not ask again (delete it to retry). Each file is written whole or
+not at all.
 
 The walk:
 
