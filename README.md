@@ -249,7 +249,12 @@ The `मतदान के दिन का हिसाब खोलें` bu
 screen (`src/ui/turnoutScreen.js`) in the same place. Its supporter count is
 `wardCount(ward)`: the distinct voters of that ward marked by the team, as far
 as this phone knows. A voter marked on two phones is one mark, on the phones
-and on the server, so it counts once. The count is read again whenever marks
+and on the server, so it counts once. A mark on a serial struck off the roll
+(made before it was struck off, or synced from a teammate's older build) stays
+stored but is left out of this count, of the team count under the
+seen-voting button and of the SMS tally's ward count
+(`wardCount(ward, {skip})` and `teamCount({skip})`, with `skip` naming the
+struck-off serials of the open roll). The count is read again whenever marks
 are added, including teammates' marks arriving with a sync, while the screen
 is open.
 
