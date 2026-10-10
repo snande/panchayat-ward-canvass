@@ -51,13 +51,14 @@ the same input:
   <out>/index.json         districts with id, name, nameLatin, file, panchayatCount
   <out>/<district>.json    the district's panchayats, sorted by Hindi name, each
                            with block (its samiti) and wards sorted by number
-  <out>.json               the older catalogue.json shape (--legacy-out), kept
-                           until the picker reads the sharded catalogue (#122)
+  --legacy-out PATH        the older single-file catalogue.json shape, only on
+                           request: the picker reads the sharded catalogue
+                           (#122) and data/sec/catalogue.json is gone
 
 A full build replaces the catalogue and removes shards the earlier index
 listed that it no longer writes. A --districts build only replaces the named
-districts: it merges them into the existing index and older catalogue and
-removes nothing else.
+districts: it merges them into the existing index (and the older catalogue,
+if asked for) and removes nothing else.
 
 Live mode (--fetch DIR) needs a networked machine: the swarm's Engineer
 sandbox cannot reach the commission's servers. It saves every response into
@@ -761,8 +762,9 @@ def build_catalogue(input_dir, only_districts=None, cover_reader=None):
             "kind is read from the portal's Latin name: 'urban' for nagar palika / parishad / "
             "nigam, 'rural' for panchayat samiti, 'unknown' otherwise. Only rural samitis list "
             "gram panchayats.",
-            "Kept until the picker reads the sharded catalogue (catalogue/index.json, which "
-            "also carries each panchayat's wards and Hindi names); see #122.",
+            "Written only on request (--legacy-out): the picker reads the sharded catalogue "
+            "(catalogue/index.json, which also carries each panchayat's wards and Hindi "
+            "names); see #122.",
         ],
         "districts": legacy,
     }
@@ -1023,9 +1025,10 @@ def main(argv=None):
     src.add_argument("--fetch", help="walk the portal into this directory (resuming from what "
                                      "is saved there), then build from it if --out is given")
     p.add_argument("--out", help="output directory, e.g. data/sec/catalogue")
-    p.add_argument("--legacy-out", help="where to write the older single-file catalogue "
-                                        "(default: <out>.json, e.g. data/sec/catalogue.json)")
-    p.add_argument("--no-legacy", action="store_true", help="do not write the older catalogue")
+    p.add_argument("--legacy-out", help="also write the older single-file catalogue here "
+                                        "(default: not written; the picker reads the shards)")
+    p.add_argument("--no-legacy", action="store_true",
+                   help="do not write the older catalogue (the default; kept for old scripts)")
     p.add_argument("--districts", help="comma-separated district ids (default: all); with --out "
                                        "the named districts are merged into the existing catalogue")
     p.add_argument("--allow-latin-names", action="store_true",
@@ -1071,8 +1074,7 @@ def main(argv=None):
             print(f"FAILED: {e}", file=sys.stderr)
         print(f"{len(errors)} failures; nothing written", file=sys.stderr)
         return 1
-    legacy_path = None if args.no_legacy else (
-        args.legacy_out or os.path.normpath(args.out).rstrip(os.sep) + ".json")
+    legacy_path = None if args.no_legacy else args.legacy_out
     write_catalogue(args.out, files, legacy_doc, legacy_path, partial=bool(only))
     print_summary(summary)
     if not node_available():

@@ -1,80 +1,158 @@
-// Pure ward catalogue helpers: no DOM, no network. Every lookup walks the
-// bundled per-installation config (config/constituency.json), so anything not
-// listed there resolves to null and can never produce a fetch URL.
+// Pure ward-picker helpers over the sharded catalogue
+// (src/picker/catalogueLoader.js): no DOM, no network. A selection is only
+// ever built from a checked shard's entries, so a pdfUrl never comes from
+// anywhere else.
+//
+// The selection the picker emits:
+//   { schemaVersion, seatType: 'ward-panch' | 'sarpanch',
+//     district: { id, name, nameLatin },
+//     panchayat: { id, name, nameLatin, block: { id, name, nameLatin } },
+//     wards: [{ ward, pdfUrl }] }
+// A ward panch's selection holds exactly its one ward; a sarpanch's holds
+// every ward of the panchayat, in ward-number order.
 
+import { normalize } from '../search/hindiSearch.js';
 import { urlList } from '../roll/supplementTags.js';
 
-const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+export const SELECTION_SCHEMA_VERSION = 1;
+export const SEAT_WARD_PANCH = 'ward-panch';
+export const SEAT_SARPANCH = 'sarpanch';
+export const SEAT_TYPES = [SEAT_WARD_PANCH, SEAT_SARPANCH];
 
-function findChild(list, id) {
-  if (!Array.isArray(list) || typeof id !== 'string') return null;
-  return list.find((item) => item && has(item, 'id') && item.id === id) || null;
+const isText = (value) => typeof value === 'string' && value.trim() !== '';
+const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/** The index's districts as options: { id, label (Hindi), latin }. */
+export function districtOptions(index) {
+  const list = index && Array.isArray(index.districts) ? index.districts : [];
+  return list.map((d) => ({ id: d.id, label: d.name, latin: d.nameLatin }));
 }
 
-function path(config, sel) {
-  if (!config || typeof sel !== 'object' || sel === null) return null;
-  const district = findChild(config.districts, sel.district);
-  const samiti = district && findChild(district.samitis, sel.samiti);
-  const panchayat = samiti && findChild(samiti.panchayats, sel.panchayat);
-  const ward = panchayat && findChild(panchayat.wards, sel.ward);
-  return ward ? { district, samiti, panchayat, ward } : null;
+/** A shard's panchayat by id, or null. */
+export function findPanchayat(shard, panchayatId) {
+  const list = shard && Array.isArray(shard.panchayats) ? shard.panchayats : [];
+  return list.find((p) => p.id === panchayatId) || null;
 }
 
-const options = (list) => (Array.isArray(list) ? list.map(({ id, label }) => ({ id, label })) : []);
-
-export function districts(config) {
-  return options(config && config.districts);
-}
-
-export function samitis(config, districtId) {
-  const d = findChild(config && config.districts, districtId);
-  return options(d && d.samitis);
-}
-
-export function panchayats(config, districtId, samitiId) {
-  const d = findChild(config && config.districts, districtId);
-  const s = d && findChild(d.samitis, samitiId);
-  return options(s && s.panchayats);
-}
-
-export function wards(config, districtId, samitiId, panchayatId) {
-  const d = findChild(config && config.districts, districtId);
-  const s = d && findChild(d.samitis, samitiId);
-  const p = s && findChild(s.panchayats, panchayatId);
-  return options(p && p.wards);
-}
-
-/** PDF URL for a configured ward, or null for anything outside the config. */
-export function resolveWard(config, sel) {
-  const hit = path(config, sel);
-  return hit && typeof hit.ward.pdfUrl === 'string' ? hit.ward.pdfUrl : null;
+/** Fold a name or a typed query so Hindi spellings and Latin case compare equal. */
+export function foldName(text) {
+  return normalize(text).toLowerCase();
 }
 
 /**
- * { district, samiti, panchayat, ward, pdfUrl, supplementPdfUrls? } (ids) or
- * null; supplementPdfUrls, present when the ward's catalogue entry lists any,
- * are the ward's supplementary roll PDFs in publication order.
+ * The panchayats whose Hindi name or Latin name (nameLatin) contains the
+ * typed query; names starting with it come first, otherwise the shard's
+ * order is kept. An empty query keeps every panchayat.
  */
-export function selectionFor(config, sel) {
-  const pdfUrl = resolveWard(config, sel);
-  if (pdfUrl === null) return null;
-  const selection = {
-    district: sel.district,
-    samiti: sel.samiti,
-    panchayat: sel.panchayat,
-    ward: sel.ward,
-    pdfUrl,
-  };
-  const listed = path(config, sel).ward.supplementPdfUrls;
-  if (Array.isArray(listed)) selection.supplementPdfUrls = urlList(listed);
-  return selection;
+export function filterPanchayats(panchayats, query) {
+  const list = Array.isArray(panchayats) ? panchayats : [];
+  const q = foldName(query);
+  if (!q) return list.slice();
+  const starts = [];
+  const contains = [];
+  for (const p of list) {
+    const names = [foldName(p.name), foldName(p.nameLatin)];
+    if (names.some((n) => n.startsWith(q))) starts.push(p);
+    else if (names.some((n) => n.includes(q))) contains.push(p);
+  }
+  return starts.concat(contains);
 }
 
-/** The selection for a ward key ("district/samiti/panchayat/ward"), or null. */
-export function selectionForWardKey(config, wardKey) {
+/** A panchayat's wards in ward-number order. */
+export function sortedWards(panchayat) {
+  const list = panchayat && Array.isArray(panchayat.wards) ? panchayat.wards : [];
+  return list.slice().sort((a, b) => a.ward - b.ward);
+}
+
+const named = ({ id, name, nameLatin }) => ({ id, name, nameLatin });
+
+/**
+ * The selection for a seat: a ward panch's one ward (wardNumber, a number or
+ * its decimal string) or, for a sarpanch, every ward. Null when the seat
+ * type, district, panchayat or ward is not one the catalogue lists.
+ */
+export function buildSelection(seatType, district, panchayat, wardNumber) {
+  if (!SEAT_TYPES.includes(seatType) || !isObject(district) || !isObject(panchayat)) return null;
+  const all = sortedWards(panchayat);
+  let wards;
+  if (seatType === SEAT_SARPANCH) {
+    wards = all;
+  } else {
+    const ward = all.find((w) => String(w.ward) === String(wardNumber));
+    wards = ward ? [ward] : [];
+  }
+  if (wards.length === 0) return null;
+  return {
+    schemaVersion: SELECTION_SCHEMA_VERSION,
+    seatType,
+    district: named(district),
+    panchayat: { ...named(panchayat), block: named(panchayat.block) },
+    wards: wards.map(({ ward, pdfUrl }) => ({ ward, pdfUrl })),
+  };
+}
+
+/** A selection of the shape above with a known schemaVersion. */
+export function isSelection(value) {
+  if (!isObject(value) || value.schemaVersion !== SELECTION_SCHEMA_VERSION) return false;
+  if (!SEAT_TYPES.includes(value.seatType)) return false;
+  const d = value.district;
+  const p = value.panchayat;
+  if (!isObject(d) || !isText(d.id) || !isText(d.name)) return false;
+  if (!isObject(p) || !isText(p.id) || !isText(p.name) || !isObject(p.block) || !isText(p.block.id)) return false;
+  if (!Array.isArray(value.wards) || value.wards.length === 0) return false;
+  if (value.seatType === SEAT_WARD_PANCH && value.wards.length !== 1) return false;
+  return value.wards.every((w) => isObject(w) && Number.isInteger(w.ward) && isText(w.pdfUrl));
+}
+
+/**
+ * The roll flow's selection for one ward of a picker selection
+ * (src/roll/rollFlow.js: district, samiti, panchayat and ward ids, pdfUrl and
+ * the supplementary roll URLs), with the supplement taken from the shard's
+ * panchayat entry when it is given.
+ */
+export function rollSelectionFor(selection, ward, panchayat = null) {
+  if (!isObject(selection) || !isObject(ward) || !isText(ward.pdfUrl)) return null;
+  const roll = {
+    district: selection.district.id,
+    samiti: selection.panchayat.block.id,
+    panchayat: selection.panchayat.id,
+    ward: String(ward.ward),
+    pdfUrl: ward.pdfUrl,
+  };
+  const entry = panchayat ? sortedWards(panchayat).find((w) => w.ward === ward.ward) : null;
+  if (entry && entry.supplementUrl) roll.supplementPdfUrls = urlList([entry.supplementUrl]);
+  return roll;
+}
+
+function wardKeyParts(wardKey) {
   if (typeof wardKey !== 'string') return null;
   const parts = wardKey.split('/');
-  if (parts.length !== 4) return null;
+  if (parts.length !== 4 || parts.some((part) => part === '')) return null;
   const [district, samiti, panchayat, ward] = parts;
-  return selectionFor(config, { district, samiti, panchayat, ward });
+  return { district, samiti, panchayat, ward };
+}
+
+/** The district id of a roll's ward key ("district/samiti/panchayat/ward"), or null. */
+export function districtOfWardKey(wardKey) {
+  const parts = wardKeyParts(wardKey);
+  return parts ? parts.district : null;
+}
+
+/**
+ * The ward a roll's ward key names in a district shard, as
+ * { selection (a ward panch's), rollSelection, seat (src/ui/seatHeader.js) },
+ * or null when the shard does not list it.
+ */
+export function wardForWardKey(shard, wardKey) {
+  const parts = wardKeyParts(wardKey);
+  if (!parts || !shard || shard.id !== parts.district) return null;
+  const panchayat = findPanchayat(shard, parts.panchayat);
+  if (!panchayat || panchayat.block.id !== parts.samiti) return null;
+  const selection = buildSelection(SEAT_WARD_PANCH, shard, panchayat, parts.ward);
+  if (!selection) return null;
+  return {
+    selection,
+    rollSelection: rollSelectionFor(selection, selection.wards[0], panchayat),
+    seat: { seatType: 'ward', panchayat: panchayat.name, ward: String(selection.wards[0].ward) },
+  };
 }

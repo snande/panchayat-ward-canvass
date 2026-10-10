@@ -1,0 +1,14 @@
+{
+ "schemaVersion": 1,
+ "source": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
+ "note": "The configured constituency (config/constituency.json) only, until the statewide build (tools/sec-catalogue/build_catalogue.py --out data/sec/catalogue, operator step #191) replaces this directory.",
+ "districts": [
+  {
+   "id": "17",
+   "name": "जयपुर",
+   "nameLatin": "JAIPUR",
+   "file": "jaipur.json",
+   "panchayatCount": 1
+  }
+ ]
+}

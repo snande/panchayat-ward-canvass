@@ -1,6 +1,6 @@
-// js/picker.js wiring (issue #16): choosing a ward calls the roll flow's
-// open(), a shown roll hides the "not loaded yet" card, and a stored roll is
-// restored at startup. Runs the real module against the fake DOM, a stubbed
+// js/picker.js wiring (issues #16, #122): choosing a ward panch's ward calls
+// the roll flow's open(), a shown roll hides the "not loaded yet" card, and a
+// stored roll is restored at startup. Runs the real module against the fake DOM, a stubbed
 // fetch and the in-memory IndexedDB.
 
 import { test } from 'node:test';
@@ -12,6 +12,9 @@ import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
 import { createSyncD1 } from './helpers/memoryD1.js';
 import { onRequest as syncOnRequest } from '../functions/sync.js';
+import {
+  choose, districtSelect, pickWard, pickerReady, seatButton, tap, wardSelect,
+} from './helpers/pickWard.js';
 
 const root = (rel) => new URL('../' + rel, import.meta.url);
 const read = (rel) => readFileSync(root(rel));
@@ -53,6 +56,7 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false, c
     if (url.startsWith('file:')) return new Response(readFileSync(fileURLToPath(url)));
     if (url === 'src/strings.hi.json') return new Response(read('src/strings.hi.json'));
     if (url === 'config/constituency.json') return new Response(config ? JSON.stringify(config) : read('config/constituency.json'));
+    if (url.startsWith('data/sec/catalogue/')) return new Response(read(url));
     if (url === '/sync/join' && syncEnv) {
       return syncOnRequest({ request: new Request(new URL(url, 'https://canvass.takshavid.com'), init), env: syncEnv });
     }
@@ -80,14 +84,14 @@ function boot(idb, requests, { syncEnv, localStorage, rollFails = () => false, c
   return { picker, roll, empty, team, seat, nav, search, navItem, currentNav, restore };
 }
 
-function choose(select, value) {
-  select.value = value;
-  select.dispatchEvent({ type: 'change' });
-}
-
 function memoryStorage() {
   const stored = new Map();
-  return { stored, getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => { stored.set(k, String(v)); } };
+  return {
+    stored,
+    getItem: (k) => stored.get(k) ?? null,
+    setItem: (k, v) => { stored.set(k, String(v)); },
+    removeItem: (k) => { stored.delete(k); },
+  };
 }
 const storedSeat = (storage) => JSON.parse(storage.stored.get('ward-canvass-seat'));
 
@@ -99,11 +103,8 @@ test('picking a ward opens its roll and hides the empty state; a reload restores
   const first = boot(idb, requests, { localStorage: storage, rollFails: (url) => url.includes('No-002') });
   try {
     await import('../js/picker.js?wiring=1');
-    await waitFor(() => first.picker.querySelector('select') !== null);
-    const [district, samiti, panchayat, ward] = first.picker.querySelectorAll('select');
-    choose(district, '17');
-    choose(samiti, '125');
-    choose(panchayat, '6313');
+    await pickWard(first.picker, { ward: null });
+    const ward = wardSelect(first.picker);
     assert.equal(first.roll.querySelectorAll('div.roll-row').length, 0);
     // The empty ward-roll screen says to pick a ward; the call list entry in
     // the nav bar leads there too, as it needs a loaded ward.
@@ -176,7 +177,7 @@ test('with no team credentials the join screen shows; after joining a reload ski
   const second = boot(idb, [], { syncEnv });
   try {
     await import('../js/picker.js?wiring=4');
-    await waitFor(() => second.picker.querySelector('select') !== null);
+    await pickerReady(second.picker);
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(second.team.hidden, true);
     assert.equal(second.team.querySelector('form'), null);
@@ -189,7 +190,7 @@ test('the nav bar opens the polling-day count and the SMS tally over a loaded ro
   const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage() });
   try {
     await import('../js/picker.js?wiring=5');
-    await waitFor(() => page.picker.querySelector('select') !== null);
+    await pickerReady(page.picker);
     assert.equal(page.nav.querySelectorAll('button.nav-item').length, 5);
     // No roll yet: each entry leads to the ward picker and the roll stays current.
     for (const id of ['turnout', 'sms', 'calls']) {
@@ -198,11 +199,7 @@ test('the nav bar opens the polling-day count and the SMS tally over a loaded ro
     }
     assert.equal(page.roll.querySelector('form.turnout-screen'), null);
 
-    const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
-    choose(district, '17');
-    choose(samiti, '125');
-    choose(panchayat, '6313');
-    choose(ward, '1');
+    await pickWard(page.picker);
     await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
     assert.deepEqual(page.currentNav(), ['roll']);
 
@@ -230,12 +227,7 @@ test("a failed download names the catalogue's support contact as whom to call", 
   const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage(), rollFails: () => true, config });
   try {
     await import('../js/picker.js?wiring=6');
-    await waitFor(() => page.picker.querySelector('select') !== null);
-    const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
-    choose(district, '17');
-    choose(samiti, '125');
-    choose(panchayat, '6313');
-    choose(ward, '1');
+    await pickWard(page.picker);
     await waitFor(() => page.roll.querySelector('.roll-error') !== null);
     assert.equal(page.roll.querySelector('p.roll-contact').textContent, config.supportContact);
     assert.ok(page.roll.querySelector('button.roll-retry'));
@@ -249,7 +241,7 @@ test('the nav bar opens the search screen; a roll loading behind it leaves it op
   const page = boot(createFakeIndexedDB(), [], { localStorage: memoryStorage() });
   try {
     await import('../js/picker.js?wiring=7');
-    await waitFor(() => page.picker.querySelector('select') !== null);
+    await pickerReady(page.picker);
     page.navItem('search').dispatchEvent({ type: 'click' });
     assert.deepEqual(page.currentNav(), ['search']);
     assert.equal(page.search.hidden, false);
@@ -258,11 +250,7 @@ test('the nav bar opens the search screen; a roll loading behind it leaves it op
     const input = screen.querySelector('input.search-input');
     assert.equal(input.disabled, true, 'the query box shows, disabled, until a roll is loaded');
 
-    const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
-    choose(district, '17');
-    choose(samiti, '125');
-    choose(panchayat, '6313');
-    choose(ward, '1');
+    await pickWard(page.picker);
     await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
     assert.equal(page.search.hidden, false, 'a roll loading in the background does not close the search');
     assert.deepEqual(page.currentNav(), ['search']);
@@ -277,6 +265,107 @@ test('the nav bar opens the search screen; a roll loading behind it leaves it op
     page.navItem('roll').dispatchEvent({ type: 'click' });
     assert.equal(page.search.hidden, true);
     assert.deepEqual(page.currentNav(), ['roll']);
+  } finally {
+    page.restore();
+  }
+});
+
+const catalogueRequests = (requests) => requests.filter((u) => u.startsWith('data/sec/'));
+
+test('first open fetches only the catalogue index; the district shard comes once the district is chosen', async () => {
+  const requests = [];
+  const page = boot(createFakeIndexedDB(), requests, { localStorage: memoryStorage() });
+  try {
+    await import('../js/picker.js?wiring=8');
+    await pickerReady(page.picker);
+    const select = districtSelect(page.picker);
+    await waitFor(() => select.children.length > 1);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.deepEqual(catalogueRequests(requests), ['data/sec/catalogue/index.json']);
+    await pickWard(page.picker);
+    assert.deepEqual(catalogueRequests(requests), ['data/sec/catalogue/index.json', 'data/sec/catalogue/jaipur.json']);
+    assert.ok(!requests.includes('data/sec/catalogue.json'));
+  } finally {
+    page.restore();
+  }
+});
+
+test('a sarpanch pick hands on every ward and stores it with schemaVersion; no roll is opened here', async () => {
+  const requests = [];
+  const storage = memoryStorage();
+  const page = boot(createFakeIndexedDB(), requests, { localStorage: storage });
+  try {
+    await import('../js/picker.js?wiring=9');
+    await pickWard(page.picker, { seat: 'sarpanch' });
+    const selection = globalThis.window.wardSelection();
+    assert.equal(selection.seatType, 'sarpanch');
+    assert.deepEqual(selection.wards.map((w) => w.ward), [1, 2, 3, 4, 5, 6, 7]);
+    assert.equal(selection.wards[0].pdfUrl, WARD1);
+    const stored = JSON.parse(storage.stored.get('ward-canvass-last-selection'));
+    assert.equal(stored.schemaVersion, 1);
+    assert.deepEqual(stored, selection);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.ok(!requests.some((u) => u.startsWith('/roll')), 'loading several wards is the roll decoder\'s work');
+  } finally {
+    page.restore();
+  }
+
+  // Reopened, the picker shows the stored pick again.
+  const again = boot(createFakeIndexedDB(), [], { localStorage: storage });
+  try {
+    await import('../js/picker.js?wiring=10');
+    await pickerReady(again.picker);
+    await waitFor(() => globalThis.window.wardSelection && globalThis.window.wardSelection() !== null);
+    assert.equal(globalThis.window.wardSelection().seatType, 'sarpanch');
+    assert.equal(seatButton(again.picker, 'sarpanch').getAttribute('aria-pressed'), 'true');
+  } finally {
+    again.restore();
+  }
+});
+
+test('a stored selection of an unknown version is discarded and the picker opens at its first step', async () => {
+  const storage = memoryStorage();
+  storage.setItem('ward-canvass-last-selection', JSON.stringify({ schemaVersion: 99, seatType: 'sarpanch' }));
+  const requests = [];
+  const page = boot(createFakeIndexedDB(), requests, { localStorage: storage });
+  const errors = [];
+  const realError = console.error;
+  console.error = (...args) => errors.push(args);
+  try {
+    await import('../js/picker.js?wiring=11');
+    await pickerReady(page.picker);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(storage.stored.has('ward-canvass-last-selection'), false);
+    assert.ok(errors.some((args) => args.includes('unknown-version')), 'the discard is reported');
+    assert.equal(globalThis.window.wardSelection(), null);
+    assert.equal(seatButton(page.picker, 'ward-panch').getAttribute('aria-pressed'), 'false');
+    assert.equal(districtSelect(page.picker).parentNode.hidden, true);
+    assert.deepEqual(catalogueRequests(requests), ['data/sec/catalogue/index.json']);
+  } finally {
+    console.error = realError;
+    page.restore();
+  }
+});
+
+test('with a roll on screen, changing the seat type asks before the loaded seat is replaced', async () => {
+  const requests = [];
+  const page = boot(createFakeIndexedDB(), requests, { localStorage: memoryStorage() });
+  try {
+    await import('../js/picker.js?wiring=12');
+    await pickWard(page.picker);
+    await waitFor(() => page.roll.querySelectorAll('div.roll-row').length > 0);
+    const alert = page.picker.querySelector('div.picker-confirm');
+    assert.equal(alert.hidden, true);
+    tap(seatButton(page.picker, 'sarpanch'));
+    assert.equal(alert.hidden, false, 'asks first');
+    assert.equal(globalThis.window.wardSelection().seatType, 'ward-panch');
+    tap(page.picker.querySelector('button.picker-confirm-no'));
+    assert.equal(alert.hidden, true);
+    assert.equal(globalThis.window.wardSelection().seatType, 'ward-panch');
+    assert.equal(page.seat.textContent, 'पंचायत: बडली · वार्ड: 1');
+    tap(seatButton(page.picker, 'sarpanch'));
+    tap(page.picker.querySelector('button.picker-confirm-yes'));
+    assert.equal(globalThis.window.wardSelection().seatType, 'sarpanch');
   } finally {
     page.restore();
   }

@@ -1,0 +1,542 @@
+{
+ "schemaVersion": 1,
+ "source_page": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
+ "generated_at": "2026-10-09T12:41:43+00:00",
+ "note": "The portal's district and samiti dropdown entries (ids, Latin names) for the five fixture districts, as walked on 2026-10-09; copied from the older data/sec/catalogue.json before it was removed (#122). Read by tools/sec-catalogue/make_test_input.py.",
+ "districts": [
+  {
+   "id": "6",
+   "name": "BHARATPUR",
+   "samitis": [
+    {
+     "id": "11423",
+     "name": ""
+    },
+    {
+     "id": "11419",
+     "name": "BAYANA NAGAR PALIKA"
+    },
+    {
+     "id": "46",
+     "name": "BAYANA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "10010",
+     "name": "BHARATPUR NAGAR NIGAM"
+    },
+    {
+     "id": "30006",
+     "name": "BHARATPUR ZILLA PARISHAD ZILLA PARISHAD"
+    },
+    {
+     "id": "11421",
+     "name": "BHUSAWAR NAGAR PALIKA"
+    },
+    {
+     "id": "304",
+     "name": "BHUSAWAR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11422",
+     "name": "NADBAI NAGAR PALIKA"
+    },
+    {
+     "id": "50",
+     "name": "NADBAI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "10050",
+     "name": "ROOPWAS NAGAR PALIKA"
+    },
+    {
+     "id": "52",
+     "name": "RUPBAS PANCHAYAT SAMITI"
+    },
+    {
+     "id": "53",
+     "name": "SEWAR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "305",
+     "name": "UCHAIN PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11548",
+     "name": "UCHHAIN NAGAR PALIKA"
+    },
+    {
+     "id": "11420",
+     "name": "VEIR NAGAR PALIKA"
+    },
+    {
+     "id": "54",
+     "name": "WEIR PANCHAYAT SAMITI"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "name": "BHILWARA",
+   "samitis": [
+    {
+     "id": "11424",
+     "name": "ASIND NAGAR PALIKA"
+    },
+    {
+     "id": "55",
+     "name": "ASIND PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12015",
+     "name": "BANERA NAGAR PALIKA"
+    },
+    {
+     "id": "56",
+     "name": "BANERA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11425",
+     "name": "BHILWARA NAGAR NIGAM"
+    },
+    {
+     "id": "30007",
+     "name": "BHILWARA ZILLA PARISHAD ZILLA PARISHAD"
+    },
+    {
+     "id": "12014",
+     "name": "BIGOD NAGAR PALIKA"
+    },
+    {
+     "id": "12016",
+     "name": "BIJOLIYA NAGAR PALIKA"
+    },
+    {
+     "id": "263",
+     "name": "BIJOLIYA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11426",
+     "name": "GANGAPUR NAGAR PALIKA"
+    },
+    {
+     "id": "11427",
+     "name": "GULABPURA NAGAR PALIKA"
+    },
+    {
+     "id": "12017",
+     "name": "HAMIRGARH NAGAR PALIKA"
+    },
+    {
+     "id": "57",
+     "name": "HURDA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11428",
+     "name": "JAHAZPUR NAGAR PALIKA"
+    },
+    {
+     "id": "58",
+     "name": "JAHAZPUR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "306",
+     "name": "KAREDA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "370",
+     "name": "KHAJURI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "59",
+     "name": "KOTRI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "60",
+     "name": "MANDAL PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11429",
+     "name": "MANDALGARH NAGAR PALIKA"
+    },
+    {
+     "id": "61",
+     "name": "MANDALGARH PANCHAYAT SAMITI"
+    },
+    {
+     "id": "371",
+     "name": "PHOOLIYA KALAN PANCHAYAT SAMITI"
+    },
+    {
+     "id": "62",
+     "name": "RAIPUR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "63",
+     "name": "SAHARA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11430",
+     "name": "SHAHPURA NAGAR PALIKA"
+    },
+    {
+     "id": "64",
+     "name": "SHAHPURA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "457",
+     "name": "SHAMBHUGARH PANCHAYAT SAMITI"
+    },
+    {
+     "id": "65",
+     "name": "SUWANA PANCHAYAT SAMITI"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "name": "BIKANER",
+   "samitis": [
+    {
+     "id": "307",
+     "name": "BAJJU KHALSA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "458",
+     "name": "BEETHNOK PANCHAYAT SAMITI"
+    },
+    {
+     "id": "10011",
+     "name": "BIKANER NAGAR NIGAM"
+    },
+    {
+     "id": "66",
+     "name": "BIKANER PANCHAYAT SAMITI"
+    },
+    {
+     "id": "30008",
+     "name": "BIKANER ZILLA PARISHAD ZILLA PARISHAD"
+    },
+    {
+     "id": "372",
+     "name": "CHHATARGARH PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11431",
+     "name": "DESHNOK NAGAR PALIKA"
+    },
+    {
+     "id": "373",
+     "name": "HADAN PANCHAYAT SAMITI"
+    },
+    {
+     "id": "374",
+     "name": "JASRASAR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12019",
+     "name": "KHAJUWALA NAGAR PALIKA"
+    },
+    {
+     "id": "68",
+     "name": "KHAJUWALA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "69",
+     "name": "KOLAYAT PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12020",
+     "name": "LUNKARANSAR NAGAR PALIKA"
+    },
+    {
+     "id": "70",
+     "name": "LUNKARANSAR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12018",
+     "name": "NAPASAR NAGAR PALIKA"
+    },
+    {
+     "id": "11432",
+     "name": "NOKHA NAGAR PALIKA"
+    },
+    {
+     "id": "71",
+     "name": "NOKHA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "264",
+     "name": "PANCHOO PANCHAYAT SAMITI"
+    },
+    {
+     "id": "308",
+     "name": "POOGAL PANCHAYAT SAMITI"
+    },
+    {
+     "id": "375",
+     "name": "REEDEE PANCHAYAT SAMITI"
+    },
+    {
+     "id": "376",
+     "name": "ROONIYA HQ BIKANER PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11433",
+     "name": "SHRIDUNGARGARH NAGAR PALIKA"
+    },
+    {
+     "id": "67",
+     "name": "SRI DUNGARGARH PANCHAYAT SAMITI"
+    }
+   ]
+  },
+  {
+   "id": "22",
+   "name": "JODHPUR",
+   "samitis": [
+    {
+     "id": "10054",
+     "name": ""
+    },
+    {
+     "id": "462",
+     "name": "AAGOLAI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "408",
+     "name": "AASOP PANCHAYAT SAMITI"
+    },
+    {
+     "id": "161",
+     "name": "BALESAR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12056",
+     "name": "BALESAR SATTAH NAGAR PALIKA"
+    },
+    {
+     "id": "163",
+     "name": "BAWADI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11554",
+     "name": "BHOPALGARH NAGAR PALIKA"
+    },
+    {
+     "id": "164",
+     "name": "BHOPALGARH PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11498",
+     "name": "BILADA NAGAR PALIKA"
+    },
+    {
+     "id": "165",
+     "name": "BILARA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "463",
+     "name": "CHABA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "328",
+     "name": "CHAMU PANCHAYAT SAMITI"
+    },
+    {
+     "id": "329",
+     "name": "DHAWA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "409",
+     "name": "HATUNDI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "410",
+     "name": "JHANWAR HQ PAL ROAD PANCHAYAT SAMITI"
+    },
+    {
+     "id": "10027",
+     "name": "JODHPUR NAGAR NIGAM"
+    },
+    {
+     "id": "30022",
+     "name": "JODHPUR ZILLA PARISHAD ZILLA PARISHAD"
+    },
+    {
+     "id": "411",
+     "name": "KAPARDA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "331",
+     "name": "KERU PANCHAYAT SAMITI"
+    },
+    {
+     "id": "166",
+     "name": "LUNI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "167",
+     "name": "MANDOR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12058",
+     "name": "MATHANIYA NAGAR PALIKA"
+    },
+    {
+     "id": "168",
+     "name": "OSIAN PANCHAYAT SAMITI"
+    },
+    {
+     "id": "283",
+     "name": "PEEPAD SAHAR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11499",
+     "name": "PIPADCITY NAGAR PALIKA"
+    },
+    {
+     "id": "412",
+     "name": "SALWAKHURD PANCHAYAT SAMITI"
+    },
+    {
+     "id": "413",
+     "name": "SAMRAU PANCHAYAT SAMITI"
+    },
+    {
+     "id": "278",
+     "name": "SEKHALA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "170",
+     "name": "SHERGARH PANCHAYAT SAMITI"
+    },
+    {
+     "id": "280",
+     "name": "TINWARI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12057",
+     "name": "TIWARI NAGAR PALIKA"
+    },
+    {
+     "id": "414",
+     "name": "UMMEDNAGAR PANCHAYAT SAMITI"
+    }
+   ]
+  },
+  {
+   "id": "33",
+   "name": "UDAIPUR",
+   "samitis": [
+    {
+     "id": "238",
+     "name": "BARGAON PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11540",
+     "name": "BHINDER NAGAR PALIKA"
+    },
+    {
+     "id": "239",
+     "name": "BHINDER PANCHAYAT SAMITI"
+    },
+    {
+     "id": "431",
+     "name": "DEVLA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "11541",
+     "name": "FATEHNAGAR SANWAD NAGAR PALIKA"
+    },
+    {
+     "id": "455",
+     "name": "GHASA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "240",
+     "name": "GIRWA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "241",
+     "name": "GOGUNDA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "242",
+     "name": "JHADOL PANCHAYAT SAMITI"
+    },
+    {
+     "id": "432",
+     "name": "KALYANPUR PANCHAYAT SAMITI"
+    },
+    {
+     "id": "10045",
+     "name": "KANOD NAGAR PALIKA"
+    },
+    {
+     "id": "243",
+     "name": "KHERWARA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "244",
+     "name": "KOTRA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "295",
+     "name": "KURABAD PANCHAYAT SAMITI"
+    },
+    {
+     "id": "12083",
+     "name": "MAVLI NAGAR PALIKA"
+    },
+    {
+     "id": "246",
+     "name": "MAVLI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "434",
+     "name": "NAAI PANCHAYAT SAMITI"
+    },
+    {
+     "id": "342",
+     "name": "NAYAGAON PANCHAYAT SAMITI"
+    },
+    {
+     "id": "435",
+     "name": "OGANA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "292",
+     "name": "PHALASIYA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "290",
+     "name": "RISHBHDEO PANCHAYAT SAMITI"
+    },
+    {
+     "id": "291",
+     "name": "SAYRA PANCHAYAT SAMITI"
+    },
+    {
+     "id": "436",
+     "name": "SULAV PANCHAYAT SAMITI"
+    },
+    {
+     "id": "10046",
+     "name": "UDAIPUR NAGAR NIGAM"
+    },
+    {
+     "id": "30033",
+     "name": "UDAIPUR ZILLA PARISHAD ZILLA PARISHAD"
+    },
+    {
+     "id": "12084",
+     "name": "VALLABHNAGAR NAGAR PALIKA"
+    },
+    {
+     "id": "343",
+     "name": "VALLABHNAGAR PANCHAYAT SAMITI"
+    }
+   ]
+  }
+ ]
+}

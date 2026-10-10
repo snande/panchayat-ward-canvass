@@ -440,6 +440,81 @@ select.picker-select,
   font-size: var(--font-size-sm);
 }
 
+/* Ward picker steps (src/ui/wardPickerScreen.js): the seat-type buttons side
+   by side, the chosen one in the checked-choice colours; the panchayat list
+   rows under the name field. Every tap target is at least 48 px. */
+.picker-seat-types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.picker-seat-option {
+  width: 100%;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+}
+
+.picker-seat-option[aria-pressed="true"] {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.picker-panchayat-list {
+  margin-top: var(--space-2);
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.picker-panchayat-list:empty {
+  display: none;
+}
+
+.picker-panchayat-option {
+  min-height: var(--touch-target);
+}
+
+.picker-panchayat-option[aria-pressed="true"] {
+  box-shadow: inset var(--space-1) 0 0 var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+.picker-option-detail {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.picker-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.picker-confirm-actions .btn-danger,
+.picker-confirm-actions .btn-secondary,
+.picker-retry {
+  min-height: var(--touch-target);
+}
+
+.picker-retry {
+  margin-top: var(--space-3);
+}
+
+.picker-contact {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+}
+
+.picker-field[hidden],
+.picker-confirm[hidden],
+.picker-contact[hidden] {
+  display: none;
+}
+
 /* Ward roll: loading line, error card and the virtualised voter list. Row
    height is fixed by src/ui/rollList.js (ROW_HEIGHT); keep the content of a
    row (three single lines) within it. */

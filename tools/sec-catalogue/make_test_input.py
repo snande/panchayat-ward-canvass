@@ -5,7 +5,7 @@ panchayats that already have fixtures under fixtures/sec/.
 
 The raw HTML of the 2026-10-09 walks was not committed, so the pages are
 rebuilt from what was: the dropdown entries (ids, Latin names) come from
-data/sec/catalogue.json, and each Search grid (its columns, its rows'
+fixtures/sec/portal-dropdowns.json, and each Search grid (its columns, its rows'
 Grampanchayat and Ward No. text, which PDF columns link a file) from
 fixtures/sec/manifest.json. The markup follows the portal's form (the field
 names build_catalogue.py posts, hidden __VIEWSTATE / __EVENTVALIDATION, a
@@ -99,7 +99,7 @@ def main():
     out_dir = os.path.join(REPO, "fixtures", "sec", "catalogue-input")
     with open(os.path.join(REPO, "fixtures", "sec", "manifest.json"), encoding="utf-8") as fh:
         manifest = json.load(fh)
-    with open(os.path.join(REPO, "data", "sec", "catalogue.json"), encoding="utf-8") as fh:
+    with open(os.path.join(REPO, "fixtures", "sec", "portal-dropdowns.json"), encoding="utf-8") as fh:
         catalogue = json.load(fh)
     picks = {p["district"]["id"]: p for p in manifest["panchayats"]}
     portal = [d for d in catalogue["districts"] if d["id"] in picks]
@@ -115,7 +115,7 @@ def main():
         "source": SOURCE_PAGE,
         "fetchedAt": manifest["generated_at"],
         "note": "Test input rebuilt by tools/sec-catalogue/make_test_input.py from "
-                "fixtures/sec/manifest.json and data/sec/catalogue.json; see README.md.",
+                "fixtures/sec/manifest.json and fixtures/sec/portal-dropdowns.json; see README.md.",
     }, ensure_ascii=False, indent=1) + "\n")
     write(PAGE_FILE, form_page("page", districts))
     for d in portal:

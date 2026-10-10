@@ -2,5 +2,5 @@
  "schemaVersion": 1,
  "source": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
  "fetchedAt": "2026-10-09T12:20:58+00:00",
- "note": "Test input rebuilt by tools/sec-catalogue/make_test_input.py from fixtures/sec/manifest.json and data/sec/catalogue.json; see README.md."
+ "note": "Test input rebuilt by tools/sec-catalogue/make_test_input.py from fixtures/sec/manifest.json and fixtures/sec/portal-dropdowns.json; see README.md."
 }

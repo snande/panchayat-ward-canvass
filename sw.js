@@ -1,9 +1,17 @@
 "use strict";
 
 // Bump CACHE_VERSION whenever any precached asset changes.
-const CACHE_VERSION = "v28";
+const CACHE_VERSION = "v29";
 const CACHE_PREFIX = "ward-canvass-shell-";
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
+
+// The ward catalogue (data/sec/catalogue/index.json and the district shards)
+// is not precached: the statewide catalogue is far larger than the shell.
+// Each file is cached when the picker first fetches it, in a cache of its
+// own that a shell version bump leaves alone, so a district already opened
+// can be picked again with the network off.
+const CATALOGUE_CACHE = "ward-canvass-catalogue-v1";
+const CATALOGUE_PATH = /\/data\/sec\/catalogue\/[^/]+\.json$/;
 
 // Every shell asset (HTML, manifest, icons, CSS, JS, string table, fonts).
 // The font must be here so Hindi renders with correct conjuncts offline.
@@ -18,7 +26,9 @@ const PRECACHE = [
   "js/app.js",
   "js/picker.js",
   "config/constituency.json",
+  "src/picker/catalogueLoader.js",
   "src/picker/wardPicker.js",
+  "src/picker/lastSelection.js",
   "src/ui/wardPickerScreen.js",
   // The navigation frame and its default screen, the ward roll.
   "src/ui/appFrame.js",
@@ -161,6 +171,36 @@ function precacheAll(cache) {
   });
 }
 
+// Network first, so a republished catalogue reaches the phone; every OK
+// response is kept. Offline, or on a non-OK response (e.g. a captive portal),
+// the kept copy answers, else a plain 503.
+function catalogueResponse(request) {
+  function cached(fallback) {
+    return caches.match(request, { cacheName: CATALOGUE_CACHE }).then(function (hit) {
+      return hit || fallback || new Response("", { status: 503, statusText: "Offline" });
+    });
+  }
+  return fetch(request)
+    .then(function (response) {
+      if (!response.ok) {
+        return cached(response);
+      }
+      const copy = response.clone();
+      return caches
+        .open(CATALOGUE_CACHE)
+        .then(function (cache) {
+          return cache.put(request, copy);
+        })
+        .catch(function () {})
+        .then(function () {
+          return response;
+        });
+    })
+    .catch(function () {
+      return cached(null);
+    });
+}
+
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches
@@ -205,6 +245,11 @@ self.addEventListener("fetch", function (event) {
   // The sync API is network-only: a cached pull would hand back stale
   // records and a stale cursor.
   if (url.pathname.indexOf("/sync/") === 0) {
+    return;
+  }
+
+  if (CATALOGUE_PATH.test(url.pathname)) {
+    event.respondWith(catalogueResponse(request));
     return;
   }
 

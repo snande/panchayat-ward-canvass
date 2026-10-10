@@ -1,6 +1,11 @@
 import { mountWardPicker } from '../src/ui/wardPickerScreen.js';
 import { createRollFlow } from '../src/roll/rollFlow.js';
-import { selectionForWardKey } from '../src/picker/wardPicker.js';
+import { wardKeyFor } from '../src/roll/rollStore.js';
+import { createCatalogueLoader } from '../src/picker/catalogueLoader.js';
+import {
+  districtOfWardKey, rollSelectionFor, wardForWardKey, SEAT_WARD_PANCH,
+} from '../src/picker/wardPicker.js';
+import { loadLastSelection, saveLastSelection } from '../src/picker/lastSelection.js';
 import { createWardRollScreen } from '../src/ui/wardRollScreen.js';
 import { mountAppFrame } from '../src/ui/appFrame.js';
 import { createVoterSearchScreen } from '../src/ui/voterSearchScreen.js';
@@ -8,7 +13,7 @@ import { voterRouteHash } from '../src/ui/voterRoute.js';
 import { loadAssignments } from '../src/calls/assignmentStore.js';
 import { getAuth, getDeviceId, joinTeam } from '../src/sync/teamAuth.js';
 import { mountTeamJoin } from '../src/ui/teamJoinScreen.js';
-import { renderSeatHeader, saveSeat, seatFromWardKey } from '../src/ui/seatHeader.js';
+import { renderSeatHeader, saveSeat } from '../src/ui/seatHeader.js';
 import { startSync } from '../src/sync/syncEngine.js';
 import { createContactSync } from '../src/contacts/contactSync.js';
 import * as marks from '../src/tally/seenVotingStore.js';
@@ -19,7 +24,7 @@ import {
 // Copies of src/strings.hi.json entries, used if the table itself failed to
 // load. repo-ci fails if they drift.
 var FALLBACK_STRINGS = {
-  picker_load_failed: "वार्ड सूची लोड नहीं हो सकी। कृपया पेज फिर से खोलें।",
+  picker_load_failed: "वार्ड सूची लोड नहीं हो सकी। इंटरनेट चालू होने पर फिर से कोशिश करें, या टीम के सहायता नंबर पर कॉल करें।",
   roll_loading: "मतदाता सूची डाउनलोड हो रही है…",
   roll_fetch_failed: "मतदाता सूची डाउनलोड नहीं हो सकी। इंटरनेट जाँचें और फिर से कोशिश करें।",
   roll_failed: "मतदाता सूची खोली नहीं जा सकी। फिर से कोशिश करें।",
@@ -87,22 +92,56 @@ function showFailure(strings) {
   container.replaceChildren(p);
 }
 
+// The ward catalogue (src/picker/catalogueLoader.js): the index on first
+// open, a district's shard only once that district is chosen (or a restored
+// roll needs its name).
+var loader = createCatalogueLoader();
+
 // The seat header above every screen names the ward whose roll is on screen,
 // and keeps it (panchayat name, ward, seat type only) for the next cold start.
 // It follows the shown roll, not the pick: a pick whose download fails leaves
-// the previous seat (and its roll) in place. A roll restored before the ward
-// catalogue has loaded is named once the catalogue is there.
-var catalogue = null;
+// the previous seat (and its roll) in place. A roll restored at startup is
+// named once its district's shard is there.
 var seatStrings = null;
 var shownWardKey = null;
+var pickedSeats = new Map();
+
+// The catalogue entry of a roll's ward key, if its district's shard is loaded.
+function catalogueWard(wardKey) {
+  var district = districtOfWardKey(wardKey);
+  return district ? wardForWardKey(loader.cachedShard(district), wardKey) : null;
+}
+
+function seatFor(wardKey) {
+  if (pickedSeats.has(wardKey)) {
+    return pickedSeats.get(wardKey);
+  }
+  var hit = catalogueWard(wardKey);
+  return hit ? hit.seat : null;
+}
 
 function showSeat() {
-  var seat = catalogue && seatFromWardKey(catalogue, shownWardKey);
-  if (!seat) {
+  var wardKey = shownWardKey;
+  var seat = seatFor(wardKey);
+  if (seat) {
+    saveSeat(seat);
+    renderSeatHeader(seatHeader, seat, seatStrings || {});
     return;
   }
-  saveSeat(seat);
-  renderSeatHeader(seatHeader, seat, seatStrings || {});
+  var district = districtOfWardKey(wardKey);
+  if (!district) {
+    return;
+  }
+  loader
+    .loadShard(district)
+    .then(function () {
+      if (shownWardKey === wardKey && seatFor(wardKey)) {
+        showSeat();
+      }
+    })
+    .catch(function (err) {
+      console.error('the shown roll\'s seat could not be named', err);
+    });
 }
 
 // The search screen (src/ui/voterSearchScreen.js) covers every roll shown
@@ -193,7 +232,8 @@ function startRoll(strings) {
     // A restored roll whose supplementary roll failed retries it with the
     // ward's selection from the catalogue.
     selectionFor: function (wardKey) {
-      return catalogue ? selectionForWardKey(catalogue, wardKey) : null;
+      var hit = catalogueWard(wardKey);
+      return hit ? hit.rollSelection : null;
     },
     // marks: tapping a voter offers "seen voting", and the turnout button
     // shows the ward's de-duplicated count beside the official turnout.
@@ -212,14 +252,14 @@ function startRoll(strings) {
 }
 
 // Brings the ward-roll screen into view: the roll (or its loading line or
-// error) once there is one, otherwise the ward picker's first dropdown.
+// error) once there is one, otherwise the ward picker's first step.
 function showRollScreen() {
   var target = rollScreen && rollScreen.state !== 'empty' ? rollContainer : container;
   if (target && typeof target.scrollIntoView === 'function') {
     target.scrollIntoView();
   }
   if (!rollScreen || rollScreen.state === 'empty') {
-    var first = document.getElementById('picker-district');
+    var first = document.getElementById('picker-seat-type');
     if (first && typeof first.focus === 'function') {
       first.focus();
     }
@@ -280,50 +320,92 @@ function startTeamJoin(strings) {
     });
 }
 
+// A ward panch's pick downloads that ward's roll. A sarpanch's pick (every
+// ward of the panchayat) is stored and handed on as window.wardSelection();
+// loading several wards is the roll decoder's work, not wired here.
+function onPick(selection, detail) {
+  saveLastSelection(selection);
+  if (selection.seatType !== SEAT_WARD_PANCH) {
+    return;
+  }
+  var ward = selection.wards[0];
+  var rollSelection = rollSelectionFor(selection, ward, detail && detail.panchayat);
+  pickedSeats.set(wardKeyFor(rollSelection), {
+    seatType: 'ward', panchayat: selection.panchayat.name, ward: String(ward.ward),
+  });
+  if (roll) {
+    roll.open(rollSelection);
+  }
+}
+
+var picker = null;
+var roll = null;
+
+function startPicker(strings) {
+  picker = mountWardPicker(container, loader, strings, {
+    onSelect: onPick,
+    // Replacing the seat of a roll on screen asks first.
+    hasLoadedRoll: function () {
+      return Boolean(rollScreen && rollScreen.state === 'filled');
+    },
+  });
+  window.wardSelection = picker.wardSelection;
+  // The last pick reopens the picker; a stored pick of a version this app
+  // does not know is discarded and the picker starts at its first step.
+  var stored = loadLastSelection();
+  if (stored.error) {
+    console.error('stored ward selection discarded:', stored.error, stored.version);
+  } else if (stored.selection) {
+    picker.restore(stored.selection);
+  }
+  // The empty card's button points at the picker, so it shows only once
+  // the picker is there: one state at a time (DESIGN.md).
+  var action = document.getElementById('primary-action');
+  if (action) {
+    action.hidden = false;
+  }
+}
+
+// Whom to call when a roll or the ward list will not open: the
+// constituency's support contact if config/constituency.json names one, else
+// the neutral coordinator line.
+function loadSupport() {
+  loadJson('config/constituency.json')
+    .then(function (config) {
+      var support = config && config.supportContact;
+      if (rollScreen) {
+        rollScreen.setSupport(support);
+      }
+      if (searchScreen) {
+        searchScreen.setSupport(support);
+      }
+      if (picker) {
+        picker.setSupport(support);
+      }
+    })
+    .catch(function (err) {
+      console.error('constituency config failed to load', err);
+    });
+}
+
 if (container) {
   var table = null;
-  var roll = null;
   loadJson('src/strings.hi.json')
     .catch(function (err) {
-      startSearch(null);
-      roll = startRoll(null);
-      startFrame(null);
-      throw err;
+      console.error('string table failed to load', err);
+      return null;
     })
     .then(function (strings) {
       table = strings;
+      seatStrings = strings;
       startSearch(strings);
       roll = startRoll(strings);
       startFrame(strings);
-      startTeamJoin(strings);
-      return loadJson('config/constituency.json');
-    })
-    .then(function (config) {
-      catalogue = config;
-      seatStrings = table;
-      // Whom to call when a roll will not open: the constituency's support
-      // contact if the catalogue names one, else the neutral coordinator line.
-      if (rollScreen) {
-        rollScreen.setSupport(config && config.supportContact);
+      if (strings) {
+        startTeamJoin(strings);
       }
-      if (searchScreen) {
-        searchScreen.setSupport(config && config.supportContact);
-      }
-      showSeat();
-      var picker = mountWardPicker(container, config, table, {
-        onSelect: function (selection) {
-          if (roll) {
-            roll.open(selection);
-          }
-        },
-      });
-      window.wardSelection = picker.wardSelection;
-      // The empty card's button points at the picker, so it shows only once
-      // the picker is there: one state at a time (DESIGN.md).
-      var action = document.getElementById('primary-action');
-      if (action) {
-        action.hidden = false;
-      }
+      startPicker(strings);
+      loadSupport();
     })
     .catch(function (err) {
       console.error('ward picker failed to load', err);

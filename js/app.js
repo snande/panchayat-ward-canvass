@@ -137,10 +137,10 @@ if (voterRoute) {
 var primaryAction = document.getElementById("primary-action");
 if (primaryAction) {
   // The roll is loaded by picking a ward below (js/picker.js); the button
-  // points there and moves focus to the first dropdown.
+  // points there and moves focus to its first step, the seat type.
   primaryAction.addEventListener("click", function () {
     setStatus("action_pending");
-    var first = document.getElementById("picker-district");
+    var first = document.getElementById("picker-seat-type");
     if (first && typeof first.focus === "function") {
       first.focus();
     }
