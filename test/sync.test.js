@@ -1,15 +1,17 @@
 // Candidate-partitioned sync endpoints (issue #47), run by `npm test`. The
 // SYNC_DB binding is test/helpers/memoryD1.js, an in-memory SQLite database
-// with the D1 API and the migrations/0001_sync.sql schema; nothing here
-// leaves the machine.
+// with the D1 API and the sync migrations applied; nothing here leaves the
+// machine.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { onRequest, signSyncToken, verifySyncToken, MAX_PULL_RECORDS } from '../functions/sync.js';
+import {
+  onRequest, signSyncToken, verifySyncToken, MAX_PULL_RECORDS, JOIN_MAX_FAILURES, JOIN_LOCKOUT_MS,
+} from '../functions/sync.js';
 import { onRequest as catchAllOnRequest } from '../functions/sync/[[path]].js';
-import { createMemoryD1 } from './helpers/memoryD1.js';
+import { createSyncDb } from './helpers/syncDb.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const SECRET = 'test-sync-secret';
@@ -39,13 +41,13 @@ const record = (id, plain = `{"phone":"${PHONE}"}`) => ({
   iv: 'AAECAwQFBgcICQoL',
 });
 
-const memoryD1 = () => createMemoryD1({ migrations: ['migrations/0001_sync.sql'] });
-const setup = async () => ({ SYNC_SECRET: SECRET, SYNC_DB: await memoryD1() });
+const setup = async () => ({ SYNC_SECRET: SECRET, SYNC_DB: await createSyncDb() });
 
 // Reads the stored tables directly.
 const rows = (env, sql, ...params) => env.SYNC_DB.sqlite.query(sql, params);
 const rowCount = (env) =>
-  ['records', 'counters', 'marks', 'verifiers'].reduce((n, table) => n + rows(env, `SELECT count(*) AS n FROM ${table}`)[0].n, 0);
+  ['records', 'counters', 'marks', 'verifiers', 'join_failures', 'revoked_devices']
+    .reduce((n, table) => n + rows(env, `SELECT count(*) AS n FROM ${table}`)[0].n, 0);
 const counter = (env, candidateId) => rows(env, 'SELECT seq FROM counters WHERE candidate_id = ?', candidateId)[0]?.seq;
 const storedVerifier = (env, candidateId) =>
   rows(env, 'SELECT verifier FROM verifiers WHERE candidate_id = ?', candidateId)[0]?.verifier;
@@ -371,8 +373,62 @@ test('two first joins racing with different verifiers found the team once', asyn
     join(env, { candidateId: 'candA', verifier: verifierOf(1) }),
     join(env, { candidateId: 'candA', verifier: verifierOf(2) }),
   ]);
-  const statuses = responses.map((res) => res.status).sort();
-  assert.deepEqual(statuses, [200, 401]);
+  assert.deepEqual(responses.map((res) => res.status).sort(), [200, 401]);
   const winner = responses[0].status === 200 ? 1 : 2;
   assert.equal(storedVerifier(env, 'candA'), verifierOf(winner));
+});
+
+test('too many wrong verifiers lock that candidate\'s joins for a while, not its sync or other teams', async () => {
+  const env = await setup();
+  const founder = await (await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).json();
+  await join(env, { candidateId: 'candB', verifier: verifierOf(2) });
+
+  for (let i = 1; i < JOIN_MAX_FAILURES; i += 1) {
+    assert.equal((await join(env, { candidateId: 'candA', verifier: verifierOf(3) })).status, 401);
+  }
+  // The right verifier still gets in before the limit, and clears the count.
+  assert.equal((await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).status, 200);
+  assert.equal(rows(env, 'SELECT count(*) AS n FROM join_failures')[0].n, 0);
+
+  for (let i = 0; i < JOIN_MAX_FAILURES; i += 1) {
+    assert.equal((await join(env, { candidateId: 'candA', verifier: verifierOf(3) })).status, 401);
+  }
+  const before = Date.now();
+  const locked = await join(env, { candidateId: 'candA', verifier: verifierOf(1) });
+  assert.equal(locked.status, 429);
+  assert.equal(await locked.text(), '');
+  const retryAfter = Number(locked.headers.get('Retry-After'));
+  assert.ok(retryAfter > 0 && retryAfter <= JOIN_LOCKOUT_MS / 1000, String(retryAfter));
+  const [{ locked_until: until }] = rows(env, 'SELECT locked_until FROM join_failures WHERE candidate_id = ?', 'candA');
+  assert.ok(until >= before + JOIN_LOCKOUT_MS - 1000 && until <= Date.now() + JOIN_LOCKOUT_MS, String(until));
+  assert.equal(storedVerifier(env, 'candA'), verifierOf(1));
+
+  // A joined device keeps syncing, and another team still joins.
+  assert.equal((await pushRecords(env, founder.token, [record('r1')])).status, 200);
+  assert.equal((await pullSince(env, founder.token, 0)).status, 200);
+  assert.equal((await join(env, { candidateId: 'candB', verifier: verifierOf(2) })).status, 200);
+
+  // Once the lock has passed, the right verifier joins again.
+  env.SYNC_DB.sqlite.query('UPDATE join_failures SET locked_until = ? WHERE candidate_id = ?', [Date.now() - 1, 'candA']);
+  assert.equal((await join(env, { candidateId: 'candA', verifier: verifierOf(1) })).status, 200);
+  assert.equal(rows(env, 'SELECT count(*) AS n FROM join_failures')[0].n, 0);
+});
+
+test('a revoked device gets a bare 401 on push and pull; its teammates do not', async () => {
+  const env = await setup();
+  const lost = await signSyncToken(SECRET, 'candA', 'lost');
+  const kept = await signSyncToken(SECRET, 'candA', 'kept');
+  // Same device id under another team is a different device.
+  const other = await signSyncToken(SECRET, 'candB', 'lost');
+  assert.equal((await pushRecords(env, lost, [record('r1')])).status, 200);
+
+  rows(env, "INSERT INTO revoked_devices (candidate_id, device_id) VALUES ('candA', 'lost')");
+  for (const res of [await pushRecords(env, lost, [record('r2')]), await pullSince(env, lost, 0)]) {
+    assert.equal(res.status, 401);
+    assert.equal(res.headers.get('WWW-Authenticate'), 'Bearer');
+    assert.equal(await res.text(), '');
+  }
+  assert.equal(counter(env, 'candA'), 1);
+  assert.deepEqual((await (await pullSince(env, kept, 0)).json()).records.map((r) => r.id), ['r1']);
+  assert.equal((await pushRecords(env, other, [record('b1')])).status, 200);
 });

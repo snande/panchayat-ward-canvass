@@ -14,14 +14,14 @@ import { createTeamAuth } from '../src/sync/teamAuth.js';
 import { onRequest } from '../functions/sync.js';
 import { CONTACTS_STORE, DB_NAME, OUTBOX_STORE } from '../src/storage/deviceDb.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
-import { createMemoryD1 } from './helpers/memoryD1.js';
+import { createSyncDb } from './helpers/syncDb.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const WARD = '17/125/6313/1';
 const PHONE = '9876543210';
 
 async function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncDb() };
   return { env, handle: (url, init = {}) => onRequest({ request: new Request(new URL(url, ORIGIN), init), env }) };
 }
 

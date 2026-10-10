@@ -15,20 +15,13 @@ import { onRequest } from '../functions/sync.js';
 import { DB_NAME, KEYS_STORE, MARKS_STORE, OUTBOX_STORE } from '../src/storage/deviceDb.js';
 import { DEVICE_KEY_ID } from '../src/crypto/deviceKey.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
-import { createMemoryD1 } from './helpers/memoryD1.js';
+import { createSyncDb, storedRecords } from './helpers/syncDb.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const WARD = '17/125/6313/1';
 
-// The team's stored records, as pull would return them plus seq and deviceId.
-function storedRecords(db, candidateId) {
-  return db.sqlite.query(
-    'SELECT seq, id, updated_at, ciphertext, iv, device_id FROM records WHERE candidate_id = ? ORDER BY seq', [candidateId],
-  ).map(({ seq, id, updated_at: updatedAt, ciphertext, iv, device_id: deviceId }) => ({ id, updatedAt, ciphertext, iv, seq, deviceId }));
-}
-
 async function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncDb() };
   const handle = (url, init = {}) => onRequest({ request: new Request(new URL(url, ORIGIN), init), env });
   // The team's stored mark records (not the marks table), for one candidate.
   const markEntries = (candidateId) => storedRecords(env.SYNC_DB, candidateId).filter((r) => r.id.startsWith('mark:'));

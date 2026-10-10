@@ -15,7 +15,7 @@ import * as teamAuthModule from '../src/sync/teamAuth.js';
 import { onRequest } from '../functions/sync.js';
 import { DB_NAME, KEYS_STORE, META_STORE } from '../src/storage/deviceDb.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
-import { createMemoryD1 } from './helpers/memoryD1.js';
+import { createSyncDb } from './helpers/syncDb.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const PASS_A = 'हमारी टीम 2026';
@@ -23,7 +23,7 @@ const PASS_B = 'दूसरी टीम';
 const encoder = new TextEncoder();
 
 async function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncDb() };
   const requests = [];
   const fetch = async (url, init = {}) => {
     requests.push({ url: String(url), init });

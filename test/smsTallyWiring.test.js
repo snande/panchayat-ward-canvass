@@ -25,7 +25,7 @@ import { createTeamSmsNumber } from '../src/team/teamSmsNumber.js';
 import { mountRollWithSearch } from '../src/ui/rollSearch.js';
 import { FALLBACK_TEXT, mountSmsTally } from '../src/ui/smsTallyView.js';
 import { FALLBACK_TEXT as ENTRY_FALLBACK } from '../src/ui/smsEntryScreen.js';
-import { createMemoryD1 } from './helpers/memoryD1.js';
+import { createSyncDb, storedRecords } from './helpers/syncDb.js';
 
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
 const strings = JSON.parse(read('src/strings.hi.json'));
@@ -43,15 +43,8 @@ async function waitFor(cond, ms = 8000) {
   }
 }
 
-// The team's stored records, as pull would return them plus seq and deviceId.
-function storedRecords(db, candidateId) {
-  return db.sqlite.query(
-    'SELECT seq, id, updated_at, ciphertext, iv, device_id FROM records WHERE candidate_id = ? ORDER BY seq', [candidateId],
-  ).map(({ seq, id, updated_at: updatedAt, ciphertext, iv, device_id: deviceId }) => ({ id, updatedAt, ciphertext, iv, seq, deviceId }));
-}
-
 async function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncDb() };
   const handle = (url, init = {}) => syncOnRequest({ request: new Request(new URL(url, ORIGIN), init), env });
   const markEntries = (candidateId) => storedRecords(env.SYNC_DB, candidateId).filter((r) => r.id.startsWith('mark:'));
   return { handle, markEntries, db: env.SYNC_DB };

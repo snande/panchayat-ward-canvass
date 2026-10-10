@@ -17,7 +17,7 @@ import { createTeamAuth } from '../src/sync/teamAuth.js';
 import { onRequest, signSyncToken } from '../functions/sync.js';
 import { DB_NAME, META_STORE, OUTBOX_STORE, SYNCED_STORE } from '../src/storage/deviceDb.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
-import { createMemoryD1 } from './helpers/memoryD1.js';
+import { createSyncDb } from './helpers/syncDb.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const SECRET = 'test-sync-secret';
@@ -25,7 +25,7 @@ const PHONE = '9876543210';
 const encoder = new TextEncoder();
 
 async function server() {
-  const env = { SYNC_SECRET: SECRET, SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
+  const env = { SYNC_SECRET: SECRET, SYNC_DB: await createSyncDb() };
   const fetch = async (url, init = {}) => onRequest({ request: new Request(new URL(url, ORIGIN), init), env });
   return { env, fetch };
 }

@@ -97,9 +97,10 @@ over `<candidateId>:<deviceId>`, keyed with the `SYNC_SECRET` secret.
 `signSyncToken` in the same file mints one. A missing or invalid token gets a
 bare 401. The candidate comes only from the verified token, never from the
 request. Records are stored in the `records` table of the D1 database bound
-as `SYNC_DB` (schema in `migrations/0001_sync.sql`), keyed by candidate and
-sequence number, with each candidate's counter in `counters`. The server
-stores `ciphertext` as given and never decrypts it.
+as `SYNC_DB` (schema in `migrations/0001_sync.sql` and
+`migrations/0002_sync_guards.sql`), keyed by candidate and sequence number,
+with each candidate's counter in `counters`. The server stores `ciphertext`
+as given and never decrypts it.
 
 A push claims its sequence numbers and writes its records in one D1 batch,
 which runs as a single transaction. Pushes that overlap get separate,
@@ -107,6 +108,13 @@ unbroken runs of sequence numbers, so a pull never meets a gap and its cursor
 cannot skip a record. A seen-voting mark is stored once per team: the
 `marks` table takes each mark id with `INSERT OR IGNORE`, and a push of a
 mark the team already has is acknowledged without a new record.
+
+After ten wrong passphrases for one candidate, that candidate's joins answer
+429 for fifteen minutes, which limits online guessing. Devices that have
+already joined keep syncing during the lock. A token does not expire. To
+withdraw one lost device without signing out every team, add its candidate
+and device id to the `revoked_devices` table; its pushes and pulls then get a
+401.
 
 Without `SYNC_SECRET` or `SYNC_DB` the endpoints return 503; both are listed
 in [`docs/operator-setup.md`](docs/operator-setup.md). The endpoints running

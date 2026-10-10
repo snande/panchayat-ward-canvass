@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createDocument } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
-import { createMemoryD1 } from './helpers/memoryD1.js';
+import { createSyncDb } from './helpers/syncDb.js';
 import { onRequest as syncOnRequest } from '../functions/sync.js';
 
 const root = (rel) => new URL('../' + rel, import.meta.url);
@@ -156,7 +156,7 @@ test('picking a ward opens its roll and hides the empty state; a reload restores
 
 test('with no team credentials the join screen shows; after joining a reload skips it', async () => {
   const idb = createFakeIndexedDB();
-  const db = await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] });
+  const db = await createSyncDb();
   const syncEnv = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: db };
   const first = boot(idb, [], { syncEnv });
   try {

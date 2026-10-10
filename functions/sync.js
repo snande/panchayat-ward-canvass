@@ -18,12 +18,19 @@
 // member; every later join must present the stored verifier or gets a bare
 // 401. Two first joins racing for a new candidate cannot both win: the
 // second insert is ignored and that join is checked against the first.
+// After JOIN_MAX_FAILURES wrong verifiers for one candidate, its joins answer
+// 429 for JOIN_LOCKOUT_MS, which bounds online guessing of the passphrase.
+// The lock only stops joins, so a guesser can delay a new teammate's join but
+// never a joined device's sync.
 //
 // Isolation between candidates is enforced here, from the verified token
 // only: every row carries the candidate_id taken from the token and every
 // query filters on it, and nothing in the request body or query can name a
 // candidate. Payloads are opaque: the server stores `ciphertext` and `iv` as
-// given and never decodes them.
+// given and never decodes them. A token has no expiry (the client cannot
+// rejoin on its own), so a lost device is withdrawn by listing it in
+// revoked_devices, after which its push and pull get the same 401 as a bad
+// token.
 //
 // Seen-voting marks (src/tally/seenVotingStore.js) are records whose id is
 // `mark:<wardId>:<serial>`. Marks are a grow-only set keyed on the voter, so
@@ -33,13 +40,13 @@
 // dropped response) is acknowledged without being stored again.
 //
 // Storage is the D1 binding env.SYNC_DB with the tables in
-// migrations/0001_sync.sql; tests back it with test/helpers/memoryD1.js.
-// A push runs as one batch, which D1 executes as a single transaction, so
-// the seqs it claims and the records it writes commit together: concurrent
-// pushes for a candidate get disjoint seq ranges and pull never meets a hole.
-// The statement count per push is fixed (records travel as one JSON
-// parameter) to stay inside D1's per-invocation query and bound-parameter
-// limits.
+// migrations/0001_sync.sql and migrations/0002_sync_guards.sql; tests back it
+// with test/helpers/memoryD1.js. A push runs as one batch, which D1 executes
+// as a single transaction, so the seqs it claims and the records it writes
+// commit together: concurrent pushes for a candidate get disjoint seq ranges
+// and pull never meets a hole. The statement count per push is fixed
+// (records travel as one JSON parameter) to stay inside D1's per-invocation
+// query and bound-parameter limits.
 //
 // Pages file routing maps this file to /sync only; functions/sync/[[path]].js
 // re-exports onRequest so /sync/push and /sync/pull reach it, and
@@ -48,6 +55,10 @@
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 export const MAX_PUSH_RECORDS = 500;
 export const MAX_PULL_RECORDS = 1000;
+// Wrong verifiers one candidate's joins may see before they are locked, and
+// for how long (see join).
+export const JOIN_MAX_FAILURES = 10;
+export const JOIN_LOCKOUT_MS = 15 * 60 * 1000;
 
 const encoder = new TextEncoder();
 
@@ -131,6 +142,14 @@ function sameBytes(a, b) {
   return diff === 0;
 }
 
+// Counts one wrong verifier for candidate ?1. The ?2-th failure locks joins
+// until ?3 and restarts the count, so each lockout admits ?2 more guesses.
+const COUNT_JOIN_FAILURE = `
+  INSERT INTO join_failures (candidate_id, failures, locked_until) VALUES (?1, 1, 0)
+  ON CONFLICT (candidate_id) DO UPDATE SET
+    failures = CASE WHEN failures + 1 >= ?2 THEN 0 ELSE failures + 1 END,
+    locked_until = CASE WHEN failures + 1 >= ?2 THEN ?3 ELSE locked_until END`;
+
 async function join(request, db, secret) {
   let body;
   try {
@@ -144,14 +163,25 @@ async function join(request, db, secret) {
     return json(400, { error: `candidateId must match ${ID_PATTERN} and verifier must be ${VERIFIER_BYTES} base64url bytes` });
   }
   // With no team yet for this candidate the insert founds it; otherwise it
-  // is ignored and the stored verifier is what this join must match.
-  const [, read] = await db.batch([
+  // is ignored and the stored verifier is what this join must match. A
+  // locked candidate always has a verifier, so the insert never founds one.
+  const now = Date.now();
+  const [guard, , read] = await db.batch([
+    db.prepare('SELECT locked_until FROM join_failures WHERE candidate_id = ?').bind(candidateId),
     db.prepare('INSERT OR IGNORE INTO verifiers (candidate_id, verifier) VALUES (?, ?)').bind(candidateId, base64urlEncode(verifier)),
     db.prepare('SELECT verifier FROM verifiers WHERE candidate_id = ?').bind(candidateId),
   ]);
+  const failures = guard.results[0];
+  if (failures && failures.locked_until > now) {
+    return bare(429, { 'Retry-After': String(Math.ceil((failures.locked_until - now) / 1000)) });
+  }
   const stored = read.results[0] && read.results[0].verifier;
   const expected = typeof stored === 'string' ? base64urlDecode(stored) : null;
-  if (!expected || !sameBytes(expected, verifier)) return bare(401);
+  if (!expected || !sameBytes(expected, verifier)) {
+    await db.prepare(COUNT_JOIN_FAILURE).bind(candidateId, JOIN_MAX_FAILURES, now + JOIN_LOCKOUT_MS).run();
+    return bare(401);
+  }
+  if (failures) await db.prepare('DELETE FROM join_failures WHERE candidate_id = ?').bind(candidateId).run();
   const deviceId = base64urlEncode(crypto.getRandomValues(new Uint8Array(DEVICE_ID_BYTES)));
   const token = await signSyncToken(secret, candidateId, deviceId);
   return json(200, { token, candidateId, deviceId });
@@ -239,10 +269,11 @@ async function pull(url, db, { candidateId }) {
     if (!Number.isSafeInteger(since)) return json(400, { error: 'since must be a non-negative integer' });
   }
 
-  // One row past the cap says whether there is more to come.
+  // One row past the cap (MAX_PULL_RECORDS + 1) says whether there is more
+  // to come.
   const { results } = await db
-    .prepare('SELECT seq, id, updated_at, ciphertext, iv FROM records WHERE candidate_id = ? AND seq > ? ORDER BY seq LIMIT ?')
-    .bind(candidateId, since, MAX_PULL_RECORDS + 1)
+    .prepare('SELECT seq, id, updated_at, ciphertext, iv FROM records WHERE candidate_id = ? AND seq > ? ORDER BY seq LIMIT 1001')
+    .bind(candidateId, since)
     .all();
   const more = results.length > MAX_PULL_RECORDS;
   const rows = more ? results.slice(0, MAX_PULL_RECORDS) : results;
@@ -265,7 +296,11 @@ export async function onRequest({ request, env }) {
   const header = request.headers.get('Authorization') || '';
   const match = /^Bearer ([^\s]+)$/.exec(header);
   const auth = match ? await verifySyncToken(secret, match[1]) : null;
-  if (!auth) return bare(401, { 'WWW-Authenticate': 'Bearer' });
+  const revoked = auth && await db
+    .prepare('SELECT 1 AS revoked FROM revoked_devices WHERE candidate_id = ? AND device_id = ?')
+    .bind(auth.candidateId, auth.deviceId)
+    .first('revoked');
+  if (!auth || revoked) return bare(401, { 'WWW-Authenticate': 'Bearer' });
 
   if (url.pathname === '/sync/push') {
     if (request.method !== 'POST') return bare(405, { Allow: 'POST' });
