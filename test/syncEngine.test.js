@@ -313,7 +313,7 @@ test('with no team credentials the engine sends no request', async () => {
   dev.engine.stop();
 });
 
-test('syncNow runs at start, on online, when the page becomes visible and every 30 s while online', async () => {
+test('syncNow runs at start, on online, when the page becomes visible and every 60 s while online and visible', async () => {
   const srv = await server();
   const dev = device(srv, null);
   dev.engine.start();
@@ -324,7 +324,7 @@ test('syncNow runs at start, on online, when the page becomes visible and every 
   assert.equal(dev.authCalls, 1, 'start twice is one engine');
   assert.equal(dev.intervals.length, 1);
   assert.equal(dev.intervals[0].ms, SYNC_INTERVAL_MS);
-  assert.equal(SYNC_INTERVAL_MS, 30000);
+  assert.equal(SYNC_INTERVAL_MS, 60000);
 
   dev.win.dispatchEvent(new Event('online'));
   await settle();
@@ -346,6 +346,15 @@ test('syncNow runs at start, on online, when the page becomes visible and every 
   dev.tick();
   await settle();
   assert.equal(dev.authCalls, 4, 'interval skipped while offline');
+  dev.nav.onLine = true;
+  dev.doc.visibilityState = 'hidden';
+  dev.tick();
+  await settle();
+  assert.equal(dev.authCalls, 4, 'interval skipped while hidden');
+  dev.doc.visibilityState = 'visible';
+  dev.tick();
+  await settle();
+  assert.equal(dev.authCalls, 5, 'interval again once visible');
 
   dev.engine.stop();
   assert.equal(dev.intervals[0].cleared, true);
@@ -353,7 +362,50 @@ test('syncNow runs at start, on online, when the page becomes visible and every 
   dev.win.dispatchEvent(new Event('online'));
   dev.doc.dispatchEvent(new Event('visibilitychange'));
   await settle();
-  assert.equal(dev.authCalls, 4, 'nothing after stop');
+  assert.equal(dev.authCalls, 5, 'nothing after stop');
+});
+
+test('an interval tick pulls once while visible and not at all while hidden', async () => {
+  const srv = await server();
+  const dev = device(srv, await teamAuth());
+  dev.engine.start();
+  await waitFor(() => pulls(dev).length === 1, 'startup pull');
+  await settle();
+
+  // Set visibilityState without the event: only the tick may sync here.
+  dev.doc.visibilityState = 'hidden';
+  dev.tick();
+  await settle();
+  assert.equal(pulls(dev).length, 1, 'no pull on a hidden tick');
+
+  dev.doc.visibilityState = 'visible';
+  for (let i = 2; i <= 3; i += 1) {
+    dev.tick();
+    await waitFor(() => pulls(dev).length === i, `pull on visible tick ${i - 1}`);
+    await settle();
+    assert.equal(pulls(dev).length, i, 'exactly one pull per visible tick');
+  }
+  dev.engine.stop();
+});
+
+test('a completed push is followed at once by a pull, without an interval tick', async () => {
+  const srv = await server();
+  const dev = device(srv, await teamAuth());
+  dev.engine.start();
+  await waitFor(() => pulls(dev).length === 1, 'startup pull');
+  await settle();
+  const before = dev.requests.length;
+
+  await dev.engine.enqueue({ id: 'c:1', updatedAt: 1000, data: { phone: PHONE } });
+  const result = await dev.engine.syncNow();
+  assert.equal(result.status, 'ok');
+  assert.equal(result.pushed, 1);
+  assert.equal(dev.state.pushedOk, 1);
+  const urls = dev.requests.slice(before).map((r) => r.url);
+  assert.equal(urls.length, 2);
+  assert.equal(urls[0], PUSH_URL);
+  assert.ok(urls[1].startsWith(`${PULL_URL}?`), urls[1]);
+  dev.engine.stop();
 });
 
 test('pulled records merge by id keeping the higher updatedAt; pulling twice gives one record', async () => {
@@ -511,7 +563,7 @@ test('L3: a record enqueued offline on device 1 reaches device 2 after reconnect
   await waitFor(() => stored(dev1.idb, OUTBOX_STORE).size === 0, 'device 1 push after online');
   assert.equal(dev1.state.pushedOk, 1);
 
-  // Device 2's next 30 s tick alone pulls it.
+  // Device 2's next 60 s tick alone pulls it.
   assert.deepEqual(dev2.received, []);
   const pullsBefore = dev2.state.pullsOk;
   dev2.tick();
