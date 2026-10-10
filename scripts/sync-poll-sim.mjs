@@ -9,8 +9,8 @@
 // cannot be installed in the sandbox this was written in (the npm registry is
 // unreachable), so the backend is test/helpers/memoryD1.js and the output says
 // so. Rows read and written are summed from that shim's D1 counters
-// (meta.rows_read / meta.rows_written, totalled in db.usage), which count
-// index writes and err high; nothing is estimated here.
+// (meta.rows_read / meta.rows_written, totalled in db.usage); nothing is
+// estimated here. See the shim for how close those counters are to D1's.
 //
 // The day follows src/sync/syncEngine.js. Each phone joins the team and syncs
 // at startup, then on its timer every SYNC_INTERVAL_MS (the shipped value

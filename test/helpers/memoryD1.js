@@ -18,11 +18,15 @@
 //
 // meta.rows_read and meta.rows_written stand in for the D1 counters that the
 // Workers Free plan bills. Neither engine exposes SQLite's scan counts, so
-// they are estimates that err high:
-// - a statement reads the rows it returned plus the rows it changed, and at
-//   least one (a key lookup that finds nothing still reads the index);
-// - each changed row is written once to its table and once to every index on
-//   that table, primary-key autoindexes included, since D1 bills index writes.
+// both are estimates:
+// - rows written err high: each changed row is written once to its table and
+//   once to every index on that table, primary-key autoindexes included,
+//   since D1 bills index writes;
+// - rows read are the rows a statement returned plus the rows it changed, and
+//   at least one (a key lookup that finds nothing still reads the index). Rows
+//   a statement only scans, such as the counters row and json_each values an
+//   INSERT ... SELECT reads or the marks an IN lookup misses, are not counted,
+//   so this can run low; budget checks should leave headroom for it.
 // `db.usage` totals both over every statement that took effect: first() drops
 // its meta, and a batch that rolls back adds nothing.
 
@@ -96,7 +100,8 @@ export async function createMemoryD1({ migrations = [] } = {}) {
     usage.rowsWritten += meta.rows_written;
   };
 
-  // Rows written per changed row of `table`: the row plus one entry per index.
+  // Rows written per changed row of the statement's table: the row plus one
+  // entry per index.
   function writesPerRow(sql) {
     const match = WRITE_TARGET.exec(sql);
     if (!match) return 1;

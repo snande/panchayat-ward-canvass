@@ -12,10 +12,11 @@ const SCRIPT = fileURLToPath(new URL('./sync-poll-sim.mjs', import.meta.url));
 const run = (args = []) => promisify(execFile)(process.execPath, [SCRIPT, ...args]);
 const LABELS = ['Function requests', 'Rows read', 'Rows written'];
 
-// The timer interval the budget holds at. The shipped SYNC_INTERVAL_MS (60 s)
-// measures about 65 000 requests for five teams, over the 50 000 budget;
-// lengthening it is a product decision left to the owner of issue #178, so
-// this pins the interval that would fit rather than retuning the client.
+// The shipped SYNC_INTERVAL_MS is 60 s, which measures about 65 000 requests
+// for five teams, over the 50 000 budget. Lengthening it is a product decision
+// left to the owner of issue #178, so the budget test pins the interval that
+// would fit rather than retuning the client.
+const SHIPPED_INTERVAL_MS = 60000;
 const BUDGET_INTERVAL_MS = 120000;
 
 test('the D1 shim reports rows read and rows written, counting index writes', async () => {
@@ -49,18 +50,22 @@ test(`five teams of 20 phones stay under half the Workers Free limits for an 8-h
     assert.equal(result.fiveTeams[key], result.team[key] * 5);
   }
   assert.ok(result.fiveTeams.requests < 50000, `requests ${result.fiveTeams.requests}`);
-  assert.ok(result.fiveTeams.rowsRead < 2500000, `rows read ${result.fiveTeams.rowsRead}`);
   assert.ok(result.fiveTeams.rowsWritten < 50000, `rows written ${result.fiveTeams.rowsWritten}`);
+  // The shim's rows read can run low (it misses rows a statement only scans),
+  // so they must fit with room to spare: under a fifth of the limit.
+  assert.ok(result.fiveTeams.rowsRead < 2500000 / 5, `rows read ${result.fiveTeams.rowsRead}`);
 });
 
-test('by default the script simulates the shipped interval, prints the three totals and exits 1 only when over a limit', async () => {
+test('by default the script simulates the shipped 60 s interval, prints the three totals and exits 1 only when over a limit', async () => {
+  assert.equal(SYNC_INTERVAL_MS, SHIPPED_INTERVAL_MS);
   const result = await simulate();
-  assert.equal(result.intervalMs, SYNC_INTERVAL_MS);
-  const over = overLimits(result.fiveTeams).length > 0;
-  const { stdout, code } = await run().then((out) => ({ ...out, code: 0 }), (err) => err);
-  assert.equal(code, over ? 1 : 0);
+  assert.equal(result.intervalMs, SHIPPED_INTERVAL_MS);
+  const over = overLimits(result.fiveTeams);
+  const { stdout, stderr, code } = await run().then((out) => ({ ...out, code: 0 }), (err) => err);
+  assert.equal(code, over.length > 0 ? 1 : 0);
+  if (over.length > 0) assert.match(stderr, /^Over the limit: /m);
   assert.match(stdout, /^Backend: memoryD1 \((node:sqlite|sql\.js)\)$/m);
-  assert.match(stdout, new RegExp(`timer every ${SYNC_INTERVAL_MS / 1000} s, the shipped SYNC_INTERVAL_MS`));
+  assert.match(stdout, /timer every 60 s, the shipped SYNC_INTERVAL_MS/);
   for (const label of LABELS) {
     assert.match(stdout, new RegExp(`^  ${label}: [1-9]\\d*$`, 'm'), label);
   }
