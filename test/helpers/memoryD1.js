@@ -3,7 +3,8 @@
 // the calls the sync code makes: prepare(sql).bind(...values) then
 // first()/all()/run()/raw(), batch([...statements]) and exec(sql), with
 // D1-shaped results (all() resolves to { results, success, meta }, first() to
-// a row or null, run() to { success, meta: { changes, last_row_id } }).
+// a row or null, run() to { success, meta: { changes, last_row_id, rows_read,
+// rows_written } }).
 //
 // SQLite comes from Node's built-in node:sqlite where it is available
 // (unflagged from Node 22.13) and otherwise from the sql.js devDependency
@@ -12,7 +13,16 @@
 //   const db = await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] });
 //
 // Migration paths are relative to the repository root. `db.sqlite` exposes the
-// underlying engine ({ exec, query }) so tests can inspect it directly.
+// underlying engine ({ exec, query }) so tests can inspect it directly, and
+// `db.engine` names it ('node:sqlite' or 'sql.js').
+//
+// meta.rows_read and meta.rows_written approximate the D1 counters that the
+// Workers Free plan bills: a statement writes the rows it changed and reads the
+// rows it returned plus the rows it changed, and at least one row (a key lookup
+// that finds nothing still reads the index). SQLite does not expose its own
+// scan counts through either engine, so this is an estimate, not D1's figure.
+// `db.usage` keeps running totals of both, which first() would otherwise drop
+// along with its meta (scripts/sync-poll-sim.mjs reads them).
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +44,7 @@ async function openSqlite() {
   if (DatabaseSync) {
     const db = new DatabaseSync(':memory:');
     return {
+      engine: 'node:sqlite',
       exec: (sql) => db.exec(sql),
       // node:sqlite rows have a null prototype; D1's are plain objects.
       query: (sql, params) => db.prepare(sql).all(...params).map((row) => ({ ...row })),
@@ -42,6 +53,7 @@ async function openSqlite() {
   const SQL = await (sqlJs ??= import('sql.js').then(({ default: initSqlJs }) => initSqlJs()));
   const db = new SQL.Database();
   return {
+    engine: 'sql.js',
     exec: (sql) => db.exec(sql),
     query: (sql, params) => {
       const stmt = db.prepare(sql);
@@ -73,6 +85,7 @@ function d1Error(err) {
 
 export async function createMemoryD1({ migrations = [] } = {}) {
   const sqlite = await openSqlite();
+  const usage = { rowsRead: 0, rowsWritten: 0 };
 
   // Runs one statement and reports what D1 would: its rows plus the change
   // count and last rowid. total_changes() is diffed rather than read through
@@ -82,10 +95,15 @@ export async function createMemoryD1({ migrations = [] } = {}) {
     const results = sqlite.query(sql, params);
     const [{ n: after, id }] = sqlite.query('SELECT total_changes() AS n, last_insert_rowid() AS id', []);
     const changes = after - before;
+    const rowsRead = Math.max(1, results.length + changes);
+    usage.rowsRead += rowsRead;
+    usage.rowsWritten += changes;
     return {
       success: true,
       results,
-      meta: { changes, last_row_id: id, changed_db: changes > 0, duration: 0 },
+      meta: {
+        changes, last_row_id: id, changed_db: changes > 0, duration: 0, rows_read: rowsRead, rows_written: changes,
+      },
     };
   }
 
@@ -129,6 +147,8 @@ export async function createMemoryD1({ migrations = [] } = {}) {
 
   const db = {
     sqlite,
+    engine: sqlite.engine,
+    usage,
 
     prepare(sql) {
       return new PreparedStatement(sql);

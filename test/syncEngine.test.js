@@ -313,7 +313,7 @@ test('with no team credentials the engine sends no request', async () => {
   dev.engine.stop();
 });
 
-test('syncNow runs at start, on online, when the page becomes visible and every 60 s while online and visible', async () => {
+test('syncNow runs at start, on online, when the page becomes visible and every 120 s while online and visible', async () => {
   const srv = await server();
   const dev = device(srv, null);
   dev.engine.start();
@@ -324,7 +324,7 @@ test('syncNow runs at start, on online, when the page becomes visible and every 
   assert.equal(dev.authCalls, 1, 'start twice is one engine');
   assert.equal(dev.intervals.length, 1);
   assert.equal(dev.intervals[0].ms, SYNC_INTERVAL_MS);
-  assert.equal(SYNC_INTERVAL_MS, 60000);
+  assert.equal(SYNC_INTERVAL_MS, 120000);
 
   dev.win.dispatchEvent(new Event('online'));
   await settle();

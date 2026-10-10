@@ -47,7 +47,11 @@ import { getAuth as storedAuth } from './teamAuth.js';
 
 export const PUSH_URL = '/sync/push';
 export const PULL_URL = '/sync/pull';
-export const SYNC_INTERVAL_MS = 60000;
+// Every phone's tick is a Function request (two when it has a push), so this
+// sets the team's daily bill: at 60 s, five teams of 20 phones exceed half the
+// Workers Free request limit over an 8-hour day. scripts/sync-poll-sim.mjs
+// measures it (issue #178).
+export const SYNC_INTERVAL_MS = 120000;
 // MAX_PUSH_RECORDS in functions/sync.js.
 export const PUSH_BATCH_SIZE = 500;
 export const CURSOR_ID = 'sync-cursor';
@@ -408,7 +412,7 @@ export function createSyncEngine({
     trigger();
   };
 
-  /** Sync now and on every later trigger (online, visible, every 60 s while online and visible). */
+  /** Sync now and on every later trigger (online, visible, every SYNC_INTERVAL_MS while online and visible). */
   function start() {
     if (started) return;
     started = true;

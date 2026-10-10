@@ -38,7 +38,9 @@
 // each (they merge by id).
 //
 // Storage goes through the D1 binding env.SYNC_DB, with the tables created by
-// migrations/0001_sync.sql; tests back it with test/helpers/memoryD1.js.
+// migrations/0001_sync.sql; tests back it with test/helpers/memoryD1.js, and
+// scripts/sync-poll-sim.mjs runs a team's polling day through it to check the
+// requests, rows read and rows written stay inside the Workers Free limits.
 //
 // Pages file routing maps this file to /sync only; functions/sync/[[path]].js
 // re-exports onRequest so /sync/push and /sync/pull reach it, and
