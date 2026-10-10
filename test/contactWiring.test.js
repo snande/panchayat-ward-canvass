@@ -13,6 +13,7 @@ import { webcrypto } from 'node:crypto';
 
 import { createDocument, type } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { catalogueResponse, pickWard } from './helpers/picker.js';
 import { createSyncD1 } from './helpers/memoryD1.js';
 import { onRequest as syncOnRequest } from '../functions/sync.js';
 import { createSyncEngine, syncNow } from '../src/sync/syncEngine.js';
@@ -69,6 +70,7 @@ function boot(idb, { offline = false } = {}) {
     if (url.startsWith('file:')) return new Response(readFileSync(fileURLToPath(url)));
     if (url === 'src/strings.hi.json') return new Response(read('src/strings.hi.json'));
     if (url === 'config/constituency.json') return new Response(read('config/constituency.json'));
+    if (catalogueResponse(url)) return catalogueResponse(url);
     if (offline) throw new TypeError('Failed to fetch');
     if (url.startsWith('/sync/')) return toServer(url, init);
     if (url.startsWith('/roll?url=')) {
@@ -91,11 +93,6 @@ function boot(idb, { offline = false } = {}) {
   return { picker, roll, team, requests, restore };
 }
 
-function choose(select, value) {
-  select.value = value;
-  select.dispatchEvent({ type: 'change' });
-}
-
 const firstRow = (page) => page.roll.querySelector('div.roll-row');
 const panelOf = (page) => page.roll.querySelector('section.contact-panel');
 const button = (page, cls) => panelOf(page).querySelector(`button.${cls}`);
@@ -115,12 +112,7 @@ test('airplane mode on, record consent and a number, reopen the next day: it is 
     pass.value = 'हमारी टीम';
     setup.team.querySelector('form').dispatchEvent({ type: 'submit', preventDefault() {} });
     await waitFor(() => setup.team.hidden === true);
-    await waitFor(() => setup.picker.querySelector('select') !== null);
-    const [district, samiti, panchayat, ward] = setup.picker.querySelectorAll('select');
-    choose(district, '17');
-    choose(samiti, '125');
-    choose(panchayat, '6313');
-    choose(ward, '1');
+    await pickWard(setup.picker, '1');
     await waitFor(() => firstRow(setup) !== null);
   } finally {
     setup.restore();

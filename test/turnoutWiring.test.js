@@ -13,6 +13,7 @@ import { webcrypto } from 'node:crypto';
 
 import { createDocument, type } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { catalogueResponse, pickWard } from './helpers/picker.js';
 import { createSyncD1 } from './helpers/memoryD1.js';
 import { onRequest as syncOnRequest } from '../functions/sync.js';
 import { createSyncEngine } from '../src/sync/syncEngine.js';
@@ -355,6 +356,7 @@ function boot(idb, srv) {
     if (url.startsWith('file:')) return new Response(readFileSync(fileURLToPath(url)));
     if (url === 'src/strings.hi.json') return new Response(read('src/strings.hi.json'));
     if (url === 'config/constituency.json') return new Response(read('config/constituency.json'));
+    if (catalogueResponse(url)) return catalogueResponse(url);
     if (url.startsWith('/sync/')) return srv.handle(url, init);
     if (url.startsWith('/roll?url=')) {
       return new Response(read('fixtures/badli-ward1.pdf'), { headers: { 'Content-Type': 'application/pdf' } });
@@ -376,11 +378,6 @@ function boot(idb, srv) {
   return { picker, roll, team, restore };
 }
 
-function choose(select, value) {
-  select.value = value;
-  select.dispatchEvent({ type: 'change' });
-}
-
 test('in the running app, a voter tapped in the roll can be marked and the turnout button shows the count', async () => {
   const srv = await server();
   const idb = createFakeIndexedDB();
@@ -393,12 +390,7 @@ test('in the running app, a voter tapped in the roll can be marked and the turno
     pass.value = PASS;
     page.team.querySelector('form').dispatchEvent({ type: 'submit', preventDefault() {} });
     await waitFor(() => page.team.hidden === true);
-    await waitFor(() => page.picker.querySelector('select') !== null);
-    const [district, samiti, panchayat, ward] = page.picker.querySelectorAll('select');
-    choose(district, '17');
-    choose(samiti, '125');
-    choose(panchayat, '6313');
-    choose(ward, '1');
+    await pickWard(page.picker, '1');
     await waitFor(() => page.roll.querySelector('div.roll-row') !== null);
 
     const row = page.roll.querySelector('div.roll-row');
