@@ -1,13 +1,12 @@
 {
- "generated_at": "2026-10-09T12:41:43+00:00",
+ "schemaVersion": 1,
+ "generated_at": "2026-10-10T10:34:22+00:00",
  "source_page": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
  "ward_pdf_url_template": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf",
  "notes": [
-  "Counts: 41 districts; 817 entries in the second dropdown (457 rural panchayat samitis, 309 urban bodies, 51 other, e.g. zilla parishads); 14403 gram panchayats across 457 walked samitis.",
-  "Only rural panchayat samitis are walked for gram panchayats. Urban bodies (nagar palika, nagar parishad, nagar nigam) list municipal wards in the third dropdown and zilla parishad entries are not samitis; both keep an empty panchayats list.",
-  "kind is read from the portal's Latin name: 'urban' for nagar palika / parishad / nigam, 'rural' for panchayat samiti, 'unknown' otherwise.",
-  "Ward lists are not stored. A panchayat's wards are found by requesting ward 001, 002, ... from ward_pdf_url_template until one answers 302 (a 173-byte HTML error page). PANCHAYAT_NAME is the panchayat's name exactly as listed here, upper-cased, with spaces percent-encoded.",
-  "Requests: 499 to sec.rajasthan.gov.in (498 form posts), at most one per 1 s."
+  "Counts: 41 districts; 457 rural panchayat samitis walked; 309 urban bodies, 41 zilla parishads and 10 other entries skipped; 14403 gram panchayats.",
+  "kind is read from the portal's Latin name: 'urban' for nagar palika / parishad / nigam, 'rural' for panchayat samiti, 'unknown' otherwise. Only rural samitis list gram panchayats.",
+  "Kept until the picker reads the sharded catalogue (catalogue/index.json, which also carries each panchayat's wards and Hindi names); see #122."
  ],
  "districts": [
   {

@@ -1,0 +1,664 @@
+{
+ "schemaVersion": 1,
+ "source": "https://sec.rajasthan.gov.in/se_pdfdownload.aspx",
+ "pdfUrlTemplates": {
+  "final": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf",
+  "supplement": "https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf"
+ },
+ "districts": [
+  {
+   "id": "1",
+   "name": "अजमेर",
+   "nameLatin": "AJMER",
+   "file": "ajmer.json",
+   "panchayatCount": 261
+  },
+  {
+   "id": "2",
+   "name": "अलवर",
+   "nameLatin": "ALWAR",
+   "file": "alwar.json",
+   "panchayatCount": 390
+  },
+  {
+   "id": "33",
+   "name": "उदयपुर",
+   "nameLatin": "UDAIPUR",
+   "file": "udaipur.json",
+   "panchayatCount": 590
+  },
+  {
+   "id": "23",
+   "name": "करौली",
+   "nameLatin": "KARAULI",
+   "file": "karauli.json",
+   "panchayatCount": 309
+  },
+  {
+   "id": "39",
+   "name": "कोटपुतली-बहरोड़",
+   "nameLatin": "KOTPUTLI-BEHROR",
+   "file": "kotputli-behror.json",
+   "panchayatCount": 238
+  },
+  {
+   "id": "24",
+   "name": "कोटा",
+   "nameLatin": "KOTA",
+   "file": "kota.json",
+   "panchayatCount": 210
+  },
+  {
+   "id": "38",
+   "name": "खैरथल-तिजारा",
+   "nameLatin": "KHAIRTHAL-TIJARA",
+   "file": "khairthal-tijara.json",
+   "panchayatCount": 180
+  },
+  {
+   "id": "15",
+   "name": "गंगानगर",
+   "nameLatin": "GANGANAGAR",
+   "file": "ganganagar.json",
+   "panchayatCount": 409
+  },
+  {
+   "id": "10",
+   "name": "चित्तोडगढ",
+   "nameLatin": "CHITTORGARH",
+   "file": "chittorgarh.json",
+   "panchayatCount": 359
+  },
+  {
+   "id": "11",
+   "name": "चुरू",
+   "nameLatin": "CHURU",
+   "file": "churu.json",
+   "panchayatCount": 478
+  },
+  {
+   "id": "17",
+   "name": "जयपुर",
+   "nameLatin": "JAIPUR",
+   "file": "jaipur.json",
+   "panchayatCount": 597
+  },
+  {
+   "id": "19",
+   "name": "जालोर",
+   "nameLatin": "JALORE",
+   "file": "jalore.json",
+   "panchayatCount": 433
+  },
+  {
+   "id": "18",
+   "name": "जैसलमेर",
+   "nameLatin": "JAISALMER",
+   "file": "jaisalmer.json",
+   "panchayatCount": 266
+  },
+  {
+   "id": "22",
+   "name": "जोधपुर",
+   "nameLatin": "JODHPUR",
+   "file": "jodhpur.json",
+   "panchayatCount": 649
+  },
+  {
+   "id": "20",
+   "name": "झालावाड",
+   "nameLatin": "JHALAWAR",
+   "file": "jhalawar.json",
+   "panchayatCount": 270
+  },
+  {
+   "id": "21",
+   "name": "झुन्झुनू",
+   "nameLatin": "JHUNJHUNU",
+   "file": "jhunjhunu.json",
+   "panchayatCount": 389
+  },
+  {
+   "id": "32",
+   "name": "टोंक",
+   "nameLatin": "TONK",
+   "file": "tonk.json",
+   "panchayatCount": 282
+  },
+  {
+   "id": "37",
+   "name": "डीग",
+   "nameLatin": "DEEG",
+   "file": "deeg.json",
+   "panchayatCount": 220
+  },
+  {
+   "id": "36",
+   "name": "डीडवाना-कुचामन",
+   "nameLatin": "DEEDWANA-KUCHAMAN",
+   "file": "deedwana-kuchaman.json",
+   "panchayatCount": 298
+  },
+  {
+   "id": "14",
+   "name": "डुंगरपुर",
+   "nameLatin": "DUNGARPUR",
+   "file": "dungarpur.json",
+   "panchayatCount": 442
+  },
+  {
+   "id": "12",
+   "name": "दौसा",
+   "nameLatin": "DAUSA",
+   "file": "dausa.json",
+   "panchayatCount": 362
+  },
+  {
+   "id": "13",
+   "name": "धोलपुर",
+   "nameLatin": "DHOLPUR",
+   "file": "dholpur.json",
+   "panchayatCount": 224
+  },
+  {
+   "id": "25",
+   "name": "नागौर",
+   "nameLatin": "NAGAUR",
+   "file": "nagaur.json",
+   "panchayatCount": 347
+  },
+  {
+   "id": "26",
+   "name": "पाली",
+   "nameLatin": "PALI",
+   "file": "pali.json",
+   "panchayatCount": 303
+  },
+  {
+   "id": "27",
+   "name": "प्रतापगढ",
+   "nameLatin": "PRATAPGARH",
+   "file": "pratapgarh.json",
+   "panchayatCount": 277
+  },
+  {
+   "id": "40",
+   "name": "फलौदी",
+   "nameLatin": "PHALODI",
+   "file": "phalodi.json",
+   "panchayatCount": 305
+  },
+  {
+   "id": "3",
+   "name": "बांसवाड़ा",
+   "nameLatin": "BANSWARA",
+   "file": "banswara.json",
+   "panchayatCount": 549
+  },
+  {
+   "id": "5",
+   "name": "बाडमेर",
+   "nameLatin": "BARMER",
+   "file": "barmer.json",
+   "panchayatCount": 625
+  },
+  {
+   "id": "4",
+   "name": "बारा",
+   "nameLatin": "BARAN",
+   "file": "baran.json",
+   "panchayatCount": 280
+  },
+  {
+   "id": "34",
+   "name": "बालोतरा",
+   "nameLatin": "BALOTRA",
+   "file": "balotra.json",
+   "panchayatCount": 448
+  },
+  {
+   "id": "8",
+   "name": "बीकानेर",
+   "nameLatin": "BIKANER",
+   "file": "bikaner.json",
+   "panchayatCount": 453
+  },
+  {
+   "id": "9",
+   "name": "बूंदी",
+   "nameLatin": "BUNDI",
+   "file": "bundi.json",
+   "panchayatCount": 235
+  },
+  {
+   "id": "35",
+   "name": "ब्यावर",
+   "nameLatin": "BEAWAR",
+   "file": "beawar.json",
+   "panchayatCount": 216
+  },
+  {
+   "id": "6",
+   "name": "भरतपुर",
+   "nameLatin": "BHARATPUR",
+   "file": "bharatpur.json",
+   "panchayatCount": 252
+  },
+  {
+   "id": "7",
+   "name": "भीलवाडा",
+   "nameLatin": "BHILWARA",
+   "file": "bhilwara.json",
+   "panchayatCount": 511
+  },
+  {
+   "id": "28",
+   "name": "राजसमन्द",
+   "nameLatin": "RAJSAMAND",
+   "file": "rajsamand.json",
+   "panchayatCount": 280
+  },
+  {
+   "id": "41",
+   "name": "सलूम्बर",
+   "nameLatin": "SALUMBER",
+   "file": "salumber.json",
+   "panchayatCount": 207
+  },
+  {
+   "id": "29",
+   "name": "सवाईमाधोपुर",
+   "nameLatin": "S. MADHOPUR",
+   "file": "s-madhopur.json",
+   "panchayatCount": 262
+  },
+  {
+   "id": "31",
+   "name": "सिरोही",
+   "nameLatin": "SIROHI",
+   "file": "sirohi.json",
+   "panchayatCount": 223
+  },
+  {
+   "id": "30",
+   "name": "सीकर",
+   "nameLatin": "SIKAR",
+   "file": "sikar.json",
+   "panchayatCount": 449
+  },
+  {
+   "id": "16",
+   "name": "हनुमानगढ",
+   "nameLatin": "HANUMANGARH",
+   "file": "hanumangarh.json",
+   "panchayatCount": 325
+  }
+ ],
+ "summary": {
+  "counts": {
+   "districts": 41,
+   "samitis": 457,
+   "panchayats": 14403,
+   "wards": 130589,
+   "wardsWithSupplement": 130589
+  },
+  "skipped": {
+   "urban": 309,
+   "zillaParishad": 41,
+   "other": 10
+  },
+  "fallbacks": [
+   {
+    "level": "samiti",
+    "id": "4",
+    "nameLatin": "KEKRI",
+    "district": "1",
+    "reason": "no Hindi samiti name read from cover-4.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "5",
+    "nameLatin": "KISHANGARH (SILORA)",
+    "district": "1",
+    "reason": "no Hindi samiti name read from cover-5.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "11",
+    "nameLatin": "KATHUMAR",
+    "district": "2",
+    "reason": "no Hindi samiti name read from cover-11.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "17",
+    "nameLatin": "RENI",
+    "district": "2",
+    "reason": "no Hindi samiti name read from cover-17.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "22",
+    "nameLatin": "UMREN",
+    "district": "2",
+    "reason": "no Hindi samiti name read from cover-22.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "358",
+    "nameLatin": "DOONGRA CHHOTA",
+    "district": "3",
+    "reason": "no Hindi samiti name read from cover-358.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "29",
+    "nameLatin": "KUSHALGARH",
+    "district": "3",
+    "reason": "no Hindi samiti name read from cover-29.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "361",
+    "nameLatin": "SAREDI BADI",
+    "district": "3",
+    "reason": "no Hindi samiti name read from cover-361.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "362",
+    "nameLatin": "KELWARA",
+    "district": "4",
+    "reason": "no Hindi samiti name read from cover-362.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "364",
+    "nameLatin": "BATADOO",
+    "district": "5",
+    "reason": "no Hindi samiti name read from cover-364.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "367",
+    "nameLatin": "DOOGERO KA TALA",
+    "district": "5",
+    "reason": "no Hindi samiti name read from cover-367.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "306",
+    "nameLatin": "KAREDA",
+    "district": "7",
+    "reason": "no Hindi samiti name read from cover-306.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "371",
+    "nameLatin": "PHOOLIYA KALAN",
+    "district": "7",
+    "reason": "no Hindi samiti name read from cover-371.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "67",
+    "nameLatin": "SRI DUNGARGARH",
+    "district": "8",
+    "reason": "no Hindi samiti name read from cover-67.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "74",
+    "nameLatin": "KESHORAIPATAN",
+    "district": "9",
+    "reason": "no Hindi samiti name read from cover-74.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "79",
+    "nameLatin": "BHADESAR",
+    "district": "10",
+    "reason": "no Hindi samiti name read from cover-79.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "83",
+    "nameLatin": "DUNGLA",
+    "district": "10",
+    "reason": "no Hindi samiti name read from cover-83.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "382",
+    "nameLatin": "CHANDGOTHI HQ RAJGARH",
+    "district": "11",
+    "reason": "no Hindi samiti name read from cover-382.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "383",
+    "nameLatin": "CHURU NORTH HQ CHURU",
+    "district": "11",
+    "reason": "no Hindi samiti name read from cover-383.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "380",
+    "nameLatin": "TARANAGAR WEST(BHALERI) HQ TARANAGAR",
+    "district": "11",
+    "reason": "no Hindi samiti name read from cover-380.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "94",
+    "nameLatin": "BANDIKUI",
+    "district": "12",
+    "reason": "no Hindi samiti name read from cover-94.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "184",
+    "nameLatin": "KUCHAMAN CITY",
+    "district": "36",
+    "reason": "no Hindi samiti name read from cover-184.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "49",
+    "nameLatin": "KUMHER",
+    "district": "37",
+    "reason": "no Hindi samiti name read from cover-49.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "105",
+    "nameLatin": "DUNGARPUR",
+    "district": "14",
+    "reason": "no Hindi samiti name read from cover-105.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "271",
+    "nameLatin": "JOTHARI",
+    "district": "14",
+    "reason": "no Hindi samiti name read from cover-271.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "392",
+    "nameLatin": "PALDEVAL",
+    "district": "14",
+    "reason": "no Hindi samiti name read from cover-392.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "113",
+    "nameLatin": "SADULSHAHAR",
+    "district": "15",
+    "reason": "no Hindi samiti name read from cover-113.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "397",
+    "nameLatin": "RAJPURA 8 BHD",
+    "district": "16",
+    "reason": "no Hindi samiti name read from cover-397.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "126",
+    "nameLatin": "DUDU",
+    "district": "17",
+    "reason": "no Hindi samiti name read from cover-126.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "400",
+    "nameLatin": "RAMDEVRA HQ POKHRAN",
+    "district": "18",
+    "reason": "no Hindi samiti name read from cover-400.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "152",
+    "nameLatin": "PIRAWA (SUNEL)",
+    "district": "20",
+    "reason": "no Hindi samiti name read from cover-152.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "331",
+    "nameLatin": "KERU",
+    "district": "22",
+    "reason": "no Hindi samiti name read from cover-331.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "412",
+    "nameLatin": "SALWAKHURD",
+    "district": "22",
+    "reason": "no Hindi samiti name read from cover-412.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "416",
+    "nameLatin": "KUDGAON",
+    "district": "23",
+    "reason": "no Hindi samiti name read from cover-416.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "448",
+    "nameLatin": "MAID KUNDLA",
+    "district": "39",
+    "reason": "no Hindi samiti name read from cover-448.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "420",
+    "nameLatin": "MERTA ROAD - GOTAN",
+    "district": "25",
+    "reason": "no Hindi samiti name read from cover-420.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "422",
+    "nameLatin": "SRI BALAJI - ALAY",
+    "district": "25",
+    "reason": "no Hindi samiti name read from cover-422.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "193",
+    "nameLatin": "DESURI",
+    "district": "26",
+    "reason": "no Hindi samiti name read from cover-193.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "279",
+    "nameLatin": "DECHU",
+    "district": "40",
+    "reason": "no Hindi samiti name read from cover-279.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "336",
+    "nameLatin": "DELWADA",
+    "district": "28",
+    "reason": "no Hindi samiti name read from cover-336.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "209",
+    "nameLatin": "DEOGARH",
+    "district": "28",
+    "reason": "no Hindi samiti name read from cover-209.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "211",
+    "nameLatin": "KUMBHALGARH",
+    "district": "28",
+    "reason": "no Hindi samiti name read from cover-211.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "212",
+    "nameLatin": "RAILMAGRA",
+    "district": "28",
+    "reason": "no Hindi samiti name read from cover-212.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "337",
+    "nameLatin": "MALARNA DUNGAR",
+    "district": "29",
+    "reason": "no Hindi samiti name read from cover-337.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "425",
+    "nameLatin": "DHOD GRAMIN HQ SIKAR",
+    "district": "30",
+    "reason": "no Hindi samiti name read from cover-425.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "229",
+    "nameLatin": "REODAR",
+    "district": "31",
+    "reason": "no Hindi samiti name read from cover-229.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "232",
+    "nameLatin": "DEOLI",
+    "district": "32",
+    "reason": "no Hindi samiti name read from cover-232.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "431",
+    "nameLatin": "DEVLA",
+    "district": "33",
+    "reason": "no Hindi samiti name read from cover-431.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "295",
+    "nameLatin": "KURABAD",
+    "district": "33",
+    "reason": "no Hindi samiti name read from cover-295.pdf"
+   },
+   {
+    "level": "samiti",
+    "id": "290",
+    "nameLatin": "RISHBHDEO",
+    "district": "33",
+    "reason": "no Hindi samiti name read from cover-290.pdf"
+   }
+  ],
+  "notes": []
+ }
+}
