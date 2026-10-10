@@ -2,7 +2,8 @@
 //
 // It renders from one `state` field, one state at a time (DESIGN.md "States
 // every surface carries"), with shared controls only:
-//   empty   no ward loaded: an info notice telling the user to pick a ward;
+//   empty   no ward loaded: an info notice telling the user to pick a ward
+//           (detail.seatType 'sarpanch': how to open one ward);
 //           opts.emptyCard (index.html's "not loaded yet" card) shows only here
 //   loading the roll is being opened from the phone, downloaded or decoded: a
 //           progress bar and a Hindi status line (detail.phase 'open',
@@ -64,8 +65,9 @@ export function createWardRollScreen(container, strings, opts = {}) {
     return p;
   }
 
-  function renderEmpty() {
-    return [notice('roll-message roll-empty', 'roll_pick_ward', 'info', 'status')];
+  function renderEmpty(detail) {
+    const key = detail.seatType === 'sarpanch' ? 'roll_sarpanch_all_wards' : 'roll_pick_ward';
+    return [notice('roll-message roll-empty', key, 'info', 'status')];
   }
 
   function renderLoading(detail) {
@@ -102,7 +104,7 @@ export function createWardRollScreen(container, strings, opts = {}) {
     } else if (next === 'error') {
       container.replaceChildren(...renderError(detail));
     } else {
-      container.replaceChildren(...renderEmpty());
+      container.replaceChildren(...renderEmpty(detail));
     }
     container.removeAttribute('hidden');
     if (opts.emptyCard) opts.emptyCard.hidden = next !== 'empty';

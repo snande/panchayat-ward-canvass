@@ -10,14 +10,13 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 import {
-  renderSeatHeader, seatFromSelection, seatFromWardKey, saveSeat, loadSeat, SEAT_STORAGE_KEY, SEAT_SCHEMA_VERSION,
+  renderSeatHeader, seatFromPick, saveSeat, loadSeat, SEAT_STORAGE_KEY, SEAT_SCHEMA_VERSION,
 } from '../src/ui/seatHeader.js';
 import { createDocument } from './helpers/fakeDom.js';
 
 const appUrl = new URL('../js/app.js', import.meta.url);
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
 const table = JSON.parse(read('src/strings.hi.json'));
-const config = JSON.parse(read('config/constituency.json'));
 const css = read('styles.css');
 const EMPTY = 'कोई वार्ड लोड नहीं — ऊपर पंचायत और वार्ड चुनें';
 
@@ -95,15 +94,22 @@ test('the header text comes from the string table, and its built-in copies match
   assert.equal(root.textContent, 'पंचायत: बडली · वार्ड नं.: 1');
 });
 
-test('a picker selection or a shown roll\'s ward key names its panchayat by label and its ward by number', () => {
-  const selection = { district: '17', samiti: '125', panchayat: '6313', ward: '3', pdfUrl: 'x' };
-  assert.deepEqual(seatFromSelection(config, selection), { seatType: 'ward', panchayat: 'बडली', ward: '3' });
-  assert.equal(seatFromSelection(config, { ...selection, panchayat: 'nope' }), null);
-  assert.equal(seatFromSelection(config, { ...selection, ward: '999' }), null);
-  assert.equal(seatFromSelection(null, selection), null);
-  assert.deepEqual(seatFromWardKey(config, '17/125/6313/3'), { seatType: 'ward', panchayat: 'बडली', ward: '3' });
-  for (const key of [null, '', '17/125/6313', '17/125/6313/3/x', '17/125/nope/3']) {
-    assert.equal(seatFromWardKey(config, key), null, String(key));
+test('a catalogue pick names its seat: the Hindi panchayat name, and its ward for a ward panch', () => {
+  const pick = (seatType, wards) => ({
+    schemaVersion: 1, seatType, district: { id: '1', name: 'अजमेर' },
+    panchayat: { id: '54', name: 'अजगरा', nameLatin: 'AJGARA', block: { id: '4', name: 'अराई' } }, wards,
+  });
+  const ward = (n) => ({ ward: n, pdfUrl: `https://example.invalid/${n}.pdf` });
+  assert.deepEqual(seatFromPick(pick('ward-panch', [ward(3)])), { seatType: 'ward', panchayat: 'अजगरा', ward: '3' });
+  assert.deepEqual(seatFromPick(pick('sarpanch', [ward(1), ward(2)])), { seatType: 'sarpanch', panchayat: 'अजगरा' });
+  const root = mount();
+  renderSeatHeader(root, seatFromPick(pick('sarpanch', [ward(1), ward(2)])));
+  assert.equal(root.textContent, 'पंचायत: अजगरा · सभी वार्ड');
+  for (const bad of [null, undefined, {}, pick('sarpanch', []), pick('ward-panch', [ward(1), ward(2)]), pick('zila', [ward(1)]),
+    pick('ward-panch', [ward(null)]), pick('ward-panch', [ward(undefined)]), pick('ward-panch', [ward(0)]),
+    pick('ward-panch', [ward('3')]), pick('ward-panch', [null]),
+    { ...pick('sarpanch', [ward(1)]), panchayat: { id: '54', name: ' ' } }]) {
+    assert.equal(seatFromPick(bad), null, JSON.stringify(bad));
   }
 });
 
