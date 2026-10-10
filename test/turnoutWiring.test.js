@@ -13,6 +13,7 @@ import { webcrypto } from 'node:crypto';
 
 import { createDocument, type } from './helpers/fakeDom.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { createSyncD1 } from './helpers/memoryD1.js';
 import { onRequest as syncOnRequest } from '../functions/sync.js';
 import { createSyncEngine } from '../src/sync/syncEngine.js';
 import { createTeamAuth } from '../src/sync/teamAuth.js';
@@ -39,30 +40,15 @@ async function waitFor(cond, ms = 8000) {
   }
 }
 
-function memoryKV() {
-  const map = new Map();
-  return {
-    map,
-    async get(key) {
-      return map.has(key) ? map.get(key) : null;
-    },
-    async put(key, value) {
-      map.set(key, String(value));
-    },
-    async list({ prefix = '' } = {}) {
-      const names = [...map.keys()].filter((k) => k.startsWith(prefix)).sort();
-      return { keys: names.map((name) => ({ name })), list_complete: true };
-    },
-  };
-}
-
-function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_KV: memoryKV() };
+async function server() {
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createSyncD1() };
   const handle = (url, init = {}) => syncOnRequest({ request: new Request(new URL(url, ORIGIN), init), env });
-  const markEntries = (candidateId) => [...env.SYNC_KV.map.entries()]
-    .filter(([k]) => k.startsWith(`c/${candidateId}/r/`))
-    .map(([, v]) => JSON.parse(v))
-    .filter((r) => r.id.startsWith('mark:'));
+  // The team's stored mark entries (not the index), for one candidate.
+  const markEntries = (candidateId) =>
+    env.SYNC_DB.sqlite.query(
+      "SELECT id, updated_at AS updatedAt, ciphertext, iv, seq, device_id AS deviceId FROM records WHERE candidate_id = ? AND id LIKE 'mark:%' ORDER BY seq",
+      [candidateId],
+    );
   return { env, handle, markEntries };
 }
 
@@ -143,7 +129,7 @@ const turnoutText = (p) => values(p)[0].textContent;
 const stored = (idb, name) => idb.databases.get(DB_NAME)?.stores.get(name) ?? new Map();
 
 test('one voter marked on two offline phones counts once beside the official turnout after both reconnect', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   const b = phone(srv, 'worker-b', '2026-10-07T10:00:00.500Z');
   await a.auth.joinTeam('candA', PASS);
@@ -195,7 +181,7 @@ test('one voter marked on two offline phones counts once beside the official tur
 });
 
 test('a teammate\'s mark arriving while the panel is open replaces the button', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   const b = phone(srv, 'worker-b', '2026-10-07T10:00:00.500Z');
   await a.auth.joinTeam('candA', PASS);
@@ -213,7 +199,7 @@ test('a teammate\'s mark arriving while the panel is open replaces the button', 
 });
 
 test('tapping two voters in a row leaves one seen-voting control, for the second voter', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   await markByTap(a, 1);
   rowFor(a, 2).dispatchEvent({ type: 'click' });
@@ -229,7 +215,7 @@ test('tapping two voters in a row leaves one seen-voting control, for the second
 });
 
 test('the supporter count is the ward\'s marks only, and a destroyed roll view stops refreshing it', async () => {
-  const srv = server();
+  const srv = await server();
   const a = phone(srv, 'worker-a', '2026-10-07T10:00:00.000Z');
   await a.marks.markSeen(WARD, 1, 'worker-a');
   await a.marks.markSeen(OTHER_WARD, 1, 'worker-a');
@@ -396,7 +382,7 @@ function choose(select, value) {
 }
 
 test('in the running app, a voter tapped in the roll can be marked and the turnout button shows the count', async () => {
-  const srv = server();
+  const srv = await server();
   const idb = createFakeIndexedDB();
   const page = boot(idb, srv);
   try {

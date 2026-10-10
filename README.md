@@ -96,21 +96,22 @@ Every request needs `Authorization: Bearer <token>`. The token is
 over `<candidateId>:<deviceId>`, keyed with the `SYNC_SECRET` secret.
 `signSyncToken` in the same file mints one. A missing or invalid token gets a
 bare 401. The candidate comes only from the verified token, never from the
-request. Records are stored under `c/<candidateId>/r/<seq>`, with the counter
-at `c/<candidateId>/seq`, in the KV namespace bound as `SYNC_KV`. The server
+request. Records are stored in the `records` table keyed on the candidate and
+a per-candidate sequence number, with the counter in `counters`, in the D1
+database bound as `SYNC_DB` (schema in `migrations/0001_sync.sql`). The server
 stores `ciphertext` as given and never decrypts it.
 
-The pull cursor only advances through an unbroken run of sequence numbers. If
-a later record is visible before an earlier one, for example because two
-pushes overlapped, the pull stops at the gap. The client then picks up the
-earlier record on its next pull instead of skipping it. A gap is skipped only
-once the record after it was claimed more than five minutes ago, which means
-the push that owned the gap has died.
+A push claims its sequence numbers and writes its records in one D1 batch,
+which is a single transaction, so two overlapping pushes get disjoint ranges
+and a pull never sees a range that is claimed but not yet written. Pull reads
+at most 1000 records above the cursor, in sequence order, and sets `more` when
+there are further records.
 
-Without `SYNC_SECRET` or `SYNC_KV` the endpoints return 503; both are listed
+Without `SYNC_SECRET` or `SYNC_DB` the endpoints return 503; both are listed
 in [`docs/operator-setup.md`](docs/operator-setup.md). The endpoints running
-against real Pages KV are checked outside repo-ci. `test/sync.test.js`
-exercises the function against an in-memory `SYNC_KV`.
+against real D1 are checked outside repo-ci. `test/sync.test.js` exercises the
+function against an in-memory SQLite database with the D1 API
+(`test/helpers/memoryD1.js`).
 
 ## Search screen
 
