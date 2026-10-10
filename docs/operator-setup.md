@@ -23,12 +23,72 @@ read in `relay/server.mjs` and `relay/rollRelay.mjs`, and `_routes.json`.
 | hosting | `_routes.json` (`include`: `/roll`, `/sync/*`) | Cloudflare Pages routing | Without it, every request (shell, fonts, service worker) runs through Functions and counts against the request quota. If `/roll` or `/sync/*` is left out, that path is served as a static file and answers 404. |
 | binding | `ASSETS` (the Pages static-asset binding; Pages provides it, the operator creates nothing) | `functions/roll.js` | `functions/roll.js` cannot read `config/constituency.json`, so `/roll` answers 503 `relay not ready` and no roll downloads. |
 | secret | `SYNC_SECRET` (an encrypted environment variable on the Pages project) | `functions/sync.js` (also reached through `functions/sync/[[path]].js`) | Every `/sync/*` request answers 503, so teams cannot join, push or pull. Changing it signs every device out: each device's token stops verifying (401) until it joins again. |
-| binding | `SYNC_DB` (a D1 database bound to the Pages project under this variable name, with the tables from `migrations/0001_sync.sql` applied) | `functions/sync.js` (also reached through `functions/sync/[[path]].js`) | Every `/sync/*` request answers 503. Binding a different or empty database drops every team's stored records and passphrase verifiers; a database without the migration applied fails every join, push and pull. |
+| binding | `SYNC_DB` (a D1 database binding on the Pages project under this variable name, with the tables from `migrations/0001_sync.sql` applied; see "D1 sync database" below) | `functions/sync.js` (also reached through `functions/sync/[[path]].js`) | Every `/sync/*` request answers 503. Binding a different or empty database drops every team's stored records and passphrase verifiers; a database without the migration applied fails every join, push and pull. |
 | plan | Cloudflare Workers Paid (or equal) on the account that owns the Pages project | `functions/sync.js` (D1 reads and writes on every push and pull) and every Function request | On the free plan, D1 rows read and written are capped per day and Function requests are capped per day. Once a cap is hit on polling day, push and pull fail until the daily reset, and teammates' marks stop arriving. |
 | local only | `PORT`, `HOST` (`process.env`) | `relay/server.mjs` | Not used on Cloudflare. For a self-hosted Node relay they default to `8080` and `127.0.0.1`, so without them the server only listens on localhost. |
 
 `relay/rollRelay.mjs` reads no environment variable. Its allowlist comes from
 `config/constituency.json`, which is deployed with the site.
+
+## D1 sync database (`SYNC_DB`)
+
+`functions/sync.js` keeps every team's records, counters, seen-voting marks
+and passphrase verifiers in one D1 database, read through the `SYNC_DB`
+binding.
+
+Current state (operator note on #183, 2026-10-10):
+
+- Database `panchayat-ward-canvass-sync`, location hint Asia Pacific, on the
+  account's free plan. Its ID is shown on the database's page in the
+  Cloudflare dashboard.
+- Schema: the four tables from `migrations/0001_sync.sql` (`records`,
+  `counters`, `marks`, `verifiers`), applied through the D1 console and
+  checked against `sqlite_master`.
+- Binding: `SYNC_DB` on the Pages project's Production environment, next to
+  `SYNC_KV` and `SYNC_SECRET`. `SYNC_KV` is no longer read by any function;
+  it stays bound only until the one-time KV-to-D1 copy (#184) retires it.
+- Preview has no `SYNC_DB` yet, so `/sync/*` on preview deployments answers
+  503.
+- Production was redeployed at `main d8a48d4` and checked live on
+  `canvass.takshavid.com`: join 200, push accepted (cursor 1), pull returned
+  the pushed record, a wrong passphrase got 401.
+
+No operator issue is open for this: the Production database exists and is
+bound. The step below is the reference for setting it up again (a new
+account, or the Preview environment).
+
+### Operator step: create, migrate and bind the D1 database
+
+1. Create the D1 database:
+
+   ```sh
+   npx wrangler d1 create panchayat-ward-canvass-sync --location apac
+   ```
+
+   (or Workers & Pages > D1 > Create database in the dashboard, with the same
+   name and the Asia Pacific location hint).
+
+2. Apply `migrations/0001_sync.sql` to it, from the repository root:
+
+   ```sh
+   npx wrangler d1 execute panchayat-ward-canvass-sync --remote --file=migrations/0001_sync.sql
+   ```
+
+   Then check that the four tables exist:
+
+   ```sh
+   npx wrangler d1 execute panchayat-ward-canvass-sync --remote --command "SELECT name FROM sqlite_master WHERE type = 'table'"
+   ```
+
+   The output lists `records`, `counters`, `marks` and `verifiers`. The
+   migration only uses `CREATE TABLE IF NOT EXISTS`, so running it again on
+   a database that already has the tables changes nothing.
+
+3. Bind it to the Pages project as `SYNC_DB`: Pages project > Settings >
+   Bindings > Add > D1 database, variable name `SYNC_DB`, database
+   `panchayat-ward-canvass-sync`. Do this for every environment that should
+   serve `/sync/*` (Production, and Preview if wanted), then redeploy, since a
+   binding only reaches deployments made after it is saved.
 
 ## What is not here
 

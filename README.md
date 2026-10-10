@@ -1,5 +1,17 @@
 # panchayat-ward-canvass
 
+## Configuration
+
+The deployed app needs these from the Cloudflare Pages project:
+
+- `SYNC_DB`: the required sync storage binding, a D1 database binding with
+  the tables from `migrations/0001_sync.sql`. Without it every `/sync/*`
+  request answers 503.
+- `SYNC_SECRET`: the secret that signs and verifies team sync tokens.
+
+Every name, and how each is provisioned, is in
+[`docs/operator-setup.md`](docs/operator-setup.md).
+
 ## Ward roll: download, decode, encrypted offline copy
 
 Picking a ward in the picker loads that ward's voter roll. There is no upload
