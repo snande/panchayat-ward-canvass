@@ -76,6 +76,20 @@ test('empty: an info notice tells the user to pick a ward, with the "not loaded"
   assertSharedControls(s.container);
 });
 
+test('empty for a sarpanch seat: an info notice says every ward is picked and how to open one', () => {
+  const s = setup();
+  s.screen.setState('empty', { seatType: 'sarpanch' });
+  assert.equal(s.screen.state, 'empty');
+  assert.equal(s.emptyCard.hidden, false);
+  const line = notice(s.container);
+  assert.equal(line.textContent, strings.roll_sarpanch_all_wards);
+  assert.equal(line.getAttribute('data-tone'), 'info');
+  assert.equal(line.getAttribute('role'), 'status');
+  assert.equal(s.container.querySelectorAll('p.notice').length, 1, 'one state at a time');
+  s.screen.setState('empty');
+  assert.equal(notice(s.container).textContent, strings.roll_pick_ward);
+});
+
 test('loading: a progress bar and a Hindi status line, for opening, download and decode', () => {
   const s = setup();
   s.screen.setState('empty');

@@ -20,6 +20,7 @@ const DEFAULT_STRINGS = {
 export const SEAT_STORAGE_KEY = 'ward-canvass-seat';
 export const SEAT_SCHEMA_VERSION = 1;
 export const SEAT_TYPES = ['ward', 'sarpanch'];
+const PICK_SEATS = { 'ward-panch': 'ward', sarpanch: 'sarpanch' };
 // The picker's container: the empty state links here.
 const PICKER_HREF = '#ward-picker';
 
@@ -66,29 +67,13 @@ export function renderSeatHeader(root, selection, strings = {}) {
   return node;
 }
 
-/** The seat a picker selection names: its panchayat's label and its ward id. */
-export function seatFromSelection(config, selection) {
-  if (!config || !selection) return null;
-  const find = (list, id) => (Array.isArray(list) ? list.find((item) => item && item.id === id) : null) || null;
-  const district = find(config.districts, selection.district);
-  const samiti = district && find(district.samitis, selection.samiti);
-  const panchayat = samiti && find(samiti.panchayats, selection.panchayat);
-  if (!panchayat || !isText(panchayat.label)) return null;
-  const ward = find(panchayat.wards, selection.ward);
-  if (!ward) return null;
-  return { seatType: 'ward', panchayat: panchayat.label, ward: String(ward.id) };
-}
-
-/**
- * The seat of a shown roll, from its ward key ("district/samiti/panchayat/ward",
- * see wardKeyFor in src/roll/rollStore.js), or null outside the catalogue.
- */
-export function seatFromWardKey(config, wardKey) {
-  if (typeof wardKey !== 'string') return null;
-  const parts = wardKey.split('/');
-  if (parts.length !== 4) return null;
-  const [district, samiti, panchayat, ward] = parts;
-  return seatFromSelection(config, { district, samiti, panchayat, ward });
+/** The seat of a catalogue pick (src/picker/catalogue.js), or null. */
+export function seatFromPick(pick) {
+  const wards = (pick && pick.wards) || [];
+  const ward = wards.length === 1 && wards[0] && wards[0].ward;
+  const seat = { seatType: PICK_SEATS[pick && pick.seatType], panchayat: pick && pick.panchayat && pick.panchayat.name };
+  if (seat.seatType === 'ward') seat.ward = Number.isInteger(ward) && ward > 0 ? String(ward) : '';
+  return wards.length && isSeat(seat) ? seat : null;
 }
 
 function defaultStorage() {
