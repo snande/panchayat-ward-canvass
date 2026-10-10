@@ -47,6 +47,9 @@ import { getAuth as storedAuth } from './teamAuth.js';
 
 export const PUSH_URL = '/sync/push';
 export const PULL_URL = '/sync/pull';
+// Each tick is a Function request per phone (two when it pushes);
+// scripts/sync-poll-sim.mjs measures what this interval costs a team's day
+// against the Workers Free limits.
 export const SYNC_INTERVAL_MS = 60000;
 // MAX_PUSH_RECORDS in functions/sync.js.
 export const PUSH_BATCH_SIZE = 500;

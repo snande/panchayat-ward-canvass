@@ -3,7 +3,8 @@
 // the calls the sync code makes: prepare(sql).bind(...values) then
 // first()/all()/run()/raw(), batch([...statements]) and exec(sql), with
 // D1-shaped results (all() resolves to { results, success, meta }, first() to
-// a row or null, run() to { success, meta: { changes, last_row_id } }).
+// a row or null, run() to { success, meta: { changes, last_row_id, rows_read,
+// rows_written } }).
 //
 // SQLite comes from Node's built-in node:sqlite where it is available
 // (unflagged from Node 22.13) and otherwise from the sql.js devDependency
@@ -12,7 +13,22 @@
 //   const db = await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] });
 //
 // Migration paths are relative to the repository root. `db.sqlite` exposes the
-// underlying engine ({ exec, query }) so tests can inspect it directly.
+// underlying engine ({ exec, query }) so tests can inspect it directly, and
+// `db.engine` names it ('node:sqlite' or 'sql.js').
+//
+// meta.rows_read and meta.rows_written stand in for the D1 counters that the
+// Workers Free plan bills. Neither engine exposes SQLite's scan counts, so
+// both are estimates:
+// - rows written err high: each changed row is written once to its table and
+//   once to every index on that table, primary-key autoindexes included,
+//   since D1 bills index writes;
+// - rows read are the rows a statement returned plus the rows it changed, and
+//   at least one (a key lookup that finds nothing still reads the index). Rows
+//   a statement only scans, such as the counters row and json_each values an
+//   INSERT ... SELECT reads or the marks an IN lookup misses, are not counted,
+//   so this can run low; budget checks should leave headroom for it.
+// `db.usage` totals both over every statement that took effect: first() drops
+// its meta, and a batch that rolls back adds nothing.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +50,7 @@ async function openSqlite() {
   if (DatabaseSync) {
     const db = new DatabaseSync(':memory:');
     return {
+      engine: 'node:sqlite',
       exec: (sql) => db.exec(sql),
       // node:sqlite rows have a null prototype; D1's are plain objects.
       query: (sql, params) => db.prepare(sql).all(...params).map((row) => ({ ...row })),
@@ -42,6 +59,7 @@ async function openSqlite() {
   const SQL = await (sqlJs ??= import('sql.js').then(({ default: initSqlJs }) => initSqlJs()));
   const db = new SQL.Database();
   return {
+    engine: 'sql.js',
     exec: (sql) => db.exec(sql),
     query: (sql, params) => {
       const stmt = db.prepare(sql);
@@ -71,8 +89,25 @@ function d1Error(err) {
   return new Error(`D1_ERROR: ${err.message}`, { cause: err });
 }
 
+// The table a write statement changes, or null for a read.
+const WRITE_TARGET = /^\s*(?:INSERT(?:\s+OR\s+\w+)?\s+INTO|REPLACE\s+INTO|UPDATE(?:\s+OR\s+\w+)?|DELETE\s+FROM)\s+["`[]?(\w+)/i;
+
 export async function createMemoryD1({ migrations = [] } = {}) {
   const sqlite = await openSqlite();
+  const usage = { rowsRead: 0, rowsWritten: 0 };
+  const count = (meta) => {
+    usage.rowsRead += meta.rows_read;
+    usage.rowsWritten += meta.rows_written;
+  };
+
+  // Rows written per changed row of the statement's table: the row plus one
+  // entry per index.
+  function writesPerRow(sql) {
+    const match = WRITE_TARGET.exec(sql);
+    if (!match) return 1;
+    const [{ n }] = sqlite.query("SELECT count(*) AS n FROM sqlite_master WHERE type = 'index' AND tbl_name = ?", [match[1]]);
+    return 1 + n;
+  }
 
   // Runs one statement and reports what D1 would: its rows plus the change
   // count and last rowid. total_changes() is diffed rather than read through
@@ -85,7 +120,14 @@ export async function createMemoryD1({ migrations = [] } = {}) {
     return {
       success: true,
       results,
-      meta: { changes, last_row_id: id, changed_db: changes > 0, duration: 0 },
+      meta: {
+        changes,
+        last_row_id: id,
+        changed_db: changes > 0,
+        duration: 0,
+        rows_read: Math.max(1, results.length + changes),
+        rows_written: changes > 0 ? changes * writesPerRow(sql) : 0,
+      },
     };
   }
 
@@ -100,11 +142,14 @@ export async function createMemoryD1({ migrations = [] } = {}) {
     }
 
     async all() {
+      let result;
       try {
-        return execute(this.sql, this.params);
+        result = execute(this.sql, this.params);
       } catch (err) {
         throw d1Error(err);
       }
+      count(result.meta);
+      return result;
     }
 
     async run() {
@@ -129,6 +174,8 @@ export async function createMemoryD1({ migrations = [] } = {}) {
 
   const db = {
     sqlite,
+    engine: sqlite.engine,
+    usage,
 
     prepare(sql) {
       return new PreparedStatement(sql);
@@ -141,6 +188,7 @@ export async function createMemoryD1({ migrations = [] } = {}) {
       try {
         const results = statements.map((stmt) => execute(stmt.sql, stmt.params));
         sqlite.exec('COMMIT');
+        for (const { meta } of results) count(meta);
         return results;
       } catch (err) {
         sqlite.exec('ROLLBACK');

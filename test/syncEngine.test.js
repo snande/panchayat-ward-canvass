@@ -324,7 +324,7 @@ test('syncNow runs at start, on online, when the page becomes visible and every 
   assert.equal(dev.authCalls, 1, 'start twice is one engine');
   assert.equal(dev.intervals.length, 1);
   assert.equal(dev.intervals[0].ms, SYNC_INTERVAL_MS);
-  assert.equal(SYNC_INTERVAL_MS, 60000);
+  assert.equal(SYNC_INTERVAL_MS, 60000, 'a new interval changes the Workers budget: rerun scripts/sync-poll-sim.mjs');
 
   dev.win.dispatchEvent(new Event('online'));
   await settle();
