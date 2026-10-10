@@ -75,6 +75,38 @@ test('the inventory table has kind, name, reader and impact columns', () => {
   }
 });
 
+test('the sync bindings in the inventory match the ones functions/sync.js reads', () => {
+  const syncReads = [...envReads('functions')]
+    .filter(([, files]) => files.has('functions/sync.js'))
+    .map(([name]) => name)
+    .sort();
+  assert.deepEqual(syncReads, ['SYNC_DB', 'SYNC_SECRET']);
+  const rows = tableRows();
+  const row = (name) => rows.find(([, exact]) => exact.startsWith(`\`${name}\``));
+  assert.equal(row('SYNC_SECRET')?.[0], 'secret');
+  assert.equal(row('SYNC_DB')?.[0], 'binding');
+  assert.match(row('SYNC_DB')[1], /D1 database binding on the Pages project/);
+});
+
+test('the D1 operator step creates the database, applies the migration and binds SYNC_DB', () => {
+  const start = doc.indexOf('### Operator step: create, migrate and bind the D1 database');
+  assert.ok(start >= 0, 'no D1 operator step');
+  const step = doc.slice(start);
+  assert.match(step, /^1\. Create the D1 database/m);
+  assert.match(step, /npx wrangler d1 create panchayat-ward-canvass-sync/);
+  assert.match(step, /^2\. Apply `migrations\/0001_sync\.sql`/m);
+  assert.match(step, /npx wrangler d1 execute panchayat-ward-canvass-sync --remote --file=migrations\/0001_sync\.sql/);
+  assert.match(step, /^3\. Bind it to the Pages project as `SYNC_DB`/m);
+  assert.match(step, /variable name `SYNC_DB`/);
+});
+
+test('README configuration names SYNC_DB as the required sync storage binding', () => {
+  const match = readme.match(/^## Configuration\n([\s\S]*?)(?=^## )/m);
+  assert.ok(match, 'README has no Configuration section');
+  assert.match(match[1], /`SYNC_DB`: the required sync storage binding, a D1 database binding/);
+  assert.ok(match[1].includes(`(${DOC_PATH})`));
+});
+
 test('the custom domain has exactly one DNS row', () => {
   const rows = tableRows().filter(([kind, name]) => kind === 'DNS' && name.includes('canvass.takshavid.com'));
   assert.equal(rows.length, 1);
