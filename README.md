@@ -120,7 +120,9 @@ at most 1000 records above the cursor, in sequence order, and sets `more` when
 there are further records.
 
 Without `SYNC_SECRET` or `SYNC_DB` the endpoints return 503; both are listed
-in [`docs/operator-setup.md`](docs/operator-setup.md). The endpoints running
+in [`docs/operator-setup.md`](docs/operator-setup.md), which also has the
+one-time copy of the old KV store into D1 (`scripts/migrate-kv-to-d1.mjs`).
+No KV binding is needed. The endpoints running
 against real D1 are checked outside repo-ci. `test/sync.test.js` exercises the
 function against an in-memory SQLite database with the D1 API
 (`test/helpers/memoryD1.js`).

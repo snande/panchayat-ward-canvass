@@ -1,7 +1,7 @@
 // Client sync engine (issue #49), run by `npm test`. Each "device" is its own
 // in-memory IndexedDB with its own injected fetch, window, document,
 // navigator and interval; every request goes straight to the real
-// functions/sync.js handler over an in-memory KV, so nothing leaves the
+// functions/sync.js handler over an in-memory D1, so nothing leaves the
 // machine.
 
 import { test } from 'node:test';

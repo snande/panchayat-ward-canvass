@@ -45,8 +45,9 @@ Current state (operator note on #183, 2026-10-10):
   `counters`, `marks`, `verifiers`), applied through the D1 console and
   checked against `sqlite_master`.
 - Binding: `SYNC_DB` on the Pages project's Production environment, next to
-  `SYNC_KV` and `SYNC_SECRET`. `SYNC_KV` is no longer read by any function;
-  it stays bound only until the one-time KV-to-D1 copy (#184) retires it.
+  `SYNC_SECRET`. No function reads a KV namespace any more. The old sync KV
+  binding is not required. It can be removed once the one-time copy below has
+  been run (see "One-time KV-to-D1 migration").
 - Preview has no `SYNC_DB` yet, so `/sync/*` on preview deployments answers
   503.
 - Production was redeployed at `main d8a48d4` and checked live on
@@ -89,6 +90,62 @@ account, or the Preview environment).
    `panchayat-ward-canvass-sync`. Do this for every environment that should
    serve `/sync/*` (Production, and Preview if wanted), then redeploy, since a
    binding only reaches deployments made after it is saved.
+
+### One-time KV-to-D1 migration
+
+Before D1, `functions/sync.js` kept the same data in a Workers KV namespace
+bound as `SYNC_KV`. `scripts/migrate-kv-to-d1.mjs` copies it into D1 once:
+`c/<candidate>/verifier` to `verifiers`, `c/<candidate>/seq` to `counters`,
+every `c/<candidate>/r/<seq>` to a `records` row with the same seq and
+fields, and every `c/<candidate>/m/<id>` to a `marks` row. Run it from the
+repository root, logged in to the account with `npx wrangler login`:
+
+1. Export the namespace. Its ID is on the namespace's page under Workers &
+   Pages > KV:
+
+   ```sh
+   node scripts/migrate-kv-to-d1.mjs export --namespace-id <namespace-id> > kv-dump.json
+   ```
+
+2. Export the records D1 already holds (teams have pushed to D1 since the
+   cutover), so a seq that both stores used is caught:
+
+   ```sh
+   npx wrangler d1 execute panchayat-ward-canvass-sync --remote --json --command "SELECT candidate_id, seq, id, ciphertext FROM records" > d1-records.json
+   ```
+
+3. Turn the dump into SQL:
+
+   ```sh
+   node scripts/migrate-kv-to-d1.mjs sql kv-dump.json --d1-records d1-records.json > kv-to-d1.sql
+   ```
+
+   It prints how many verifiers, counters, records and marks it found, and
+   any key it skipped with the reason. If a KV record's seq is already
+   taken in D1 by a different record, it lists each such `collision` and
+   writes no SQL. Those records cannot keep their seq, so stop and raise it
+   on #184 rather than applying anything.
+
+4. Apply it:
+
+   ```sh
+   npx wrangler d1 execute panchayat-ward-canvass-sync --remote --file=kv-to-d1.sql
+   ```
+
+The SQL can safely be run again, for example after a timeout or with a fresh
+export. Verifiers, records and marks are inserted only where missing, so a
+second run adds nothing and never replaces a verifier a team already has in
+D1. A counter only moves up, to the highest of its D1 value, the KV counter
+and the highest migrated record seq, so new pushes never reuse a migrated
+slot.
+
+When the KV binding can be removed: once step 4 has succeeded, check the
+result. Running steps 1 to 4 again must change nothing. `SELECT COUNT(*) FROM
+records` must be at least the number of `r/` keys in `kv-dump.json`. After that,
+delete the `SYNC_KV` binding (Pages project > Settings > Bindings) and
+redeploy. No function reads it. Keep the namespace itself until polling day
+is over as a backup, then delete it. Delete `kv-dump.json`, `d1-records.json`
+and `kv-to-d1.sql` too. They hold every team's ciphertext and verifier.
 
 ## What is not here
 

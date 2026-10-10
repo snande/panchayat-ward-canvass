@@ -100,6 +100,18 @@ test('the D1 operator step creates the database, applies the migration and binds
   assert.match(step, /variable name `SYNC_DB`/);
 });
 
+test('SYNC_KV is no longer a binding, and the KV-to-D1 migration is documented', () => {
+  assert.ok(!tableRows().some((row) => row.join(' ').includes('SYNC_KV')), 'SYNC_KV still in the inventory');
+  assert.ok(!readme.includes('SYNC_KV'), 'README still names SYNC_KV');
+  const start = doc.indexOf('### One-time KV-to-D1 migration');
+  assert.ok(start >= 0, 'no KV-to-D1 migration section');
+  const section = doc.slice(start, doc.indexOf('\n## ', start));
+  assert.match(section, /node scripts\/migrate-kv-to-d1\.mjs export --namespace-id/);
+  assert.match(section, /node scripts\/migrate-kv-to-d1\.mjs sql kv-dump\.json/);
+  assert.match(section, /npx wrangler d1 execute panchayat-ward-canvass-sync --remote --file=kv-to-d1\.sql/);
+  assert.match(section, /When the KV binding can be removed/);
+});
+
 test('README configuration names SYNC_DB as the required sync storage binding', () => {
   const match = readme.match(/^## Configuration\n([\s\S]*?)(?=^## )/m);
   assert.ok(match, 'README has no Configuration section');

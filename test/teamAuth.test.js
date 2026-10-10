@@ -1,6 +1,6 @@
 // Team join on the device (issue #48), run by `npm test`. Each "device" is
 // its own in-memory IndexedDB; join requests go straight to the real
-// functions/sync.js handler over an in-memory KV, so nothing leaves the
+// functions/sync.js handler over an in-memory D1, so nothing leaves the
 // machine.
 
 import { test } from 'node:test';

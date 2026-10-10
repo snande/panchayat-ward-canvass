@@ -1,7 +1,7 @@
 // Seen-voting marks (issue #78), run by `npm test`. Each "device" is its own
 // in-memory IndexedDB with its own mark store, team join and sync engine;
 // every request goes to the real functions/sync.js handler over an in-memory
-// KV, so nothing leaves the machine.
+// D1, so nothing leaves the machine.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

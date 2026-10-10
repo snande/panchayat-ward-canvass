@@ -1,7 +1,7 @@
 // Consent and numbers shared with the candidate's team (issue #44), run by
 // `npm test`. Each "device" is its own in-memory IndexedDB with its own
 // contact store, team join and sync engine; every request goes to the real
-// functions/sync.js handler over an in-memory KV, so nothing leaves the machine.
+// functions/sync.js handler over an in-memory D1, so nothing leaves the machine.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
