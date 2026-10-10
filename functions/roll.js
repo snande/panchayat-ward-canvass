@@ -3,16 +3,20 @@
 // the handler is written against the standard Request/Response API, so the
 // same code that relay/server.mjs runs under Node runs here.
 //
-// The allowlist is the ward pdfUrl set of config/constituency.json, read
+// GET /roll?url=<u> relays u when it has the shape of the statewide
+// catalogue's Final/ or Supplement/ roll PDF template,
+// .../PRI/Final/<samiti id>/<NAME>-Ward%20No-<NNN>.pdf (pdfUrlTemplates in
+// data/sec/catalogue/index.json; isSecRollUrl), so any ward the picker offers
+// can download, or when u is a ward URL of config/constituency.json, read
 // through the Pages static-asset binding (env.ASSETS) on the first request
-// and cached for the lifetime of the isolate, so a catalogue update deploys
+// and cached for the lifetime of the isolate, so a config update deploys
 // with the site and needs no separate step.
 //
 // Only this path is routed to a function (_routes.json); every other URL is
 // a static file, so the shell's offline precache and install flow are
 // unaffected.
 
-import { allowedRollUrls, createRollRelay } from '../relay/rollRelay.mjs';
+import { allowedRollUrls, createRollRelay, isSecRollUrl } from '../relay/rollRelay.mjs';
 
 let relayPromise = null;
 
@@ -21,7 +25,7 @@ async function buildRelay(request, env) {
   const response = await env.ASSETS.fetch(new Request(configUrl, { method: 'GET' }));
   if (!response.ok) throw new Error(`constituency config unavailable: HTTP ${response.status}`);
   const config = await response.json();
-  return createRollRelay({ allowedUrls: allowedRollUrls(config) });
+  return createRollRelay({ allowedUrls: allowedRollUrls(config), isAllowedUrl: isSecRollUrl });
 }
 
 export async function onRequest({ request, env }) {

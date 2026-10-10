@@ -96,8 +96,16 @@ The app's domain must be served by this server (or the handler mounted at
 no relay, so every download fails with the Hindi retry message.
 
 In the live deployment, `functions/roll.js` mounts the same `createRollRelay`
-handler on `/roll` as a Pages Function, reading `config/constituency.json`
-through the static-asset binding on first use. `_routes.json` routes only
+handler on `/roll` as a Pages Function. Both relay `GET /roll?url=<u>` for
+any `u` with the shape of the SEC catalogue's Final or Supplement roll PDF
+template (`pdfUrlTemplates.final` and `pdfUrlTemplates.supplement` in
+`data/sec/catalogue/index.json`): https, host `esuchiroll.rajasthan.gov.in`,
+path `/Publication_PDF_2026/PRI/Final/<samiti id>/<NAME>-Ward%20No-<NNN>.pdf`
+or the same under `Supplement/`, with a digit samiti id, `NAME` the
+upper-case panchayat name and `NNN` three digits. So every ward the picker
+offers can download; any other `u` answers 403 `url is not an SEC roll PDF`.
+The function also reads `config/constituency.json` through the static-asset
+binding on first use and allows its ward URLs. `_routes.json` routes only
 `/roll` and `/sync/*` to functions, so every other URL stays a plain static
 file. The hosting, DNS, bindings and plan this needs are listed in
 [`docs/operator-setup.md`](docs/operator-setup.md). The Android Chrome check

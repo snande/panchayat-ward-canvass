@@ -3,10 +3,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 
-import { allowedRollUrls, createRollRelay, MAX_PDF_BYTES } from '../relay/rollRelay.mjs';
+import { allowedRollUrls, createRollRelay, isSecRollUrl, MAX_PDF_BYTES } from '../relay/rollRelay.mjs';
 import { createAppServer, publicFile } from '../relay/server.mjs';
 
 const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url));
@@ -29,7 +29,7 @@ function upstream(respond = () => new Response(PDF, { headers: { 'Content-Type':
 }
 
 function relayWith(up) {
-  return createRollRelay({ allowedUrls: allowedRollUrls(config), fetch: up.fetch });
+  return createRollRelay({ allowedUrls: allowedRollUrls(config), isAllowedUrl: isSecRollUrl, fetch: up.fetch });
 }
 
 test('the allowlist is exactly the ward pdfUrls of the config', () => {
@@ -71,7 +71,7 @@ test('any URL outside the config answers 403 and contacts no server', async () =
   const forbidden = [
     rollUrl('https://example.com/x.pdf'),
     `${ORIGIN}/roll?url=https://example.com/x.pdf`,
-    rollUrl(WARD1.replace('001', '008')),
+    rollUrl(WARD1.replace('001', '0008')),
     rollUrl(WARD1.replace('https:', 'http:')),
     rollUrl(WARD1 + '?x=1'),
     rollUrl(WARD1 + '#frag'),
@@ -208,4 +208,162 @@ test('the default server builds its allowlist from config/constituency.json', as
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const res = await get(server.address().port, '/roll?url=https://example.com/x.pdf');
   assert.equal(res.status, 403);
+});
+
+// Statewide catalogue (issue #198): GET /roll?url=<u> relays any u the
+// catalogue names (data/sec/catalogue/index.json's Final/ and Supplement/
+// templates, .../<samiti id>/<NAME>-Ward%20No-<NNN>.pdf), not only the Badli
+// wards of config/constituency.json.
+const CATALOGUE = new URL('../data/sec/catalogue/', import.meta.url);
+const SHARDS = readdirSync(CATALOGUE).filter((f) => f.endsWith('.json') && f !== 'index.json');
+const shard = (file) => JSON.parse(readFileSync(new URL(file, CATALOGUE), 'utf8'));
+const JALORE = shard('jalore.json').panchayats.find((p) => p.wards[0].pdfUrl.includes('/AADARSH%20SANKAD-'));
+const STATE_WARD = JALORE.wards[0].pdfUrl;
+const STATE_SUPP = JALORE.wards[1].supplementUrl;
+
+test('every ward URL in every catalogue shard is an SEC roll URL', () => {
+  const index = JSON.parse(readFileSync(new URL('index.json', CATALOGUE), 'utf8'));
+  // The templates isSecRollUrl encodes: .../Final/ and .../Supplement/<samiti id>/<NAME>-Ward%20No-<NNN>.pdf.
+  const SUFFIX = '{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf';
+  assert.equal(index.pdfUrlTemplates.final,
+    `https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/${SUFFIX}`);
+  assert.equal(index.pdfUrlTemplates.supplement,
+    `https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/${SUFFIX}`);
+  assert.ok(SHARDS.length > 30);
+  let count = 0;
+  for (const file of SHARDS) {
+    for (const p of shard(file).panchayats) {
+      for (const w of p.wards) {
+        for (const u of [w.pdfUrl, w.supplementUrl]) {
+          if (u === null || u === undefined) continue;
+          assert.ok(isSecRollUrl(u), `${file}: ${u}`);
+          count += 1;
+        }
+      }
+    }
+  }
+  assert.ok(count > 100_000, String(count));
+  for (const w of config.districts[0].samitis[0].panchayats[0].wards) assert.ok(isSecRollUrl(w.pdfUrl), w.pdfUrl);
+});
+
+test('a non-Badli ward and supplement roll from the catalogue are relayed', async () => {
+  assert.ok(!allowedRollUrls(config).has(STATE_WARD));
+  assert.match(STATE_SUPP, /\/PRI\/Supplement\//);
+  for (const u of [STATE_WARD, STATE_SUPP]) {
+    const up = upstream();
+    const res = await relayWith(up)(new Request(rollUrl(u)));
+    assert.equal(res.status, 200, u);
+    assert.equal(res.headers.get('content-type'), 'application/pdf');
+    assert.deepEqual(Buffer.from(await res.arrayBuffer()), PDF);
+    assert.deepEqual(up.calls.map((c) => c.url), [u]);
+  }
+});
+
+test('every Badli ward in config/constituency.json still relays', async () => {
+  for (const w of config.districts[0].samitis[0].panchayats[0].wards) {
+    const up = upstream();
+    assert.equal((await relayWith(up)(new Request(rollUrl(w.pdfUrl)))).status, 200, w.pdfUrl);
+    // The config set alone, without the template predicate, still admits them.
+    const configOnly = createRollRelay({ allowedUrls: allowedRollUrls(config), fetch: up.fetch });
+    assert.equal((await configOnly(new Request(rollUrl(w.pdfUrl)))).status, 200, w.pdfUrl);
+  }
+});
+
+test('every u outside the SEC roll templates answers 403 "not an SEC roll PDF" and contacts no server', async () => {
+  const up = upstream();
+  const relay = relayWith(up);
+  const base = 'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI';
+  const forbidden = [
+    STATE_WARD.replace('esuchiroll.rajasthan.gov.in', 'evil.example'),
+    STATE_WARD.replace('esuchiroll.rajasthan.gov.in', 'esuchiroll.rajasthan.gov.in.evil.example'),
+    STATE_WARD.replace('esuchiroll.rajasthan.gov.in', 'x.esuchiroll.rajasthan.gov.in'),
+    STATE_WARD.replace('https:', 'http:'),
+    STATE_WARD.replace('esuchiroll.rajasthan.gov.in', 'esuchiroll.rajasthan.gov.in:8443'),
+    STATE_WARD.replace('https://', 'https://user:pw@'),
+    STATE_WARD + '?',
+    STATE_WARD + '?x=1',
+    STATE_WARD + '#',
+    STATE_WARD + '#frag',
+    `${base}/Final2/325/AADARSH%20SANKAD-Ward%20No-001.pdf`,
+    `${base}/final/325/AADARSH%20SANKAD-Ward%20No-001.pdf`,
+    `${base}/Supplements/325/AADARSH%20SANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/325/sub/AADARSH%20SANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/AADARSH%20SANKAD-Ward%20No-001.pdf`,
+    'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2025/PRI/Final/325/AADARSH%20SANKAD-Ward%20No-001.pdf',
+    'https://esuchiroll.rajasthan.gov.in/ErrorPage.aspx',
+    `${base}/Final/32a/AADARSH%20SANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/325/AADARSH%20SANKAD-Ward%20No-01.pdf`,
+    `${base}/Final/325/AADARSH%20SANKAD-Ward%20No-0001.pdf`,
+    `${base}/Final/325/AADARSH%20SANKAD-Ward%20No-001.PDF`,
+    `${base}/Final/325/AADARSH%20SANKAD-Ward%20No-001`,
+    `${base}/Final/325/Aadarsh%20Sankad-Ward%20No-001.pdf`,
+    `${base}/Final/325/AADARSH SANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/325/AADARSH+SANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/325/AADARSH%2fSANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/325/AADARSH%2FSANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/325/AADARSH%5CSANKAD-Ward%20No-001.pdf`,
+    `${base}/Final/325/..%2F..%2FX-Ward%20No-001.pdf`,
+    `${base}/Final/325/%2E%2E-Ward%20No-001.pdf`,
+    `${base}/Final/325/../325/BADLI-Ward%20No-001.pdf`,
+    `${base}/Supplement/325/../325/BADLI-Ward%20No-001.pdf`,
+    `${base}/Final/325/%2e%2e/BADLI-Ward%20No-001.pdf`,
+    `${base}/Final/195/DEOLI%20%28auwa%29-Ward%20No-001.pdf`,
+    `${base}/Final/195/DEOLI%20(AUWA)-Ward%20No-001.pdf`,
+    `${base}/Final/195/DEOLI%20%2cAUWA-Ward%20No-001.pdf`,
+    `${base}/Final/195/X%00Y-Ward%20No-001.pdf`,
+    `${base}/Final/195/X%E0%A4-Ward%20No-001.pdf`,
+    `${base}/Final/125/-Ward%20No-001.pdf`,
+  ];
+  for (const u of forbidden) {
+    assert.equal(isSecRollUrl(u), false, u);
+    const res = await relay(new Request(rollUrl(u)));
+    assert.equal(res.status, 403, u);
+    const body = await res.text();
+    assert.match(body, /not an SEC roll PDF/, u);
+    assert.doesNotMatch(body, /constituency config/);
+  }
+  const twice = `${ORIGIN}/roll?url=${encodeURIComponent(STATE_WARD)}&url=${encodeURIComponent(STATE_SUPP)}`;
+  assert.equal((await relay(new Request(twice))).status, 403);
+  assert.equal(isSecRollUrl(null), false);
+  assert.equal(isSecRollUrl(42), false);
+  assert.equal(up.calls.length, 0);
+  assert.throws(() => createRollRelay({ allowedUrls: new Set(), isAllowedUrl: 'yes' }), TypeError);
+});
+
+test('the default server relays a statewide catalogue ward', async (t) => {
+  const up = upstream();
+  const server = await createAppServer({ fetch: up.fetch });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const { port } = server.address();
+  const ok = await get(port, `/roll?url=${encodeURIComponent(STATE_WARD)}`);
+  assert.equal(ok.status, 200);
+  assert.deepEqual(ok.body, PDF);
+  const denied = await get(port, '/roll?url=https://example.com/x.pdf');
+  assert.equal(denied.status, 403);
+  assert.equal(denied.body.toString('utf8'), 'url is not an SEC roll PDF\n');
+  assert.deepEqual(up.calls.map((c) => c.url), [STATE_WARD]);
+});
+
+test('the Pages Function relays a statewide catalogue ward and the config wards', async (t) => {
+  const up = upstream();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = up.fetch; // the function's relay takes its upstream fetch from the global
+  t.after(() => { globalThis.fetch = realFetch; });
+  const { onRequest } = await import('../functions/roll.js');
+  const env = {
+    ASSETS: {
+      fetch: async (req) => {
+        assert.equal(new URL(req.url).pathname, '/config/constituency.json');
+        return new Response(read('config/constituency.json'), { headers: { 'Content-Type': 'application/json' } });
+      },
+    },
+  };
+  for (const u of [STATE_WARD, STATE_SUPP, WARD1]) {
+    const res = await onRequest({ request: new Request(rollUrl(u)), env });
+    assert.equal(res.status, 200, u);
+  }
+  const denied = await onRequest({ request: new Request(rollUrl('https://example.com/x.pdf')), env });
+  assert.equal(denied.status, 403);
+  assert.deepEqual(up.calls.map((c) => c.url), [STATE_WARD, STATE_SUPP, WARD1]);
 });
