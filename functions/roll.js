@@ -3,9 +3,10 @@
 // the handler is written against the standard Request/Response API, so the
 // same code that relay/server.mjs runs under Node runs here.
 //
-// The allowlist is every URL with the shape of the statewide catalogue's
-// SEC roll PDF templates (isSecRollUrl), so any ward the picker offers can
-// download, plus the ward pdfUrl set of config/constituency.json, read
+// GET /roll?url=<u> relays u when it has the shape of the statewide
+// catalogue's Final/ or Supplement/ roll PDF template (pdfUrlTemplates in
+// data/sec/catalogue/index.json; isSecRollUrl), so any ward the picker offers
+// can download, or when u is a ward URL of config/constituency.json, read
 // through the Pages static-asset binding (env.ASSETS) on the first request
 // and cached for the lifetime of the isolate, so a config update deploys
 // with the site and needs no separate step.

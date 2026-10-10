@@ -2,9 +2,9 @@
 //
 //   node relay/server.mjs            # PORT=8080 HOST=127.0.0.1 by default
 //
-// GET /roll?url=... goes to relay/rollRelay.mjs, which relays any SEC ward
-// roll PDF URL of the catalogue's shape (isSecRollUrl) and the pdfUrl of
-// every ward in config/constituency.json (read at startup).
+// GET /roll?url=<u> goes to relay/rollRelay.mjs, which relays u when it is an
+// SEC ward roll PDF URL of the catalogue's shape (isSecRollUrl) or the pdfUrl
+// of a ward in config/constituency.json (read at startup).
 // Everything else is a static file from the shell's own files and
 // directories (PUBLIC below); the rest of the repo (fixtures with real voter
 // data, tools, tests outside src/) is never served.

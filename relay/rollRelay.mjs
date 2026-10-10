@@ -4,14 +4,16 @@
 //
 //   GET /roll?url=<pdf url>
 //
-// The relay only fetches an SEC ward roll PDF: a URL with the shape of the
-// statewide catalogue's two roll PDF templates (pdfUrlTemplates in
-// data/sec/catalogue/index.json; see isSecRollUrl), or one the deployment
-// lists itself (allowedRollUrls of config/constituency.json). Any other URL,
-// a missing or repeated url parameter, or anything that is not a URL answers
+// The relay fetches a url parameter u only when u is an SEC ward roll PDF:
+// either u has the shape of one of the catalogue's two roll PDF templates
+// (pdfUrlTemplates.final and pdfUrlTemplates.supplement in
+// data/sec/catalogue/index.json, i.e. .../PRI/Final/ or .../PRI/Supplement/;
+// see isSecRollUrl), or u is a ward pdfUrl or supplementPdfUrls entry in
+// config/constituency.json (allowedRollUrls). Every other u (another host,
+// http, a query or fragment, another path, '..' or an encoded slash), a
+// missing or repeated url parameter, or anything that is not a URL answers
 // 403 without contacting any server, so the relay cannot be used as an open
-// proxy. Non-GET methods
-// answer 405. An upstream failure, redirect (the portal answers 302 for a
+// proxy. Non-GET methods answer 405. An upstream failure, redirect (the portal answers 302 for a
 // ward that does not exist), non-PDF body or an upstream that stalls past
 // the timeout answers 502.
 //
@@ -34,9 +36,9 @@ function normalise(raw) {
 }
 
 const SEC_ROLL_HOST = 'esuchiroll.rajasthan.gov.in';
-// Final and Supplement roll paths as data/sec/catalogue/index.json's
-// pdfUrlTemplates build them: digit samiti id, percent-encoded upper-case
-// panchayat name, three-digit ward.
+// The Final/ and Supplement/ roll paths as the pdfUrlTemplates of
+// data/sec/catalogue/index.json build them: digit samiti id, percent-encoded
+// upper-case panchayat name, three-digit ward.
 const SEC_ROLL_PATH =
   /^\/Publication_PDF_2026\/PRI\/(?:Final|Supplement)\/[0-9]+\/((?:[A-Z0-9._~-]|%[0-9A-F]{2})+)-Ward%20No-[0-9]{3}\.pdf$/;
 
@@ -46,20 +48,22 @@ function quoteName(name) {
 }
 
 /**
- * True for a URL with the exact shape of an SEC ward roll PDF in the
- * catalogue: https, host esuchiroll.rajasthan.gov.in, no port, credentials,
- * query or fragment, and a Final or Supplement path whose name segment is the
+ * True when u has the exact shape of an SEC ward roll PDF in the catalogue:
+ * https, host esuchiroll.rajasthan.gov.in, no port, credentials, query or
+ * fragment, and a Final/ or Supplement/ path whose name segment is the
  * canonical encoding of an upper-case printable-ASCII name with no slash.
+ * u must already be in canonical form (new URL(u).href === u), so a '..'
+ * segment or other text the parser would rewrite is refused, not resolved.
  */
-export function isSecRollUrl(raw) {
-  if (typeof raw !== 'string' || raw.includes('?') || raw.includes('#')) return false;
+export function isSecRollUrl(u) {
+  if (typeof u !== 'string' || u.includes('?') || u.includes('#')) return false;
   let url;
   try {
-    url = new URL(raw);
+    url = new URL(u);
   } catch {
     return false;
   }
-  if (url.href !== raw || url.protocol !== 'https:' || url.hostname !== SEC_ROLL_HOST) return false;
+  if (url.href !== u || url.protocol !== 'https:' || url.hostname !== SEC_ROLL_HOST) return false;
   if (url.port !== '' || url.username !== '' || url.password !== '') return false;
   const match = SEC_ROLL_PATH.exec(url.pathname);
   if (!match) return false;
@@ -126,10 +130,10 @@ function plain(status, message, headers = {}) {
 }
 
 /**
- * @param {{allowedUrls: Set<string>, isAllowedUrl?: (href: string) => boolean,
+ * @param {{allowedUrls: Set<string>, isAllowedUrl?: (u: string) => boolean,
  *   fetch?: typeof fetch, maxBytes?: number, timeoutMs?: number}} options
- * A URL is relayed when its normalised href is in allowedUrls or
- * isAllowedUrl (for example isSecRollUrl) accepts the url parameter as sent.
+ * A url parameter u is relayed when its normalised href is in allowedUrls or
+ * isAllowedUrl (for example isSecRollUrl) accepts u as sent.
  * timeoutMs bounds the whole upstream exchange (headers and body); a stalled
  * source answers 502 instead of holding the request open.
  * @returns {(request: Request) => Promise<Response>}
@@ -148,8 +152,8 @@ export function createRollRelay({
 
     const targets = url.searchParams.getAll('url');
     const target = targets.length === 1 ? normalise(targets[0]) : null;
-    // The predicate sees the parameter as sent, so a URL the parser would
-    // rewrite (a '..' segment, a raw space) is refused, not resolved.
+    // The predicate sees u as sent, so a u the parser would rewrite (a '..'
+    // segment, a raw space) is refused, not resolved.
     if (!target || !(allowedUrls.has(target) || isAllowedUrl(targets[0]))) {
       return plain(403, 'url is not an SEC roll PDF');
     }
