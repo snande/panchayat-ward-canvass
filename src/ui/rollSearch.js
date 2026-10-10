@@ -5,8 +5,9 @@
 // above the box, and a call-list button opens the ward's call list there.
 // opts.marks adds the "seen voting" control and a turnout button (its count is
 // the mark store's de-duplicated wardCount, re-read as marks arrive). Every
-// count read here skips marks on serials struck off this roll, however old the
-// mark or whichever phone made it. opts.sms
+// count shown here is this ward's: the seen-voting control's count line too,
+// as only this roll says which serials are struck off. Marks on serials struck
+// off it are left out, however old the mark or whichever phone made it. opts.sms
 // adds an SMS tally button whose view is imported on first open, as nothing
 // under src/decoder loads at startup. One view at a time; opts.onHostChange
 // (view) hears 'contact', 'calls', 'turnout', 'sms' or null, for the nav bar.
@@ -33,11 +34,15 @@ export function toVoter(entry) {
   };
 }
 
-// The mark store with its counts skipping marks skip(wardId, serial) is true for.
-function countingLiveSerials(store, skip) {
+// The mark store with every count limited to wardId and leaving out marks
+// skip(wardId, serial) is true for; teamCount, which the seen-voting control
+// reads, becomes that ward's count.
+function countingLiveSerials(store, wardId, skip) {
   const view = { ...store };
-  if (typeof store.teamCount === 'function') view.teamCount = () => store.teamCount({ skip });
-  if (typeof store.wardCount === 'function') view.wardCount = (wardId) => store.wardCount(wardId, { skip });
+  if (typeof store.wardCount === 'function') {
+    view.wardCount = (ward) => store.wardCount(ward, { skip });
+    if (typeof store.teamCount === 'function') view.teamCount = () => store.wardCount(wardId, { skip });
+  }
   return view;
 }
 
@@ -73,7 +78,7 @@ export function mountRollWithSearch(container, entries, strings, opts = {}) {
   // counts below leave out marks stored against them.
   const struckSerials = new Set(entries.filter((e) => e.struck === true).map((e) => String(e.serial)));
   const skip = (wardId, serial) => wardId === wardKey && struckSerials.has(String(serial));
-  const marks = canTally ? countingLiveSerials(opts.marks, skip) : null;
+  const marks = canTally ? countingLiveSerials(opts.marks, wardKey, skip) : null;
   let turnoutButton = null;
   if (canTally) {
     turnoutButton = el(doc, 'button', 'btn-secondary turnout-open', strings && strings.turnout_open);

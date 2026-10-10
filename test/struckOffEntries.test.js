@@ -201,18 +201,21 @@ test('the store\'s counts leave out marks skip names, and keep the marks themsel
   await assert.rejects(marks.wardCount(WARD, { skip: 9 }), TypeError);
 });
 
+// A teammate's mark as a sync pull brings it.
+const pulled = (wardId, serial) => ({
+  id: `mark:${wardId}:${serial}`, updatedAt: '2026-10-09T08:00:00.000Z',
+  data: { wardId, serial, workerId: 'w2', markedAt: '2026-10-09T08:00:00.000Z' },
+});
+
 test('marks stored against struck-off serials, old or from a teammate\'s older build, are not counted in the roll view', async () => {
   const container = createDocument().createElement('section');
   const marks = marksStore();
   await marks.markSeen(WARD, 8, 'w1');
-  // A mark made on serial 9 before it was struck off, and one on serial 10
-  // pulled from a teammate whose build still offered the button.
+  // Serial 9 marked before it was struck off; a voter of another ward, whose
+  // roll this view cannot judge, marked too.
   await marks.markSeen(WARD, 9, 'w1');
-  assert.equal(await marks.applyRemote([{
-    id: `mark:${WARD}:10`, updatedAt: '2026-10-09T08:00:00.000Z',
-    data: { wardId: WARD, serial: 10, workerId: 'w2', markedAt: '2026-10-09T08:00:00.000Z' },
-  }]), 1);
-  assert.equal(await marks.wardCount(WARD), 3, 'all three marks are stored');
+  await marks.markSeen('17/125/6313/2', 9, 'w1');
+  assert.equal(await marks.teamCount(), 3, 'every mark is stored');
   const view = mountRollWithSearch(container, ENTRIES, strings, {
     contacts: noContacts, wardKey: WARD, marks, workerId: async () => 'w1', viewportHeight: 1200,
     turnout: { saveOfficialTurnout: async () => {}, loadOfficialTurnout: async () => null },
@@ -223,24 +226,33 @@ test('marks stored against struck-off serials, old or from a teammate\'s older b
     },
   });
 
+  // The count line under the seen-voting button is this ward's live count.
   const panel = view.openContact(ENTRIES[0]);
   await panel.seenVoting.ready;
   await waitFor(() => panel.seenVoting.countValue.textContent === '1');
+  assert.equal(panel.seenVoting.root.querySelector('span.seen-voting-count-label').textContent,
+    strings.seen_team_count_label);
 
   const screen = view.openTurnout();
   const supporters = () => screen.root.querySelectorAll('p.turnout-value')[1].textContent;
   await waitFor(() => supporters() === '1');
+  // A teammate on an older build marked struck-off serial 10: the count is
+  // read again and stays the same.
+  assert.equal(await marks.applyRemote([pulled(WARD, 10)]), 1);
+  await sleep(30);
+  assert.equal(supporters(), '1');
+  // A voter not struck off, marked meanwhile, adds one.
+  assert.equal(await marks.applyRemote([pulled(WARD, 7)]), 1);
+  await waitFor(() => supporters() === '2');
 
   const tally = await view.openSmsTally();
   await tally.ready;
-  await waitFor(() => tally.wardValue.textContent === '1');
-
-  // A live voter marked while the screen is open still adds one.
-  await marks.markSeen(WARD, 8, 'w1');
-  await marks.applyRemote([{
-    id: `mark:${WARD}:7`, updatedAt: '2026-10-09T08:01:00.000Z',
-    data: { wardId: WARD, serial: 7, workerId: 'w2', markedAt: '2026-10-09T08:01:00.000Z' },
-  }]);
   await waitFor(() => tally.wardValue.textContent === '2');
+  await marks.markSeen(WARD, 11, 'w1');
+  await waitFor(() => tally.wardValue.textContent === '3');
+
+  const again = view.openContact(ENTRIES[0]);
+  await waitFor(() => again.seenVoting.countValue.textContent === '3');
+  assert.equal(await marks.wardCount(WARD), 5, 'the struck-off marks stay stored');
   view.destroy();
 });

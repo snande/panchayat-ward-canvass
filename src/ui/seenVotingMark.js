@@ -13,8 +13,9 @@
 // which names this worker only when this tap added it. If the mark cannot be
 // read, a warning shows and the button stays (marking is safe to repeat).
 //
-// When the store offers teamCount(), a line under the action shows how many
-// voters the team has marked as far as this phone knows. It is read again
+// When the store offers teamCount(), a line under the action shows the count
+// it returns: in the roll view (src/ui/rollSearch.js) that is how many live
+// voters of the open ward the team has marked as far as this phone knows. It is read again
 // after every added mark, both this phone's and those a sync pull brings from
 // teammates (the store reports both through onMarksChanged once they are
 // stored). All text comes from the strings table. A struck-off entry gets
