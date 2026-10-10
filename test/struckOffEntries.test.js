@@ -1,7 +1,8 @@
 // Entries struck off the roll (struck: true) outside the roll list and the
 // voter card: search rows mark them struck off, the seen-voting control offers
 // no mark for them, and the SMS tally neither counts a pasted struck-off
-// serial nor sends one. All on the fake DOM over in-memory stores.
+// serial nor sends one, and no count includes a mark already stored against
+// a struck-off serial. All on the fake DOM over in-memory stores.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -182,4 +183,76 @@ test('the send panel leaves out this worker\'s marks on serials struck off the r
   });
   await view.ready;
   await waitFor(() => view.ownValue.textContent === '1');
+});
+
+test('the store\'s counts leave out marks skip names, and keep the marks themselves', async () => {
+  const marks = marksStore();
+  await marks.markSeen(WARD, 8, 'w1');
+  await marks.markSeen(WARD, 9, 'w1');
+  await marks.markSeen('other', 9, 'w1');
+  const skip = (wardId, serial) => wardId === WARD && serial === 9;
+  assert.equal(await marks.teamCount(), 3);
+  assert.equal(await marks.teamCount({ skip }), 2);
+  assert.equal(await marks.wardCount(WARD), 2);
+  assert.equal(await marks.wardCount(WARD, { skip }), 1);
+  assert.equal(await marks.wardCount('other', { skip }), 1);
+  assert.ok(await marks.getMark(WARD, 9), 'the skipped mark is still stored');
+  await assert.rejects(marks.teamCount({ skip: 'no' }), TypeError);
+  await assert.rejects(marks.wardCount(WARD, { skip: 9 }), TypeError);
+});
+
+// A teammate's mark as a sync pull brings it.
+const pulled = (wardId, serial) => ({
+  id: `mark:${wardId}:${serial}`, updatedAt: '2026-10-09T08:00:00.000Z',
+  data: { wardId, serial, workerId: 'w2', markedAt: '2026-10-09T08:00:00.000Z' },
+});
+
+test('marks stored against struck-off serials, old or from a teammate\'s older build, are not counted in the roll view', async () => {
+  const container = createDocument().createElement('section');
+  const marks = marksStore();
+  await marks.markSeen(WARD, 8, 'w1');
+  // Serial 9 marked before it was struck off; a voter of another ward, whose
+  // roll this view cannot judge, marked too.
+  await marks.markSeen(WARD, 9, 'w1');
+  await marks.markSeen('17/125/6313/2', 9, 'w1');
+  assert.equal(await marks.teamCount(), 3, 'every mark is stored');
+  const view = mountRollWithSearch(container, ENTRIES, strings, {
+    contacts: noContacts, wardKey: WARD, marks, workerId: async () => 'w1', viewportHeight: 1200,
+    turnout: { saveOfficialTurnout: async () => {}, loadOfficialTurnout: async () => null },
+    sms: {
+      settings: async () => ({ teamSmsNumber: NUMBER, candidateId: TEAM }),
+      inbox: createSmsInbox({ indexedDB: createFakeIndexedDB(), crypto: webcrypto }),
+      location: { href: '' },
+    },
+  });
+
+  // The count line under the seen-voting button is this ward's live count.
+  const panel = view.openContact(ENTRIES[0]);
+  await panel.seenVoting.ready;
+  await waitFor(() => panel.seenVoting.countValue.textContent === '1');
+  assert.equal(panel.seenVoting.root.querySelector('span.seen-voting-count-label').textContent,
+    strings.seen_team_count_label);
+
+  const screen = view.openTurnout();
+  const supporters = () => screen.root.querySelectorAll('p.turnout-value')[1].textContent;
+  await waitFor(() => supporters() === '1');
+  // A teammate on an older build marked struck-off serial 10: the count is
+  // read again and stays the same.
+  assert.equal(await marks.applyRemote([pulled(WARD, 10)]), 1);
+  await sleep(30);
+  assert.equal(supporters(), '1');
+  // A voter not struck off, marked meanwhile, adds one.
+  assert.equal(await marks.applyRemote([pulled(WARD, 7)]), 1);
+  await waitFor(() => supporters() === '2');
+
+  const tally = await view.openSmsTally();
+  await tally.ready;
+  await waitFor(() => tally.wardValue.textContent === '2');
+  await marks.markSeen(WARD, 11, 'w1');
+  await waitFor(() => tally.wardValue.textContent === '3');
+
+  const again = view.openContact(ENTRIES[0]);
+  await waitFor(() => again.seenVoting.countValue.textContent === '3');
+  assert.equal(await marks.wardCount(WARD), 5, 'the struck-off marks stay stored');
+  view.destroy();
 });

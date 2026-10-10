@@ -22,7 +22,10 @@
 //   ones this device lacks. teamCount() is the number of distinct voters this
 //   device holds a mark for, its own and its teammates'; wardCount(wardId)
 //   is the same count for one ward, which is the supporter count the
-//   polling-day turnout screen (src/ui/turnoutScreen.js) shows.
+//   polling-day turnout screen (src/ui/turnoutScreen.js) shows. Both take
+//   {skip(wardId, serial)}: a mark it returns true for is kept but not
+//   counted, which is how a serial struck off the roll after it was marked
+//   (or marked on a teammate's older build) stays out of the count.
 // - onMarksChanged(callback) is called after a mark is added on this device or
 //   pulled marks add at least one, so an open count can be read again.
 //
@@ -205,17 +208,33 @@ export function createSeenVotingStore({
     return count;
   }
 
-  /** How many distinct voters the team has marked, as far as this device knows. */
-  async function teamCount() {
-    return countWhere(() => true);
+  // The skip option as a predicate on a stored record.
+  function counted(opts) {
+    const skip = opts && opts.skip;
+    if (skip === undefined) return () => true;
+    if (typeof skip !== 'function') throw new TypeError('skip must be a function');
+    return (record) => !skip(record.wardId, record.serial);
   }
 
-  /** How many distinct voters of one ward the team has marked, as far as this device knows. */
-  async function wardCount(wardId) {
+  /**
+   * How many distinct voters the team has marked, as far as this device knows.
+   * @param {{skip?: (wardId: string, serial: number) => boolean}} [opts] marks skip returns true for are not counted
+   */
+  async function teamCount(opts) {
+    return countWhere(counted(opts));
+  }
+
+  /**
+   * How many distinct voters of one ward the team has marked, as far as this device knows.
+   * @param {string} wardId
+   * @param {{skip?: (wardId: string, serial: number) => boolean}} [opts] marks skip returns true for are not counted
+   */
+  async function wardCount(wardId, opts) {
     if (typeof wardId !== 'string' || !wardId || wardId.includes(':')) {
       throw new TypeError('wardId must be a non-empty string without ":"');
     }
-    return countWhere((record) => record.wardId === wardId);
+    const keep = counted(opts);
+    return countWhere((record) => record.wardId === wardId && keep(record));
   }
 
   /**
@@ -272,7 +291,7 @@ export const markSeen = async (wardId, serial, workerId) => store().markSeen(war
 export const listMarks = async () => store().listMarks();
 export const recordSeen = async (wardId, serial, workerId) => store().recordSeen(wardId, serial, workerId);
 export const getMark = async (wardId, serial) => store().getMark(wardId, serial);
-export const teamCount = async () => store().teamCount();
-export const wardCount = async (wardId) => store().wardCount(wardId);
+export const teamCount = async (opts) => store().teamCount(opts);
+export const wardCount = async (wardId, opts) => store().wardCount(wardId, opts);
 export const onMarksChanged = (callback) => store().onMarksChanged(callback);
 export const listenForTeamMarks = () => store().listen();
