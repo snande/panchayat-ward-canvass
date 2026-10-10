@@ -98,12 +98,13 @@ no relay, so every download fails with the Hindi retry message.
 In the live deployment, `functions/roll.js` mounts the same `createRollRelay`
 handler on `/roll` as a Pages Function. Both relay `GET /roll?url=<u>` for
 any `u` with the shape of the SEC catalogue's Final or Supplement roll PDF
-template (`pdfUrlTemplates` in `data/sec/catalogue/index.json`: https,
-`esuchiroll.rajasthan.gov.in`, `/Publication_PDF_2026/PRI/Final/` or
-`/Publication_PDF_2026/PRI/Supplement/`, digit samiti id, upper-case
-panchayat name, three-digit ward), so every ward the picker offers can
-download; any other `u` answers 403 `url is not an SEC roll PDF`. The
-function also reads `config/constituency.json` through the static-asset
+template (`pdfUrlTemplates.final` and `pdfUrlTemplates.supplement` in
+`data/sec/catalogue/index.json`): https, host `esuchiroll.rajasthan.gov.in`,
+path `/Publication_PDF_2026/PRI/Final/<samiti id>/<NAME>-Ward%20No-<NNN>.pdf`
+or the same under `Supplement/`, with a digit samiti id, `NAME` the
+upper-case panchayat name and `NNN` three digits. So every ward the picker
+offers can download; any other `u` answers 403 `url is not an SEC roll PDF`.
+The function also reads `config/constituency.json` through the static-asset
 binding on first use and allows its ward URLs. `_routes.json` routes only
 `/roll` and `/sync/*` to functions, so every other URL stays a plain static
 file. The hosting, DNS, bindings and plan this needs are listed in

@@ -4,7 +4,8 @@
 // same code that relay/server.mjs runs under Node runs here.
 //
 // GET /roll?url=<u> relays u when it has the shape of the statewide
-// catalogue's Final/ or Supplement/ roll PDF template (pdfUrlTemplates in
+// catalogue's Final/ or Supplement/ roll PDF template,
+// .../PRI/Final/<samiti id>/<NAME>-Ward%20No-<NNN>.pdf (pdfUrlTemplates in
 // data/sec/catalogue/index.json; isSecRollUrl), so any ward the picker offers
 // can download, or when u is a ward URL of config/constituency.json, read
 // through the Pages static-asset binding (env.ASSETS) on the first request

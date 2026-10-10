@@ -212,7 +212,8 @@ test('the default server builds its allowlist from config/constituency.json', as
 
 // Statewide catalogue (issue #198): GET /roll?url=<u> relays any u the
 // catalogue names (data/sec/catalogue/index.json's Final/ and Supplement/
-// templates), not only the Badli wards of config/constituency.json.
+// templates, .../<samiti id>/<NAME>-Ward%20No-<NNN>.pdf), not only the Badli
+// wards of config/constituency.json.
 const CATALOGUE = new URL('../data/sec/catalogue/', import.meta.url);
 const SHARDS = readdirSync(CATALOGUE).filter((f) => f.endsWith('.json') && f !== 'index.json');
 const shard = (file) => JSON.parse(readFileSync(new URL(file, CATALOGUE), 'utf8'));
@@ -222,10 +223,12 @@ const STATE_SUPP = JALORE.wards[1].supplementUrl;
 
 test('every ward URL in every catalogue shard is an SEC roll URL', () => {
   const index = JSON.parse(readFileSync(new URL('index.json', CATALOGUE), 'utf8'));
-  const prefix = (template) => template.slice(0, template.indexOf('{'));
-  assert.equal(prefix(index.pdfUrlTemplates.final), 'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/');
-  assert.equal(prefix(index.pdfUrlTemplates.supplement),
-    'https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/');
+  // The templates isSecRollUrl encodes: .../Final/ and .../Supplement/<samiti id>/<NAME>-Ward%20No-<NNN>.pdf.
+  const SUFFIX = '{samiti_id}/{PANCHAYAT_NAME}-Ward%20No-{NNN}.pdf';
+  assert.equal(index.pdfUrlTemplates.final,
+    `https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Final/${SUFFIX}`);
+  assert.equal(index.pdfUrlTemplates.supplement,
+    `https://esuchiroll.rajasthan.gov.in/Publication_PDF_2026/PRI/Supplement/${SUFFIX}`);
   assert.ok(SHARDS.length > 30);
   let count = 0;
   for (const file of SHARDS) {
