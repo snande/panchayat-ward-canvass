@@ -2,8 +2,9 @@
 //
 //   node relay/server.mjs            # PORT=8080 HOST=127.0.0.1 by default
 //
-// GET /roll?url=... goes to relay/rollRelay.mjs, whose allowlist is the
-// pdfUrl of every ward in config/constituency.json (read at startup).
+// GET /roll?url=... goes to relay/rollRelay.mjs, which relays any SEC ward
+// roll PDF URL of the catalogue's shape (isSecRollUrl) and the pdfUrl of
+// every ward in config/constituency.json (read at startup).
 // Everything else is a static file from the shell's own files and
 // directories (PUBLIC below); the rest of the repo (fixtures with real voter
 // data, tools, tests outside src/) is never served.
@@ -13,7 +14,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { allowedRollUrls, createRollRelay, RELAY_PATH } from './rollRelay.mjs';
+import { allowedRollUrls, createRollRelay, isSecRollUrl, RELAY_PATH } from './rollRelay.mjs';
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -54,12 +55,14 @@ async function sendResponse(res, response, head) {
 }
 
 /**
- * @param {{root?: string, relay?: (request: Request) => Promise<Response>}} [options]
+ * @param {{root?: string, relay?: (request: Request) => Promise<Response>,
+ *   fetch?: typeof fetch}} [options]
+ * fetch is the default relay's upstream fetch (tests stub it).
  */
-export async function createAppServer({ root = REPO_ROOT, relay } = {}) {
+export async function createAppServer({ root = REPO_ROOT, relay, fetch = globalThis.fetch } = {}) {
   if (!relay) {
     const config = JSON.parse(await readFile(path.join(root, 'config/constituency.json'), 'utf8'));
-    relay = createRollRelay({ allowedUrls: allowedRollUrls(config) });
+    relay = createRollRelay({ allowedUrls: allowedRollUrls(config), isAllowedUrl: isSecRollUrl, fetch });
   }
 
   return createServer(async (req, res) => {
