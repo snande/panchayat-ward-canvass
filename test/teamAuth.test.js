@@ -1,6 +1,6 @@
 // Team join on the device (issue #48), run by `npm test`. Each "device" is
 // its own in-memory IndexedDB; join requests go straight to the real
-// functions/sync.js handler over an in-memory KV, so nothing leaves the
+// functions/sync.js handler over an in-memory D1, so nothing leaves the
 // machine.
 
 import { test } from 'node:test';
@@ -15,31 +15,15 @@ import * as teamAuthModule from '../src/sync/teamAuth.js';
 import { onRequest } from '../functions/sync.js';
 import { DB_NAME, KEYS_STORE, META_STORE } from '../src/storage/deviceDb.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { createMemoryD1 } from './helpers/memoryD1.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const PASS_A = 'हमारी टीम 2026';
 const PASS_B = 'दूसरी टीम';
 const encoder = new TextEncoder();
 
-function memoryKV() {
-  const map = new Map();
-  return {
-    map,
-    async get(key) {
-      return map.has(key) ? map.get(key) : null;
-    },
-    async put(key, value) {
-      map.set(key, String(value));
-    },
-    async list({ prefix = '' } = {}) {
-      const names = [...map.keys()].filter((k) => k.startsWith(prefix)).sort();
-      return { keys: names.map((name) => ({ name })), list_complete: true };
-    },
-  };
-}
-
-function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_KV: memoryKV() };
+async function server() {
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
   const requests = [];
   const fetch = async (url, init = {}) => {
     requests.push({ url: String(url), init });
@@ -82,7 +66,7 @@ test('exports joinTeam and getAuth, and uses at least 100000 PBKDF2 iterations',
 });
 
 test('the same passphrase on two devices yields working tokens and one team key', async () => {
-  const srv = server();
+  const srv = await server();
   const first = device(srv);
   const second = device(srv);
   assert.equal(await first.auth.getAuth(), null);
@@ -96,7 +80,7 @@ test('the same passphrase on two devices yields working tokens and one team key'
   // The first join recorded exactly the verifier of the PBKDF2 bits, so the
   // client's base64url copy and the server's encoder agree.
   const { bits, verifier } = await expectedVerifier('candA', PASS_A);
-  assert.equal(srv.env.SYNC_KV.map.get('c/candA/verifier'), verifier);
+  assert.equal(srv.env.SYNC_DB.sqlite.query('SELECT verifier FROM verifiers WHERE candidate_id = ?', ['candA'])[0]?.verifier, verifier);
   assert.deepEqual(JSON.parse(srv.requests[0].init.body), { candidateId: 'candA', verifier });
   assert.equal(srv.requests[0].url, '/sync/join');
   assert.equal(srv.requests[0].init.method, 'POST');
@@ -136,7 +120,7 @@ test('the same passphrase on two devices yields working tokens and one team key'
 });
 
 test('a wrong passphrase or another candidate\'s passphrase is a 401 and stores nothing', async () => {
-  const srv = server();
+  const srv = await server();
   await device(srv).auth.joinTeam('candA', PASS_A);
   await device(srv).auth.joinTeam('candB', PASS_B);
 
@@ -147,7 +131,7 @@ test('a wrong passphrase or another candidate\'s passphrase is a 401 and stores 
     assert.equal(stored(dev.idb, KEYS_STORE).size, 0);
     assert.equal(stored(dev.idb, META_STORE).size, 0);
   }
-  assert.equal(srv.env.SYNC_KV.map.get('c/candA/verifier'), (await expectedVerifier('candA', PASS_A)).verifier);
+  assert.equal(srv.env.SYNC_DB.sqlite.query('SELECT verifier FROM verifiers WHERE candidate_id = ?', ['candA'])[0]?.verifier, (await expectedVerifier('candA', PASS_A)).verifier);
 
   // The two teams' keys differ: candB cannot read candA's records.
   const a = await device(srv).auth.joinTeam('candA', PASS_A);
@@ -156,7 +140,7 @@ test('a wrong passphrase or another candidate\'s passphrase is a 401 and stores 
 });
 
 test('no plaintext passphrase is persisted; only the token, candidate code and key', async () => {
-  const srv = server();
+  const srv = await server();
   const dev = device(srv);
   await dev.auth.joinTeam('candA', PASS_A);
   const keys = stored(dev.idb, KEYS_STORE);
@@ -173,7 +157,7 @@ test('no plaintext passphrase is persisted; only the token, candidate code and k
 });
 
 test('PBKDF2 runs with salt = candidateId and the configured iterations', async () => {
-  const srv = server();
+  const srv = await server();
   const params = [];
   const subtle = new Proxy(webcrypto.subtle, {
     get(target, name) {
@@ -198,7 +182,7 @@ test('PBKDF2 runs with salt = candidateId and the configured iterations', async 
 });
 
 test('bad input and network failures reject without storing anything', async () => {
-  const srv = server();
+  const srv = await server();
   const dev = device(srv);
   for (const id of ['', 'a/b', 'उम्मीदवार', null]) {
     await assert.rejects(dev.auth.joinTeam(id, PASS_A), { code: 'invalid-code' });

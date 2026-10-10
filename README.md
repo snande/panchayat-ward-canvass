@@ -96,21 +96,23 @@ Every request needs `Authorization: Bearer <token>`. The token is
 over `<candidateId>:<deviceId>`, keyed with the `SYNC_SECRET` secret.
 `signSyncToken` in the same file mints one. A missing or invalid token gets a
 bare 401. The candidate comes only from the verified token, never from the
-request. Records are stored under `c/<candidateId>/r/<seq>`, with the counter
-at `c/<candidateId>/seq`, in the KV namespace bound as `SYNC_KV`. The server
+request. Records are stored in the `records` table of the D1 database bound
+as `SYNC_DB` (schema in `migrations/0001_sync.sql`), keyed by candidate and
+sequence number, with each candidate's counter in `counters`. The server
 stores `ciphertext` as given and never decrypts it.
 
-The pull cursor only advances through an unbroken run of sequence numbers. If
-a later record is visible before an earlier one, for example because two
-pushes overlapped, the pull stops at the gap. The client then picks up the
-earlier record on its next pull instead of skipping it. A gap is skipped only
-once the record after it was claimed more than five minutes ago, which means
-the push that owned the gap has died.
+A push claims its sequence numbers and writes its records in one D1 batch,
+which runs as a single transaction. Pushes that overlap get separate,
+unbroken runs of sequence numbers, so a pull never meets a gap and its cursor
+cannot skip a record. A seen-voting mark is stored once per team: the
+`marks` table takes each mark id with `INSERT OR IGNORE`, and a push of a
+mark the team already has is acknowledged without a new record.
 
-Without `SYNC_SECRET` or `SYNC_KV` the endpoints return 503; both are listed
+Without `SYNC_SECRET` or `SYNC_DB` the endpoints return 503; both are listed
 in [`docs/operator-setup.md`](docs/operator-setup.md). The endpoints running
-against real Pages KV are checked outside repo-ci. `test/sync.test.js`
-exercises the function against an in-memory `SYNC_KV`.
+against a real D1 database are checked outside repo-ci. `test/sync.test.js`
+exercises the function against `test/helpers/memoryD1.js`, an in-memory
+SQLite database with the D1 API.
 
 ## Search screen
 

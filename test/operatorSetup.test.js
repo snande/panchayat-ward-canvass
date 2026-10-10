@@ -48,7 +48,7 @@ function tableRows() {
 
 test('the scan finds the env reads the functions are known to make', () => {
   const names = [...envReads('functions').keys()];
-  for (const known of ['ASSETS', 'SYNC_SECRET', 'SYNC_KV']) {
+  for (const known of ['ASSETS', 'SYNC_SECRET', 'SYNC_DB']) {
     assert.ok(names.includes(known), `scan missed env.${known}`);
   }
 });

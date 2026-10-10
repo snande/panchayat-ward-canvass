@@ -19,6 +19,7 @@ import { createTeamAuth } from '../src/sync/teamAuth.js';
 import { createContactStore } from '../src/contacts/contactStore.js';
 import { createContactSync, contactRecordId } from '../src/contacts/contactSync.js';
 import { CONTACTS_STORE, DB_NAME, OUTBOX_STORE } from '../src/storage/deviceDb.js';
+import { createMemoryD1 } from './helpers/memoryD1.js';
 
 const root = (rel) => new URL('../' + rel, import.meta.url);
 const read = (rel) => readFileSync(root(rel));
@@ -35,26 +36,9 @@ async function waitFor(cond, ms = 8000) {
   }
 }
 
-function memoryKV() {
-  const map = new Map();
-  return {
-    map,
-    async get(key) {
-      return map.has(key) ? map.get(key) : null;
-    },
-    async put(key, value) {
-      map.set(key, String(value));
-    },
-    async list({ prefix = '' } = {}) {
-      const names = [...map.keys()].filter((k) => k.startsWith(prefix)).sort();
-      return { keys: names.map((name) => ({ name })), list_complete: true };
-    },
-  };
-}
-
-const syncEnv = { SYNC_SECRET: 'test-sync-secret', SYNC_KV: memoryKV() };
+const syncEnv = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
 const toServer = (url, init) => syncOnRequest({ request: new Request(new URL(url, ORIGIN), init), env: syncEnv });
-const teamRecords = (candidateId) => [...syncEnv.SYNC_KV.map.keys()].filter((k) => k.startsWith(`c/${candidateId}/r/`));
+const teamRecords = (candidateId) => syncEnv.SYNC_DB.sqlite.query('SELECT seq FROM records WHERE candidate_id = ?', [candidateId]);
 
 // offline: every request except the precached shell files (served by sw.js)
 // fails like a phone in airplane mode.
@@ -187,7 +171,7 @@ test('airplane mode on, record consent and a number, reopen the next day: it is 
     assert.equal(result.status, 'ok', String(result.error));
     assert.equal(stored(idb, OUTBOX_STORE).size, 0);
     assert.equal(teamRecords('candA').length, 1);
-    for (const value of syncEnv.SYNC_KV.map.values()) assert.ok(!value.includes(PHONE));
+    assert.ok(!JSON.stringify(syncEnv.SYNC_DB.sqlite.query('SELECT * FROM records', [])).includes(PHONE));
   } finally {
     nextDay.restore();
   }

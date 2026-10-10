@@ -1,7 +1,7 @@
 // Seen-voting marks (issue #78), run by `npm test`. Each "device" is its own
 // in-memory IndexedDB with its own mark store, team join and sync engine;
 // every request goes to the real functions/sync.js handler over an in-memory
-// KV, so nothing leaves the machine.
+// D1, so nothing leaves the machine.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,35 +15,23 @@ import { onRequest } from '../functions/sync.js';
 import { DB_NAME, KEYS_STORE, MARKS_STORE, OUTBOX_STORE } from '../src/storage/deviceDb.js';
 import { DEVICE_KEY_ID } from '../src/crypto/deviceKey.js';
 import { createFakeIndexedDB } from './helpers/fakeIndexedDB.js';
+import { createMemoryD1 } from './helpers/memoryD1.js';
 
 const ORIGIN = 'https://canvass.takshavid.com';
 const WARD = '17/125/6313/1';
 
-function memoryKV() {
-  const map = new Map();
-  return {
-    map,
-    async get(key) {
-      return map.has(key) ? map.get(key) : null;
-    },
-    async put(key, value) {
-      map.set(key, String(value));
-    },
-    async list({ prefix = '' } = {}) {
-      const names = [...map.keys()].filter((k) => k.startsWith(prefix)).sort();
-      return { keys: names.map((name) => ({ name })), list_complete: true };
-    },
-  };
+// The team's stored records, as pull would return them plus seq and deviceId.
+function storedRecords(db, candidateId) {
+  return db.sqlite.query(
+    'SELECT seq, id, updated_at, ciphertext, iv, device_id FROM records WHERE candidate_id = ? ORDER BY seq', [candidateId],
+  ).map(({ seq, id, updated_at: updatedAt, ciphertext, iv, device_id: deviceId }) => ({ id, updatedAt, ciphertext, iv, seq, deviceId }));
 }
 
-function server() {
-  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_KV: memoryKV() };
+async function server() {
+  const env = { SYNC_SECRET: 'test-sync-secret', SYNC_DB: await createMemoryD1({ migrations: ['migrations/0001_sync.sql'] }) };
   const handle = (url, init = {}) => onRequest({ request: new Request(new URL(url, ORIGIN), init), env });
-  // The team's stored mark entries (not the index), for one candidate.
-  const markEntries = (candidateId) => [...env.SYNC_KV.map.entries()]
-    .filter(([k]) => k.startsWith(`c/${candidateId}/r/`))
-    .map(([, v]) => JSON.parse(v))
-    .filter((r) => r.id.startsWith('mark:'));
+  // The team's stored mark records (not the marks table), for one candidate.
+  const markEntries = (candidateId) => storedRecords(env.SYNC_DB, candidateId).filter((r) => r.id.startsWith('mark:'));
   return { env, handle, markEntries };
 }
 
@@ -79,7 +67,7 @@ test('the module exports markSeen, listMarks and teamCount', () => {
 });
 
 test('marks survive a reload while offline, and a second mark of a voter is not stored', async () => {
-  const srv = server();
+  const srv = await server();
   const phone = device(srv, { offline: true });
   const first = await phone.marks.markSeen(WARD, 42, 'worker-1');
   const again = await phone.marks.markSeen(WARD, '42', 'worker-2');
@@ -95,7 +83,7 @@ test('marks survive a reload while offline, and a second mark of a voter is not 
 });
 
 test('a stored mark is encrypted with the device key and holds only ward, serial, worker and time', async () => {
-  const srv = server();
+  const srv = await server();
   const phone = device(srv, { offline: true });
   const mark = await phone.marks.markSeen(WARD, 42, 'worker-1');
   assert.deepEqual(Object.keys(mark).sort(), ['markedAt', 'serial', 'wardId', 'workerId']);
@@ -116,7 +104,7 @@ test('a stored mark is encrypted with the device key and holds only ward, serial
 });
 
 test('marks made offline are pushed once connectivity returns', async () => {
-  const srv = server();
+  const srv = await server();
   const phone = device(srv);
   await phone.auth.joinTeam('candA', 'हमारी टीम');
   phone.state.offline = true;
@@ -136,7 +124,7 @@ test('marks made offline are pushed once connectivity returns', async () => {
 // and then sync in the given order. Returns the server's entries and each
 // device's teamCount() before and after.
 async function concurrentMarks(order) {
-  const srv = server();
+  const srv = await server();
   const a = device(srv);
   const b = device(srv);
   await a.auth.joinTeam('candA', 'हमारी टीम');
@@ -184,7 +172,7 @@ test('the order of the two pushes does not change the team count', async () => {
 });
 
 test('re-pushing an already-synced mark (a retry after a dropped response) does not change the count', async () => {
-  const srv = server();
+  const srv = await server();
   const a = device(srv);
   const b = device(srv);
   await a.auth.joinTeam('candA', 'हमारी टीम');
@@ -217,7 +205,7 @@ test('re-pushing an already-synced mark (a retry after a dropped response) does 
 });
 
 test("one team never reads or counts another team's marks", async () => {
-  const srv = server();
+  const srv = await server();
   const ours = device(srv);
   const teammate = device(srv);
   const rival = device(srv);
@@ -236,12 +224,13 @@ test("one team never reads or counts another team's marks", async () => {
   // The rival's mark of the same voter made its own entry under its own team.
   assert.equal(srv.markEntries('candA').length, 1);
   assert.equal(srv.markEntries('candB').length, 2);
-  assert.ok(srv.env.SYNC_KV.map.has(`c/candB/m/${markRecordId(WARD, 42)}`));
+  assert.deepEqual(srv.env.SYNC_DB.sqlite.query('SELECT id FROM marks WHERE candidate_id = ?', ['candB'])
+    .filter((m) => m.id === markRecordId(WARD, 42)).length, 1);
   assert.deepEqual((await teammate.marks.listMarks()).map((m) => m.workerId), ['worker-a']);
 });
 
 test('pulled records that are not well-formed marks are ignored', async () => {
-  const srv = server();
+  const srv = await server();
   const phone = device(srv, { offline: true });
   const added = await phone.marks.applyRemote([
     { id: 'contact:w:1', updatedAt: 1, data: { wardId: 'w', serial: 1 } },
@@ -255,7 +244,7 @@ test('pulled records that are not well-formed marks are ignored', async () => {
 });
 
 test('markSeen rejects a bad voter reference or worker, storing nothing', async () => {
-  const phone = device(server(), { offline: true });
+  const phone = device(await server(), { offline: true });
   for (const [wardId, serial, workerId] of [
     ['', 1, 'w'], ['a:b', 1, 'w'], [WARD, -1, 'w'], [WARD, 1.5, 'w'], [WARD, 'x', 'w'], [WARD, 1, ''], [WARD, 1, 7],
   ]) {
