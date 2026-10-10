@@ -225,9 +225,9 @@ test('clear() puts the shown roll away and drops a download still running; the s
 
 test('clear() during a pending restore() wins: the stored roll is not shown', async () => {
   const idb = createFakeIndexedDB();
-  const first = setup({ fetchRoll: async () => pdfBuffer(), idb });
+  const first = setup({ idb, fetchRoll: async () => pdfBuffer() });
   await first.flow.open(SELECTION);
-  const s = setup({ fetchRoll: async () => { throw new Error('no network expected'); }, idb });
+  const s = setup({ idb, fetchRoll: async () => { throw new Error('no network'); } });
   const restoring = s.flow.restore();
   s.flow.clear({ seatType: 'sarpanch' });
   assert.equal(await restoring, null);
